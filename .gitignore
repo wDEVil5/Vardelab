@@ -6,3 +6,5 @@ node_modules/
 .next/
 dist/
 .DS_Store
+docs/CampusLab_Informe_Completo.pdf
+.claude/
