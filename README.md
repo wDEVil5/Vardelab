@@ -4,19 +4,25 @@
 
 **Plataforma de microproyectos reales y colaboración interdisciplinaria**
 
-Convierte necesidades reales en experiencias formativas verificables para estudiantes universitarios.
+Convierte necesidades reales en microproyectos acotados y acompañados, para que estudiantes universitarios puedan colaborar, entregar resultados y construir un portafolio con evidencia desde una etapa temprana de su carrera, antes de realizar su primera práctica profesional o acceder a su primer empleo.
 
 ![Estado](https://img.shields.io/badge/estado-en%20dise%C3%B1o%20(pre--MVP)-orange)
 ![Licencia](https://img.shields.io/badge/licencia-por%20definir-lightgrey)
 ![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![AWS SES](https://img.shields.io/badge/AWS_SES-FF9900?logo=amazonaws&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?logo=vercel&logoColor=white)
+![Figma](https://img.shields.io/badge/Figma-F24E1E?logo=figma&logoColor=white)
 
 </div>
 
 > [!IMPORTANT]
-> **Propuesta independiente.** CampusLab **no** es una plataforma oficial de la Universidad Andrés Bello (UNAB) ni cuenta todavía con patrocinio o aprobación institucional. Es un proyecto en fase de diseño, desarrollado como iniciativa estudiantil y vehículo de aprendizaje full-stack.
+> **Propuesta independiente.** CampusLab **no** es una plataforma oficial ni cuenta todavía con patrocinio o aprobación institucional. Es un proyecto en fase de diseño, desarrollado como iniciativa estudiantil y vehículo de aprendizaje full-stack.
 
 ---
 
@@ -43,6 +49,10 @@ Convierte necesidades reales en experiencias formativas verificables para estudi
 CampusLab es una plataforma web que conecta a **estudiantes** con **necesidades reales** publicadas por profesores, organizaciones sociales, unidades internas, centros de estudiantes, emprendimientos y pequeñas empresas. Cada necesidad se transforma en un **microproyecto**: breve, acotado y verificable, con roles definidos, entregable concreto, plazo limitado (2–8 semanas) y una persona responsable de acompañar el proceso.
 
 Su espacio está **entre la formación académica y el trabajo formal**: no reemplaza una bolsa de empleo, un aula virtual ni la intranet institucional.
+
+La idea es crear un puente simple entre quienes tienen una necesidad concreta y quienes necesitan una primera experiencia real para demostrar lo que saben hacer. Cada proyecto debe tener un alcance comprensible, un plazo acotado, roles claros, acompañamiento y un resultado que pueda revisarse y convertirse en evidencia de aprendizaje.
+
+CampusLab busca que la experiencia no termine cuando se entrega un archivo: el proceso completo —postulación, equipo, hitos, retroalimentación y evaluación— queda organizado para que el estudiante pueda explicar qué hizo, cómo lo hizo y qué aprendió.
 
 > **Tesis del proyecto:** el activo principal de CampusLab no es publicar oportunidades, sino **convertir necesidades reales en experiencias formativas verificables y repetibles**.
 
@@ -85,8 +95,9 @@ Este repositorio está en su punto de partida: la **especificación de producto 
 | Backend administrado | **Supabase** | Autenticación, PostgreSQL, almacenamiento y políticas de acceso |
 | Base de datos | **PostgreSQL** | Modelo relacional (proyectos, roles, postulaciones, equipos…) |
 | Seguridad | **Row Level Security** | Permisos por rol y por propiedad del registro, en la base |
+| Correo transaccional | **AWS SES** | Confirmación de cuentas, recuperación de contraseña y notificaciones mediante correos personales |
 | Despliegue | **Vercel** | Entrega continua + dominio propio (HTTPS) |
-| Diseño | **Figma u otro** | Prototipos y pruebas antes de programar |
+| Diseño | **Figma** | Prototipos y pruebas antes de programar |
 
 > Los tipos de TypeScript se **autogeneran desde el esquema de Supabase** (`supabase gen types`) para mantener sincronizados la base de datos y el código.
 
@@ -110,7 +121,7 @@ Este repositorio está en su punto de partida: la **especificación de producto 
 - Pagos / contratación laboral
 - Matching con IA
 - Chat en tiempo real propio
-- SSO UNAB y certificados oficiales
+- SSO institucional y certificados oficiales
 - App móvil nativa
 - Marketplace sin moderación
 
@@ -149,25 +160,24 @@ campuslab/
 
 ## 🚀 Puesta en marcha
 
-> ⚠️ Aún no hay código ejecutable. Estos pasos quedan documentados para cuando comience la Fase 2 (MVP).
+Requisitos: **Node 20+**, **npm** y (para Supabase local) **Docker**.
 
 ```bash
-# 1. Clonar el repositorio
-git clone https://github.com/wDEVil5/CampusLab.git
-cd CampusLab
-
-# 2. Instalar dependencias
+# 1. Instalar dependencias
 npm install
 
-# 3. Configurar variables de entorno
-cp .env.example .env.local
-# Completar con las credenciales de tu proyecto de Supabase
+# 2. Levantar Supabase local (requiere Docker) — imprime las claves locales
+npx supabase start
 
-# 4. Levantar el entorno de desarrollo
-npm run dev
+# 3. Variables de entorno
+cp .env.example .env.local
+# Pegar en .env.local la API URL y la anon key que imprimió `supabase start`
+
+# 4. Entorno de desarrollo
+npm run dev        # http://localhost:3000
 ```
 
-**Variables de entorno necesarias** (referencia):
+**Variables de entorno** (`.env.example`):
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
@@ -175,13 +185,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=   # solo servidor, nunca en el cliente
 ```
 
+> La app arranca aunque Supabase no esté configurado todavía: el `proxy.ts` se salta la sesión si faltan las claves.
+
 ## 🗺️ Roadmap
 
 - [ ] **Fase 0** — Entrevistas (12 estudiantes, 5 patrocinadores) y validación del problema
 - [ ] **Fase 1** — Prototipo del flujo completo en Figma u otro
 - [ ] **Fase 2** — MVP: auth, perfiles, proyectos, moderación, postulaciones, equipos, hitos, evaluación y portafolio
 - [ ] **Fase 3** — Piloto controlado (10 proyectos · 30–50 estudiantes · 8 semanas)
-- [ ] **Fase 4** — Presentación de resultados y colaboración con UNAB
+- [ ] **Fase 4** — Presentación de resultados y búsqueda de colaboración institucional
 
 ## 📚 Documentación
 
