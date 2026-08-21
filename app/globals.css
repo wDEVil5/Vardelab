@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+/* CampusLab — Foundations (design tokens) · ver PRD §5.1 y página Figma "Foundations" */
+@theme {
+  /* Color */
+  --color-ink: #0d253b; /* texto principal / marca oscura */
+  --color-deep: #183451;
+  --color-electric: #3867ff; /* acción / marca */
+  --color-sprout: #62d5a2; /* éxito */
+  --color-coral: #ff836e; /* alerta / peligro */
+  --color-muted: #607086; /* texto secundario */
+  --color-surface: #f3f5f8; /* superficie suave */
+  --color-cloud: #f7f8f4;
+  --color-border: #e3e8ee;
+
+  /* Tipografía */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+
+  /* Radios */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: var(--color-ink);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
