@@ -43,6 +43,7 @@ next-env.d.ts
 # --- CampusLab custom ---
 !.env.example
 docs/CampusLab_Informe_Completo.pdf
+docs/CampusLab_Diseno_Backend.pdf
 .claude/
 tmp/
 BACKEND.md
