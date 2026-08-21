@@ -149,31 +149,32 @@ campuslab/
 
 ## 🚀 Puesta en marcha
 
-> ⚠️ Aún no hay código ejecutable. Estos pasos quedan documentados para cuando comience la Fase 2 (MVP).
+Requisitos: **Node 20+**, **npm** y (para Supabase local) **Docker**.
 
 ```bash
-# 1. Clonar el repositorio
-git clone https://github.com/wDEVil5/CampusLab.git
-cd CampusLab
-
-# 2. Instalar dependencias
+# 1. Instalar dependencias
 npm install
 
-# 3. Configurar variables de entorno
-cp .env.example .env.local
-# Completar con las credenciales de tu proyecto de Supabase
+# 2. Levantar Supabase local (requiere Docker) — imprime las claves locales
+npx supabase start
 
-# 4. Levantar el entorno de desarrollo
-npm run dev
+# 3. Variables de entorno
+cp .env.example .env.local
+# Pegar en .env.local la API URL y la anon key que imprimió `supabase start`
+
+# 4. Entorno de desarrollo
+npm run dev        # http://localhost:3000
 ```
 
-**Variables de entorno necesarias** (referencia):
+**Variables de entorno** (`.env.example`):
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=   # solo servidor, nunca en el cliente
 ```
+
+> La app arranca aunque Supabase no esté configurado todavía: el `proxy.ts` se salta la sesión si faltan las claves.
 
 ## 🗺️ Roadmap
 
