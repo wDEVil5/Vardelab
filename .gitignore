@@ -44,6 +44,7 @@ next-env.d.ts
 !.env.example
 docs/CampusLab_Informe_Completo.pdf
 docs/CampusLab_Diseno_Backend.pdf
+docs/CampusLab_Vision_Tesis_y_Expansion.pdf
 .claude/
 tmp/
 BACKEND.md
