@@ -1,15 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { Database } from "@/types/database.types";
 
 /**
  * Cliente de Supabase para Server Components, Route Handlers y Server Actions.
  * Lee/escribe la sesión en cookies. En Server Components la escritura de cookies
  * puede fallar; el middleware es el encargado de refrescar la sesión.
+ * El genérico <Database> aporta el tipado de tablas, columnas y enums a las queries.
  */
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
