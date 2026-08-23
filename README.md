@@ -6,7 +6,7 @@
 
 Convierte necesidades reales en microproyectos acotados y acompañados, para que estudiantes universitarios puedan colaborar, entregar resultados y construir un portafolio con evidencia desde una etapa temprana de su carrera, antes de realizar su primera práctica profesional o acceder a su primer empleo.
 
-![Estado](https://img.shields.io/badge/estado-en%20dise%C3%B1o%20(pre--MVP)-orange)
+![Estado](https://img.shields.io/badge/estado-MVP%20en%20construcci%C3%B3n-yellow)
 ![Licencia](https://img.shields.io/badge/licencia-por%20definir-lightgrey)
 ![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
@@ -75,15 +75,15 @@ Un patrocinador describe una necesidad mediante una **plantilla obligatoria**; u
 
 ## 🚦 Estado del proyecto
 
-> **Fase actual: diseño / pre-MVP.**
+> **Fase actual: construcción del MVP (fundación técnica lista).**
 
-Este repositorio está en su punto de partida: la **especificación de producto (PRD) está completa** y las decisiones técnicas están tomadas, pero el desarrollo del código **aún no comienza**. El objetivo inmediato es validar el problema (entrevistas + prototipo) antes de construir el MVP.
+La **especificación de producto (PRD) está completa** y las decisiones técnicas están tomadas. El proyecto ya pasó del papel al código: están el **scaffold** (Next.js + Supabase), el **modelo de datos completo** (8 migraciones · 17 tablas con Row Level Security), los **tipos TypeScript** generados desde el esquema y el **despliegue de migraciones por CI**. El siguiente paso es la primera vertical de interfaz (público → autenticación → estudiante).
 
 | Fase | Descripción | Estado |
 |------|-------------|--------|
 | 0 · Descubrimiento | Entrevistas y validación del problema | ⬜ Pendiente |
-| 1 · Prototipo | Flujo completo en Figma, probado con usuarios | ⬜ Pendiente |
-| 2 · MVP | Flujo publicación → portafolio en producción | ⬜ Pendiente |
+| 1 · Prototipo | Flujo completo en Figma, probado con usuarios | 🟡 En progreso |
+| 2 · MVP | Flujo publicación → portafolio en producción | 🟡 En progreso (base de datos lista) |
 | 3 · Piloto | 10 proyectos, 30–50 estudiantes, 8 semanas | ⬜ Pendiente |
 | 4 · Institucionalización | Presentar resultados y buscar continuidad | ⬜ Pendiente |
 
@@ -97,6 +97,7 @@ Este repositorio está en su punto de partida: la **especificación de producto 
 | Seguridad | **Row Level Security** | Permisos por rol y por propiedad del registro, en la base |
 | Correo transaccional | **AWS SES** | Confirmación de cuentas, recuperación de contraseña y notificaciones mediante correos personales |
 | Despliegue | **Vercel** | Entrega continua + dominio propio (HTTPS) |
+| CI/CD | **GitHub Actions** | Despliegue automático de migraciones al mergear a `main` |
 | Diseño | **Figma** | Prototipos y pruebas antes de programar |
 
 > Los tipos de TypeScript se **autogeneran desde el esquema de Supabase** (`supabase gen types`) para mantener sincronizados la base de datos y el código.
@@ -144,7 +145,7 @@ flowchart TD
 
 ## 📁 Estructura del repositorio
 
-> Estructura orientativa objetivo (se irá creando durante la Fase 2).
+> Las carpetas base (`app/`, `lib/supabase/`, `types/`, `supabase/`) ya existen; `components/`, `features/` y `tests/` se completan durante la Fase 2.
 
 ```
 campuslab/
@@ -177,6 +178,13 @@ cp .env.example .env.local
 npm run dev        # http://localhost:3000
 ```
 
+> `supabase start` aplica automáticamente las migraciones de `supabase/migrations/`. Para reconstruir la base desde cero o regenerar los tipos tras cambiar el esquema:
+>
+> ```bash
+> npx supabase db reset                                                # recrea la base y reaplica todas las migraciones
+> npx supabase gen types typescript --local > types/database.types.ts  # regenera los tipos TS
+> ```
+
 **Variables de entorno** (`.env.example`):
 
 ```env
@@ -202,7 +210,7 @@ SUPABASE_SERVICE_ROLE_KEY=   # solo servidor, nunca en el cliente
 
 ## 🤝 Contribución
 
-CampusLab es actualmente un proyecto de una sola persona en fase de diseño. La construcción del MVP puede hacerse en solitario; **el piloto no**: requiere sumar mentores, patrocinadores y un enlace institucional. Si te interesa colaborar (mentoría, proyectos semilla o desarrollo), abre un *issue* para conversarlo.
+CampusLab es actualmente un proyecto de una sola persona, en construcción del MVP. La construcción del MVP puede hacerse en solitario; **el piloto no**: requiere sumar mentores, patrocinadores y un enlace institucional. Si te interesa colaborar (mentoría, proyectos semilla o desarrollo), abre un *issue* para conversarlo.
 
 ## 📄 Licencia
 
