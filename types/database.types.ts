@@ -39,6 +39,7 @@ export type Database = {
           applicant_id: string
           created_at: string
           disponibilidad: string | null
+          evidencia: string | null
           id: string
           mensaje: string | null
           project_role_id: string
@@ -49,6 +50,7 @@ export type Database = {
           applicant_id: string
           created_at?: string
           disponibilidad?: string | null
+          evidencia?: string | null
           id?: string
           mensaje?: string | null
           project_role_id: string
@@ -59,6 +61,7 @@ export type Database = {
           applicant_id?: string
           created_at?: string
           disponibilidad?: string | null
+          evidencia?: string | null
           id?: string
           mensaje?: string | null
           project_role_id?: string
