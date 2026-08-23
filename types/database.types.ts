@@ -38,6 +38,7 @@ export type Database = {
         Row: {
           applicant_id: string
           created_at: string
+          disponibilidad: string | null
           id: string
           mensaje: string | null
           project_role_id: string
@@ -47,6 +48,7 @@ export type Database = {
         Insert: {
           applicant_id: string
           created_at?: string
+          disponibilidad?: string | null
           id?: string
           mensaje?: string | null
           project_role_id: string
@@ -56,6 +58,7 @@ export type Database = {
         Update: {
           applicant_id?: string
           created_at?: string
+          disponibilidad?: string | null
           id?: string
           mensaje?: string | null
           project_role_id?: string
@@ -106,6 +109,7 @@ export type Database = {
         Row: {
           comentario: string | null
           created_at: string
+          criterios: Json | null
           evaluatee_id: string
           evaluator_id: string | null
           id: string
@@ -116,6 +120,7 @@ export type Database = {
         Insert: {
           comentario?: string | null
           created_at?: string
+          criterios?: Json | null
           evaluatee_id: string
           evaluator_id?: string | null
           id?: string
@@ -126,6 +131,7 @@ export type Database = {
         Update: {
           comentario?: string | null
           created_at?: string
+          criterios?: Json | null
           evaluatee_id?: string
           evaluator_id?: string | null
           id?: string
@@ -147,6 +153,7 @@ export type Database = {
         Row: {
           created_at: string
           descripcion: string | null
+          estado: Database["public"]["Enums"]["milestone_status"]
           fecha_limite: string | null
           id: string
           orden: number
@@ -157,6 +164,7 @@ export type Database = {
         Insert: {
           created_at?: string
           descripcion?: string | null
+          estado?: Database["public"]["Enums"]["milestone_status"]
           fecha_limite?: string | null
           id?: string
           orden?: number
@@ -167,6 +175,7 @@ export type Database = {
         Update: {
           created_at?: string
           descripcion?: string | null
+          estado?: Database["public"]["Enums"]["milestone_status"]
           fecha_limite?: string | null
           id?: string
           orden?: number
@@ -186,6 +195,7 @@ export type Database = {
       }
       organizations: {
         Row: {
+          contacto: string | null
           created_at: string
           descripcion: string | null
           id: string
@@ -195,8 +205,10 @@ export type Database = {
           sitio_web: string | null
           tipo: Database["public"]["Enums"]["org_type"]
           updated_at: string
+          verificacion: Database["public"]["Enums"]["verification_status"]
         }
         Insert: {
+          contacto?: string | null
           created_at?: string
           descripcion?: string | null
           id?: string
@@ -206,8 +218,10 @@ export type Database = {
           sitio_web?: string | null
           tipo: Database["public"]["Enums"]["org_type"]
           updated_at?: string
+          verificacion?: Database["public"]["Enums"]["verification_status"]
         }
         Update: {
+          contacto?: string | null
           created_at?: string
           descripcion?: string | null
           id?: string
@@ -217,6 +231,7 @@ export type Database = {
           sitio_web?: string | null
           tipo?: Database["public"]["Enums"]["org_type"]
           updated_at?: string
+          verificacion?: Database["public"]["Enums"]["verification_status"]
         }
         Relationships: []
       }
@@ -319,7 +334,10 @@ export type Database = {
           bio: string | null
           carrera: string | null
           created_at: string
+          disponibilidad: string | null
+          enlaces: Json
           id: string
+          intereses: string | null
           nombre: string | null
           semestre: number | null
           updated_at: string
@@ -330,7 +348,10 @@ export type Database = {
           bio?: string | null
           carrera?: string | null
           created_at?: string
+          disponibilidad?: string | null
+          enlaces?: Json
           id: string
+          intereses?: string | null
           nombre?: string | null
           semestre?: number | null
           updated_at?: string
@@ -341,7 +362,10 @@ export type Database = {
           bio?: string | null
           carrera?: string | null
           created_at?: string
+          disponibilidad?: string | null
+          enlaces?: Json
           id?: string
+          intereses?: string | null
           nombre?: string | null
           semestre?: number | null
           updated_at?: string
@@ -428,39 +452,57 @@ export type Database = {
       }
       projects: {
         Row: {
+          alcance: string | null
           created_at: string
           created_by: string | null
           descripcion: string | null
+          duracion_semanas: number | null
+          entregable: string | null
+          expectativas: string | null
           fecha_fin: string | null
           fecha_inicio: string | null
           id: string
+          modalidad: Database["public"]["Enums"]["project_modality"] | null
           org_id: string
+          problema: string | null
           resumen: string | null
           status: Database["public"]["Enums"]["project_status"]
           titulo: string
           updated_at: string
         }
         Insert: {
+          alcance?: string | null
           created_at?: string
           created_by?: string | null
           descripcion?: string | null
+          duracion_semanas?: number | null
+          entregable?: string | null
+          expectativas?: string | null
           fecha_fin?: string | null
           fecha_inicio?: string | null
           id?: string
+          modalidad?: Database["public"]["Enums"]["project_modality"] | null
           org_id: string
+          problema?: string | null
           resumen?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           titulo: string
           updated_at?: string
         }
         Update: {
+          alcance?: string | null
           created_at?: string
           created_by?: string | null
           descripcion?: string | null
+          duracion_semanas?: number | null
+          entregable?: string | null
+          expectativas?: string | null
           fecha_fin?: string | null
           fecha_inicio?: string | null
           id?: string
+          modalidad?: Database["public"]["Enums"]["project_modality"] | null
           org_id?: string
+          problema?: string | null
           resumen?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           titulo?: string
@@ -541,6 +583,7 @@ export type Database = {
       }
       submissions: {
         Row: {
+          archivo_url: string | null
           created_at: string
           id: string
           milestone_id: string
@@ -550,6 +593,7 @@ export type Database = {
           url: string | null
         }
         Insert: {
+          archivo_url?: string | null
           created_at?: string
           id?: string
           milestone_id: string
@@ -559,6 +603,7 @@ export type Database = {
           url?: string | null
         }
         Update: {
+          archivo_url?: string | null
           created_at?: string
           id?: string
           milestone_id?: string
@@ -579,6 +624,7 @@ export type Database = {
       }
       team_members: {
         Row: {
+          contribucion: string | null
           created_at: string
           id: string
           project_role_id: string | null
@@ -586,6 +632,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          contribucion?: string | null
           created_at?: string
           id?: string
           project_role_id?: string | null
@@ -593,6 +640,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          contribucion?: string | null
           created_at?: string
           id?: string
           project_role_id?: string | null
@@ -619,18 +667,24 @@ export type Database = {
       teams: {
         Row: {
           created_at: string
+          estado: Database["public"]["Enums"]["team_status"]
+          fecha_inicio: string | null
           id: string
           project_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          estado?: Database["public"]["Enums"]["team_status"]
+          fecha_inicio?: string | null
           id?: string
           project_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          estado?: Database["public"]["Enums"]["team_status"]
+          fecha_inicio?: string | null
           id?: string
           project_id?: string
           updated_at?: string
@@ -688,12 +742,14 @@ export type Database = {
     Enums: {
       app_role: "estudiante" | "patrocinador" | "mentor" | "moderador" | "admin"
       application_status: "enviada" | "aceptada" | "rechazada" | "retirada"
+      milestone_status: "pendiente" | "en_progreso" | "entregado" | "aprobado"
       org_type:
         | "academica"
         | "social"
         | "emprendimiento"
         | "empresa"
         | "interna"
+      project_modality: "presencial" | "remoto" | "hibrido"
       project_status:
         | "borrador"
         | "en_revision"
@@ -706,6 +762,8 @@ export type Database = {
         | "cancelado"
       report_status: "abierto" | "en_revision" | "resuelto"
       skill_level: "basico" | "intermedio" | "avanzado"
+      team_status: "formando" | "activo" | "finalizado"
+      verification_status: "sin_verificar" | "en_revision" | "verificado"
       visibility: "publico" | "privado"
     }
     CompositeTypes: {
@@ -839,7 +897,9 @@ export const Constants = {
     Enums: {
       app_role: ["estudiante", "patrocinador", "mentor", "moderador", "admin"],
       application_status: ["enviada", "aceptada", "rechazada", "retirada"],
+      milestone_status: ["pendiente", "en_progreso", "entregado", "aprobado"],
       org_type: ["academica", "social", "emprendimiento", "empresa", "interna"],
+      project_modality: ["presencial", "remoto", "hibrido"],
       project_status: [
         "borrador",
         "en_revision",
@@ -853,6 +913,8 @@ export const Constants = {
       ],
       report_status: ["abierto", "en_revision", "resuelto"],
       skill_level: ["basico", "intermedio", "avanzado"],
+      team_status: ["formando", "activo", "finalizado"],
+      verification_status: ["sin_verificar", "en_revision", "verificado"],
       visibility: ["publico", "privado"],
     },
   },
