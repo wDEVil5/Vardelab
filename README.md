@@ -81,7 +81,7 @@ La **especificación de producto (PRD) está completa** y las decisiones técnic
 
 | Fase | Descripción | Estado |
 |------|-------------|--------|
-| 0 · Descubrimiento | Entrevistas y validación del problema | ⬜ Pendiente |
+| 0 · Descubrimiento | Entrevistas y validación del problema | 🟡 En progreso |
 | 1 · Prototipo | Flujo completo en Figma, probado con usuarios | 🟡 En progreso |
 | 2 · MVP | Flujo publicación → portafolio en producción | 🟡 En progreso (base de datos lista) |
 | 3 · Piloto | 10 proyectos, 30–50 estudiantes, 8 semanas | ⬜ Pendiente |
