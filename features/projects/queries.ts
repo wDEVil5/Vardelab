@@ -129,3 +129,43 @@ export async function getPublishedProjectById(id: string) {
 export type ProjectDetail = NonNullable<
   Awaited<ReturnType<typeof getPublishedProjectById>>
 >;
+
+/**
+ * Trae un rol para el flujo de postulación, validando que pertenezca al
+ * proyecto indicado y que el proyecto esté publicado. Devuelve `null` si no se
+ * cumple (rol inexistente, de otro proyecto, o proyecto no publicado) → la
+ * página muestra 404.
+ */
+export async function getRoleForApplication(projectId: string, roleId: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("project_roles")
+    .select(
+      `
+      id,
+      nombre,
+      descripcion,
+      project:projects!inner ( id, titulo, status ),
+      skills:project_role_skills (
+        nivel_minimo,
+        skill:skills ( id, nombre )
+      )
+    `,
+    )
+    .eq("id", roleId)
+    .eq("project_id", projectId)
+    .eq("project.status", "publicado")
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getRoleForApplication]", error.message);
+    throw error;
+  }
+
+  return data;
+}
+
+export type RoleForApplication = NonNullable<
+  Awaited<ReturnType<typeof getRoleForApplication>>
+>;
