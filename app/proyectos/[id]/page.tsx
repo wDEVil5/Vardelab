@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonClasses } from "@/components/ui/button";
+import { buttonClasses } from "@/components/ui/button";
 import {
   getPublishedProjectById,
   type ProjectDetail,
 } from "@/features/projects/queries";
 import { getCurrentUser } from "@/features/auth/queries";
+import { getMyApplicationRoleIds } from "@/features/applications/queries";
 
 // Etiquetas legibles de los enums para la interfaz.
 const MODALIDAD_LABEL: Record<string, string> = {
@@ -50,6 +51,11 @@ export default async function ProyectoPage({ params }: PageProps) {
   const user = await getCurrentUser();
   const org = project.organization;
   const roles = project.roles ?? [];
+
+  // Roles a los que el usuario ya postuló, para marcar el estado en cada CTA.
+  const appliedRoleIds = user
+    ? await getMyApplicationRoleIds(roles.map((r) => r.id))
+    : new Set<string>();
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
@@ -103,7 +109,9 @@ export default async function ProyectoPage({ params }: PageProps) {
               <RoleCard
                 key={rol.id}
                 rol={rol}
+                projectId={project.id}
                 isAuthenticated={Boolean(user)}
+                yaPostulo={appliedRoleIds.has(rol.id)}
               />
             ))}
           </div>
@@ -135,10 +143,14 @@ function Section({
 /** Tarjeta de un rol con sus habilidades exigidas y el CTA de postulación. */
 function RoleCard({
   rol,
+  projectId,
   isAuthenticated,
+  yaPostulo,
 }: {
   rol: ProjectDetail["roles"][number];
+  projectId: string;
   isAuthenticated: boolean;
+  yaPostulo: boolean;
 }) {
   const skills = rol.skills ?? [];
   return (
@@ -170,20 +182,24 @@ function RoleCard({
         </div>
       )}
 
-      {/* Sin sesión: enlace real a Ingresar (puerta de autenticación). Con
-          sesión: el CTA queda deshabilitado hasta que el flujo de postulación
-          se implemente (Slice 3). */}
+      {/* CTA según el estado: sin sesión → Ingresar; ya postuló → aviso; con
+          sesión y sin postular → enlace al formulario de postulación (E-03). */}
       <div className="mt-5">
-        {isAuthenticated ? (
-          <Button size="sm" disabled title="Disponible pronto">
-            Postular a este rol
-          </Button>
-        ) : (
+        {!isAuthenticated ? (
           <Link
             href="/ingresar"
             className={buttonClasses({ variant: "primary", size: "sm" })}
           >
             Ingresar para postular
+          </Link>
+        ) : yaPostulo ? (
+          <Badge tone="success">Ya postulaste</Badge>
+        ) : (
+          <Link
+            href={`/proyectos/${projectId}/postular/${rol.id}`}
+            className={buttonClasses({ variant: "primary", size: "sm" })}
+          >
+            Postular a este rol
           </Link>
         )}
       </div>
