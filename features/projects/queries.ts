@@ -67,3 +67,65 @@ export async function getPublishedProjects() {
 export type ProjectCard = Awaited<
   ReturnType<typeof getPublishedProjects>
 >[number];
+
+// Campos de la ficha completa (P-03): la plantilla del proyecto en detalle
+// (problema, alcance, entregable, expectativas) más la organización con su
+// contacto y los roles con descripción y habilidades exigidas.
+const PROJECT_DETAIL_SELECT = `
+  id,
+  titulo,
+  resumen,
+  problema,
+  alcance,
+  entregable,
+  expectativas,
+  modalidad,
+  duracion_semanas,
+  created_at,
+  organization:organizations (
+    id,
+    nombre,
+    tipo,
+    descripcion,
+    sitio_web,
+    verificacion
+  ),
+  roles:project_roles (
+    id,
+    nombre,
+    descripcion,
+    cupos,
+    skills:project_role_skills (
+      nivel_minimo,
+      skill:skills ( id, nombre )
+    )
+  )
+` as const;
+
+/**
+ * Devuelve la ficha de un proyecto publicado por id, o `null` si no existe o no
+ * está publicado. `maybeSingle()` no lanza cuando no hay fila: devuelve null y
+ * la página decide mostrar 404.
+ */
+export async function getPublishedProjectById(id: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("projects")
+    .select(PROJECT_DETAIL_SELECT)
+    .eq("id", id)
+    .eq("status", "publicado")
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getPublishedProjectById]", error.message);
+    throw error;
+  }
+
+  return data;
+}
+
+// Tipo de la ficha, derivado del retorno (excluye el `null` del caso 404).
+export type ProjectDetail = NonNullable<
+  Awaited<ReturnType<typeof getPublishedProjectById>>
+>;
