@@ -9,23 +9,33 @@
 -- hacen falta usuarios. Se insertan directo en auth.users (solo local).
 -- El trigger handle_new_user (M1) crea su fila en profiles automáticamente,
 -- tomando el nombre de raw_user_meta_data.
+-- Los campos de token (confirmation_token, recovery_token, email_change, …) se
+-- fijan en '' (string vacío) y NO en NULL: GoTrue (Auth) hace comparaciones de
+-- string sobre ellos al iniciar sesión y falla con "Database error querying
+-- schema" si están en NULL. Al crear un usuario por la API esto lo hace GoTrue;
+-- al insertarlo a mano hay que ponerlo explícitamente.
 insert into auth.users
   (instance_id, id, aud, role, email, encrypted_password,
    email_confirmed_at, created_at, updated_at,
-   raw_app_meta_data, raw_user_meta_data)
+   raw_app_meta_data, raw_user_meta_data,
+   confirmation_token, recovery_token, email_change,
+   email_change_token_new, email_change_token_current,
+   phone_change, phone_change_token, reauthentication_token)
 values
   ('00000000-0000-0000-0000-000000000000',
    '11111111-1111-1111-1111-111111111111',
    'authenticated', 'authenticated', 'investigacion@demo.cl',
    crypt('demo1234', gen_salt('bf')), now(), now(), now(),
    '{"provider":"email","providers":["email"]}',
-   '{"nombre":"Camila Rojas"}'),
+   '{"nombre":"Camila Rojas"}',
+   '', '', '', '', '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000',
    '22222222-2222-2222-2222-222222222222',
    'authenticated', 'authenticated', 'semilla@demo.cl',
    crypt('demo1234', gen_salt('bf')), now(), now(), now(),
    '{"provider":"email","providers":["email"]}',
-   '{"nombre":"Diego Fuentes"}')
+   '{"nombre":"Diego Fuentes"}',
+   '', '', '', '', '', '', '', '')
 on conflict (id) do nothing;
 
 -- 2) ORGANIZACIONES ----------------------------------------------------------
