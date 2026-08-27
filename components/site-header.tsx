@@ -21,6 +21,12 @@ export async function SiteHeader() {
         <nav className="flex items-center gap-3">
           {user ? (
             <>
+              <Link
+                href="/mis-postulaciones"
+                className="text-sm text-muted transition-colors hover:text-electric"
+              >
+                Mis postulaciones
+              </Link>
               <span className="hidden text-sm text-muted sm:inline">
                 {user.nombre}
               </span>
