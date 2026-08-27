@@ -11,8 +11,10 @@ const toneClasses = {
   neutral: "bg-surface text-muted",
   // Marca: destaca sin ser una acción.
   brand: "bg-electric/10 text-electric",
-  // Éxito: organización verificada.
+  // Éxito: organización verificada, postulación aceptada.
   success: "bg-sprout/15 text-ink",
+  // Alerta: postulación rechazada, estados negativos.
+  danger: "bg-coral/15 text-ink",
   // Contorno: chips de habilidad sobre fondos claros.
   outline: "border border-border text-muted",
 } as const;
