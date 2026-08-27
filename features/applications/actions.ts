@@ -65,3 +65,36 @@ export async function applyToRole(
   revalidatePath(`/proyectos/${projectId}`);
   redirect(`/proyectos/${projectId}?postulado=1`);
 }
+
+/**
+ * Retira una postulación propia (estado → `retirada`). Solo transiciona desde
+ * `enviada`: no permite deshacer una decisión ya tomada por el gestor. La RLS
+ * garantiza que solo el autor pueda tocar su fila; el filtro por `status` y
+ * `applicant_id` acota la operación en el propio update.
+ */
+export async function withdrawApplication(formData: FormData): Promise<void> {
+  const applicationId = String(formData.get("applicationId") ?? "");
+  if (!applicationId) return;
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/ingresar");
+  }
+
+  const { error } = await supabase
+    .from("applications")
+    .update({ status: "retirada" })
+    .eq("id", applicationId)
+    .eq("applicant_id", user.id)
+    .eq("status", "enviada");
+
+  if (error) {
+    console.error("[withdrawApplication]", error.message);
+  }
+
+  revalidatePath("/mis-postulaciones");
+}

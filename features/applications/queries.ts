@@ -35,3 +35,51 @@ export async function getMyApplicationRoleIds(
 
   return new Set(data.map((a) => a.project_role_id));
 }
+
+/**
+ * Postulaciones del usuario actual, de la más reciente a la más antigua, con el
+ * rol, el proyecto y la organización. Vacío si no hay sesión. La RLS
+ * (`applications_select_own_or_manager`) ya limita a las postulaciones propias.
+ */
+export async function getMyApplications() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("applications")
+    .select(
+      `
+      id,
+      status,
+      mensaje,
+      created_at,
+      role:project_roles!inner (
+        id,
+        nombre,
+        project:projects!inner (
+          id,
+          titulo,
+          organization:organizations ( nombre )
+        )
+      )
+    `,
+    )
+    .eq("applicant_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[getMyApplications]", error.message);
+    throw error;
+  }
+
+  return data;
+}
+
+export type MyApplication = Awaited<
+  ReturnType<typeof getMyApplications>
+>[number];
