@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/queries";
-import { CreateOrgForm } from "@/features/organizations/components/create-org-form";
+import { createOrganization } from "@/features/organizations/actions";
+import { OrgForm } from "@/features/organizations/components/org-form";
 
 export const metadata: Metadata = {
   title: "Nueva organización · CampusLab",
@@ -32,7 +33,11 @@ export default async function NuevaOrganizacionPage() {
       </header>
 
       <div className="mt-8">
-        <CreateOrgForm />
+        <OrgForm
+          action={createOrganization}
+          submitLabel="Crear organización"
+          pendingText="Creando…"
+        />
       </div>
     </main>
   );
