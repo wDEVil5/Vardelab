@@ -45,6 +45,9 @@ export function MilestoneSubmissions({
   }, [state]);
 
   const submissions = milestone.submissions ?? [];
+  const aprobado = milestone.estado === "aprobado";
+  // El gestor devolvió el hito para correcciones (ver acción returnMilestone).
+  const pidioCambios = milestone.estado === "en_progreso";
 
   return (
     <div className="rounded-lg border border-border p-4">
@@ -100,7 +103,20 @@ export function MilestoneSubmissions({
         </ul>
       )}
 
-      {/* Subir una entrega */}
+      {/* Aviso de revisión: aprobado o devuelto para correcciones. */}
+      {aprobado && (
+        <p className="mt-3 text-xs text-sprout">
+          Aprobado por el gestor. No necesitas entregar más.
+        </p>
+      )}
+      {pidioCambios && (
+        <p className="mt-3 text-xs text-coral">
+          El gestor pidió cambios. Ajusta el trabajo y vuelve a entregar.
+        </p>
+      )}
+
+      {/* Subir una entrega (salvo que el hito ya esté aprobado). */}
+      {!aprobado && (
       <form ref={formRef} action={formAction} className="mt-3 flex flex-col gap-2">
         <input type="hidden" name="milestoneId" value={milestone.id} />
         <input type="hidden" name="projectId" value={projectId} />
@@ -123,6 +139,7 @@ export function MilestoneSubmissions({
           <SubmitButton pendingText="Enviando…">Subir entrega</SubmitButton>
         </div>
       </form>
+      )}
     </div>
   );
 }
