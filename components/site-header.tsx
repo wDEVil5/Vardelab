@@ -22,12 +22,20 @@ export async function SiteHeader() {
           {user ? (
             <>
               {user.esPatrocinador && (
-                <Link
-                  href="/mis-proyectos"
-                  className="text-sm text-muted transition-colors hover:text-electric"
-                >
-                  Mis proyectos
-                </Link>
+                <>
+                  <Link
+                    href="/mis-organizaciones"
+                    className="hidden text-sm text-muted transition-colors hover:text-electric sm:inline"
+                  >
+                    Organizaciones
+                  </Link>
+                  <Link
+                    href="/mis-proyectos"
+                    className="text-sm text-muted transition-colors hover:text-electric"
+                  >
+                    Mis proyectos
+                  </Link>
+                </>
               )}
               {user.esEstudiante && (
                 <Link
