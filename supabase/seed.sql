@@ -125,3 +125,62 @@ from (values
 ) as r(role_id, skill_nombre, nivel)
 join public.skills s on s.nombre = r.skill_nombre
 on conflict (project_role_id, skill_id) do nothing;
+
+-- 6) ESTUDIANTE DEMO + EQUIPO + HITOS ----------------------------------------
+-- Cuenta de estudiante para probar el lado del alumno end-to-end: aceptada en un
+-- rol del proyecto 1 (Dashboard de encuesta académica), integrante de su equipo,
+-- con hitos ya definidos para poder subir entregas.
+insert into auth.users
+  (instance_id, id, aud, role, email, encrypted_password,
+   email_confirmed_at, created_at, updated_at,
+   raw_app_meta_data, raw_user_meta_data,
+   confirmation_token, recovery_token, email_change,
+   email_change_token_new, email_change_token_current,
+   phone_change, phone_change_token, reauthentication_token)
+values
+  ('00000000-0000-0000-0000-000000000000',
+   '33333333-3333-3333-3333-333333333333',
+   'authenticated', 'authenticated', 'estudiante@demo.cl',
+   crypt('demo1234', gen_salt('bf')), now(), now(), now(),
+   '{"provider":"email","providers":["email"]}',
+   '{"nombre":"Valentina Soto","rol":"estudiante"}',
+   '', '', '', '', '', '', '', '')
+on conflict (id) do nothing;
+
+-- Datos de perfil (el trigger solo pone el nombre).
+update public.profiles
+  set carrera = 'Ingeniería en Computación', semestre = 7,
+      bio = 'Me interesa el análisis de datos y la visualización.'
+  where id = '33333333-3333-3333-3333-333333333333';
+
+-- Postulación aceptada al rol "Datos" (c...-1) del proyecto 1.
+insert into public.applications (id, project_role_id, applicant_id, status, mensaje)
+values
+  ('f0000000-0000-0000-0000-000000000001',
+   'c0000000-0000-0000-0000-000000000001',
+   '33333333-3333-3333-3333-333333333333',
+   'aceptada', 'Me interesa mucho trabajar con los datos de la encuesta.')
+on conflict (id) do nothing;
+
+-- Equipo del proyecto 1 y la estudiante como integrante.
+insert into public.teams (id, project_id, estado)
+values ('d0000000-0000-0000-0000-000000000001',
+        'b0000000-0000-0000-0000-000000000001', 'formando')
+on conflict (id) do nothing;
+
+insert into public.team_members (team_id, user_id, project_role_id)
+values ('d0000000-0000-0000-0000-000000000001',
+        '33333333-3333-3333-3333-333333333333',
+        'c0000000-0000-0000-0000-000000000001')
+on conflict (id) do nothing;
+
+-- Hitos del proyecto 1.
+insert into public.milestones (id, project_id, titulo, descripcion, orden, fecha_limite)
+values
+  ('e0000000-0000-0000-0000-000000000001',
+   'b0000000-0000-0000-0000-000000000001',
+   'Exploración de datos', 'Limpiar y explorar las respuestas de la encuesta.', 1, '2026-09-15'),
+  ('e0000000-0000-0000-0000-000000000002',
+   'b0000000-0000-0000-0000-000000000001',
+   'Dashboard v1', 'Primera versión navegable con filtros básicos.', 2, '2026-09-30')
+on conflict (id) do nothing;
