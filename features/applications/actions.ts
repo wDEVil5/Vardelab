@@ -127,8 +127,51 @@ async function resolveApplication(
   revalidatePath(`/mis-proyectos/${projectId}/postulaciones`);
 }
 
+/**
+ * Acepta una postulación respetando los cupos del rol: si el rol ya tiene tantas
+ * aceptadas como cupos, no acepta más (guarda de servidor, defensa en profundidad
+ * junto con la UI que oculta el botón). Solo actúa sobre postulaciones `enviada`.
+ */
 export async function acceptApplication(formData: FormData): Promise<void> {
-  return resolveApplication(formData, "aceptada");
+  const applicationId = String(formData.get("applicationId") ?? "");
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!applicationId) return;
+
+  const supabase = await createClient();
+
+  // Rol y estado de la postulación.
+  const { data: app } = await supabase
+    .from("applications")
+    .select("project_role_id, status")
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  if (app && app.status === "enviada") {
+    const [{ data: role }, { count }] = await Promise.all([
+      supabase
+        .from("project_roles")
+        .select("cupos")
+        .eq("id", app.project_role_id)
+        .maybeSingle(),
+      supabase
+        .from("applications")
+        .select("id", { count: "exact", head: true })
+        .eq("project_role_id", app.project_role_id)
+        .eq("status", "aceptada"),
+    ]);
+
+    // Solo acepta si quedan cupos.
+    if (role && (count ?? 0) < role.cupos) {
+      const { error } = await supabase
+        .from("applications")
+        .update({ status: "aceptada" })
+        .eq("id", applicationId)
+        .eq("status", "enviada");
+      if (error) console.error("[acceptApplication]", error.message);
+    }
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}/postulaciones`);
 }
 
 export async function rejectApplication(formData: FormData): Promise<void> {
