@@ -47,6 +47,50 @@ export async function addMilestone(
   return {};
 }
 
+/**
+ * Aprueba un hito entregado (`entregado → aprobado`). Solo transiciona desde
+ * `entregado`: no se aprueba un hito sin entrega ni se reabre uno ya cerrado. La
+ * RLS `milestones_write_manager` (M5) limita la escritura al gestor del proyecto.
+ */
+export async function approveMilestone(formData: FormData): Promise<void> {
+  const milestoneId = String(formData.get("milestoneId") ?? "");
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!milestoneId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("milestones")
+    .update({ estado: "aprobado" })
+    .eq("id", milestoneId)
+    .eq("estado", "entregado");
+
+  if (error) console.error("[approveMilestone]", error.message);
+
+  revalidatePath(`/mis-proyectos/${projectId}`);
+}
+
+/**
+ * Devuelve un hito entregado para correcciones (`entregado → en_progreso`). El
+ * equipo lo verá como "pedido de cambios"; al re-entregar, el trigger de M16 lo
+ * vuelve a `entregado`. Solo actúa desde `entregado`.
+ */
+export async function returnMilestone(formData: FormData): Promise<void> {
+  const milestoneId = String(formData.get("milestoneId") ?? "");
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!milestoneId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("milestones")
+    .update({ estado: "en_progreso" })
+    .eq("id", milestoneId)
+    .eq("estado", "entregado");
+
+  if (error) console.error("[returnMilestone]", error.message);
+
+  revalidatePath(`/mis-proyectos/${projectId}`);
+}
+
 /** Elimina un hito. La RLS restringe a quien gestiona el proyecto. */
 export async function deleteMilestone(formData: FormData): Promise<void> {
   const milestoneId = String(formData.get("milestoneId") ?? "");
