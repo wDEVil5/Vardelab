@@ -79,7 +79,12 @@ export default async function MisOrganizacionesPage() {
                 className="flex items-start justify-between gap-4 rounded-lg border border-border bg-white p-5"
               >
                 <div className="flex flex-col gap-1">
-                  <span className="font-semibold text-ink">{o.nombre}</span>
+                  <Link
+                    href={`/mis-organizaciones/${o.id}/editar`}
+                    className="font-semibold text-ink hover:text-electric"
+                  >
+                    {o.nombre}
+                  </Link>
                   <span className="text-sm text-muted">
                     {TIPO_LABEL[o.tipo] ?? o.tipo}
                   </span>
