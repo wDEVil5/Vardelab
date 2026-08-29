@@ -85,6 +85,62 @@ export type MyApplication = Awaited<
 >[number];
 
 /**
+ * Postulación activa que el usuario ya tiene en un proyecto, o `null`. "Activa"
+ * es `enviada` o `aceptada`: un rechazo o un retiro previo no cuentan, así el
+ * estudiante puede volver a intentar con otro rol del mismo proyecto.
+ *
+ * Es la fuente única de la regla "a lo sumo un rol por proyecto" en la interfaz:
+ * si devuelve algo, el resto de roles del proyecto no debe ofrecer postular.
+ */
+export type MyProjectApplication = {
+  roleId: string;
+  roleNombre: string | null;
+  status: string;
+};
+
+export async function getMyActiveApplicationInProject(
+  projectId: string,
+): Promise<MyProjectApplication | null> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  // Se filtra por el proyecto a través del rol (applications guarda el rol, no
+  // el proyecto). `!inner` obliga a que el rol pertenezca a este proyecto.
+  const { data, error } = await supabase
+    .from("applications")
+    .select("project_role_id, status, project_roles!inner ( project_id, nombre )")
+    .eq("applicant_id", user.id)
+    .eq("project_roles.project_id", projectId)
+    .in("status", ["enviada", "aceptada"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getMyActiveApplicationInProject]", error.message);
+    return null;
+  }
+  if (!data) return null;
+
+  // El embed many-to-one llega como objeto (o arreglo según el inferido); se
+  // normaliza para leer el nombre del rol con seguridad.
+  const rol = Array.isArray(data.project_roles)
+    ? data.project_roles[0]
+    : data.project_roles;
+
+  return {
+    roleId: data.project_role_id,
+    roleNombre: rol?.nombre ?? null,
+    status: data.status,
+  };
+}
+
+/**
  * Roles de un proyecto con las postulaciones de cada uno, para que el gestor las
  * revise. Verifica la propiedad con `created_by`; la RLS de M4/M12/M13 permite
  * al gestor leer las postulaciones y el perfil de cada postulante. `null` si el
