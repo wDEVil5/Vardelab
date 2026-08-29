@@ -43,6 +43,26 @@ export async function applyToRole(
     redirect(`/ingresar`);
   }
 
+  // Regla de producto: a lo sumo una postulación activa por proyecto. Si ya hay
+  // una `enviada` o `aceptada` en cualquier rol de este proyecto, no se permite
+  // postular a otro. Un rechazo o un retiro previo no bloquean (no son activas).
+  // El chequeo filtra por proyecto a través del rol (`!inner`).
+  const { data: activa } = await supabase
+    .from("applications")
+    .select("id, project_roles!inner ( project_id )")
+    .eq("applicant_id", user.id)
+    .eq("project_roles.project_id", projectId)
+    .in("status", ["enviada", "aceptada"])
+    .limit(1)
+    .maybeSingle();
+
+  if (activa) {
+    return {
+      error:
+        "Ya tienes una postulación activa en este proyecto. Solo puedes postular a un rol por proyecto.",
+    };
+  }
+
   const { error } = await supabase.from("applications").insert({
     project_role_id: roleId,
     applicant_id: user.id,
