@@ -5,7 +5,8 @@ import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/features/auth/queries";
 import { getMyOrganizations } from "@/features/organizations/queries";
-import { CreateProjectForm } from "@/features/projects/components/create-project-form";
+import { createProject } from "@/features/projects/actions";
+import { ProjectForm } from "@/features/projects/components/project-form";
 
 export const metadata: Metadata = {
   title: "Nuevo proyecto · CampusLab",
@@ -56,7 +57,12 @@ export default async function NuevoProyectoPage() {
             </Link>
           </div>
         ) : (
-          <CreateProjectForm organizations={organizations} />
+          <ProjectForm
+            action={createProject}
+            submitLabel="Crear proyecto"
+            pendingText="Creando…"
+            organizations={organizations}
+          />
         )}
       </div>
     </main>
