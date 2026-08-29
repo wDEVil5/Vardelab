@@ -15,8 +15,15 @@ import { PublishControls } from "@/features/projects/components/publish-controls
 import { DeleteProjectButton } from "@/features/projects/components/delete-project-button";
 import { getActiveSkills, type Skill } from "@/features/skills/queries";
 import { getProjectTeam } from "@/features/teams/queries";
-import { getProjectMilestones, type Milestone } from "@/features/milestones/queries";
-import { deleteMilestone } from "@/features/milestones/actions";
+import {
+  getMilestonesWithSubmissions,
+  type MilestoneWithSubmissions,
+} from "@/features/milestones/queries";
+import {
+  approveMilestone,
+  returnMilestone,
+  deleteMilestone,
+} from "@/features/milestones/actions";
 import { AddMilestoneForm } from "@/features/milestones/components/add-milestone-form";
 
 export const metadata: Metadata = {
@@ -45,7 +52,7 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
   const [catalog, team, milestones] = await Promise.all([
     getActiveSkills(),
     getProjectTeam(project.id),
-    getProjectMilestones(project.id),
+    getMilestonesWithSubmissions(project.id),
   ]);
   const estado = ESTADO[project.status] ?? {
     label: project.status,
@@ -236,40 +243,93 @@ function MilestoneRow({
   hito,
   projectId,
 }: {
-  hito: Milestone;
+  hito: MilestoneWithSubmissions;
   projectId: string;
 }) {
   const estado = ESTADO_HITO[hito.estado] ?? {
     label: hito.estado,
     tone: "neutral" as BadgeTone,
   };
+  const entregas = hito.submissions ?? [];
+  // Solo se revisa lo que el equipo entregó; un hito ya aprobado no se reabre.
+  const enRevision = hito.estado === "entregado";
+
   return (
-    <li className="flex items-start justify-between gap-4 rounded-lg border border-border bg-white p-4">
-      <div className="flex flex-col gap-0.5">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-ink">{hito.titulo}</span>
-          <Badge tone={estado.tone}>{estado.label}</Badge>
+    <li className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-ink">{hito.titulo}</span>
+            <Badge tone={estado.tone}>{estado.label}</Badge>
+          </div>
+          {hito.descripcion && (
+            <p className="text-sm text-muted">{hito.descripcion}</p>
+          )}
+          {hito.fecha_limite && (
+            <span className="text-xs text-muted">
+              Fecha límite: {hito.fecha_limite}
+            </span>
+          )}
         </div>
-        {hito.descripcion && (
-          <p className="text-sm text-muted">{hito.descripcion}</p>
-        )}
-        {hito.fecha_limite && (
-          <span className="text-xs text-muted">
-            Fecha límite: {hito.fecha_limite}
-          </span>
-        )}
+
+        <form action={deleteMilestone}>
+          <input type="hidden" name="milestoneId" value={hito.id} />
+          <input type="hidden" name="projectId" value={projectId} />
+          <button
+            type="submit"
+            className={buttonClasses({ variant: "ghost", size: "sm" })}
+          >
+            Eliminar
+          </button>
+        </form>
       </div>
 
-      <form action={deleteMilestone}>
-        <input type="hidden" name="milestoneId" value={hito.id} />
-        <input type="hidden" name="projectId" value={projectId} />
-        <button
-          type="submit"
-          className={buttonClasses({ variant: "ghost", size: "sm" })}
-        >
-          Eliminar
-        </button>
-      </form>
+      {/* Entregas del equipo (lo que se revisa). */}
+      {entregas.length > 0 && (
+        <ul className="flex flex-col gap-2 border-t border-border pt-3">
+          {entregas.map((s) => (
+            <li key={s.id} className="rounded-md bg-surface/60 p-3">
+              {s.url && (
+                <a
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-electric hover:underline"
+                >
+                  {s.url}
+                </a>
+              )}
+              {s.nota && <p className="text-xs text-muted">{s.nota}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Revisión: aprobar o pedir cambios. Solo con el hito entregado. */}
+      {enRevision && (
+        <div className="flex items-center gap-2 border-t border-border pt-3">
+          <form action={approveMilestone}>
+            <input type="hidden" name="milestoneId" value={hito.id} />
+            <input type="hidden" name="projectId" value={projectId} />
+            <button
+              type="submit"
+              className={buttonClasses({ variant: "primary", size: "sm" })}
+            >
+              Aprobar
+            </button>
+          </form>
+          <form action={returnMilestone}>
+            <input type="hidden" name="milestoneId" value={hito.id} />
+            <input type="hidden" name="projectId" value={projectId} />
+            <button
+              type="submit"
+              className={buttonClasses({ variant: "secondary", size: "sm" })}
+            >
+              Pedir cambios
+            </button>
+          </form>
+        </div>
+      )}
     </li>
   );
 }
