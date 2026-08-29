@@ -63,3 +63,48 @@ export async function createOrganization(
   revalidatePath("/mis-organizaciones");
   redirect("/mis-organizaciones?creada=1");
 }
+
+export type EditOrgState = { error?: string };
+
+/**
+ * Edita una organización propia. No toca `verificacion` (eso es del moderador).
+ * La RLS `organizations_update_own` (M3) exige `owner_id = auth.uid()`, y aquí
+ * se filtra el update por `id` para acotarlo a la organización indicada.
+ */
+export async function updateOrganization(
+  _prevState: EditOrgState,
+  formData: FormData,
+): Promise<EditOrgState> {
+  const id = String(formData.get("orgId") ?? "");
+  const nombre = String(formData.get("nombre") ?? "").trim();
+  const tipo = String(formData.get("tipo") ?? "");
+  const descripcion = String(formData.get("descripcion") ?? "").trim();
+  const sitioWeb = String(formData.get("sitio_web") ?? "").trim();
+  const contacto = String(formData.get("contacto") ?? "").trim();
+
+  if (!id) return { error: "Falta la organización." };
+  if (!nombre) return { error: "La organización necesita un nombre." };
+  if (!TIPOS.includes(tipo as (typeof TIPOS)[number])) {
+    return { error: "Selecciona un tipo de organización válido." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("organizations")
+    .update({
+      nombre,
+      tipo: tipo as (typeof TIPOS)[number],
+      descripcion: descripcion || null,
+      sitio_web: sitioWeb || null,
+      contacto: contacto || null,
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("[updateOrganization]", error.message);
+    return { error: "No se pudieron guardar los cambios. Inténtalo de nuevo." };
+  }
+
+  revalidatePath("/mis-organizaciones");
+  redirect("/mis-organizaciones?editada=1");
+}
