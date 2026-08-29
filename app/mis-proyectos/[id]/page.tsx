@@ -10,6 +10,9 @@ import {
 } from "@/features/projects/queries";
 import { deleteRole } from "@/features/projects/actions";
 import { AddRoleForm } from "@/features/projects/components/add-role-form";
+import { RoleSkillsEditor } from "@/features/projects/components/role-skills-editor";
+import { PublishControls } from "@/features/projects/components/publish-controls";
+import { getActiveSkills, type Skill } from "@/features/skills/queries";
 
 export const metadata: Metadata = {
   title: "Gestionar proyecto · CampusLab",
@@ -34,6 +37,7 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
   if (!project) notFound();
 
   const roles = project.roles ?? [];
+  const catalog = await getActiveSkills();
   const estado = ESTADO[project.status] ?? {
     label: project.status,
     tone: "neutral" as BadgeTone,
@@ -72,7 +76,12 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
         ) : (
           <ul className="mt-4 flex flex-col gap-3">
             {roles.map((rol) => (
-              <RoleRow key={rol.id} rol={rol} projectId={project.id} />
+              <RoleRow
+                key={rol.id}
+                rol={rol}
+                projectId={project.id}
+                catalog={catalog}
+              />
             ))}
           </ul>
         )}
@@ -82,6 +91,14 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
       <div className="mt-6">
         <AddRoleForm projectId={project.id} />
       </div>
+
+      {/* Publicación */}
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold text-ink">Publicación</h2>
+        <div className="mt-3">
+          <PublishControls projectId={project.id} status={project.status} />
+        </div>
+      </section>
     </main>
   );
 }
@@ -91,14 +108,15 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
 function RoleRow({
   rol,
   projectId,
+  catalog,
 }: {
   rol: ManagedProject["roles"][number];
   projectId: string;
+  catalog: Skill[];
 }) {
-  const skills = rol.skills ?? [];
   return (
     <li className="flex items-start justify-between gap-4 rounded-lg border border-border bg-white p-5">
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-1 flex-col gap-1.5">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-ink">{rol.nombre}</span>
           <Badge>
@@ -108,15 +126,12 @@ function RoleRow({
         {rol.descripcion && (
           <p className="text-sm text-muted">{rol.descripcion}</p>
         )}
-        {skills.length > 0 && (
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            {skills.map((s) => (
-              <Badge key={s.skill?.id ?? s.nivel_minimo} tone="outline">
-                {s.skill?.nombre}
-              </Badge>
-            ))}
-          </div>
-        )}
+        <RoleSkillsEditor
+          projectId={projectId}
+          roleId={rol.id}
+          skills={rol.skills ?? []}
+          catalog={catalog}
+        />
       </div>
 
       <form action={deleteRole}>
