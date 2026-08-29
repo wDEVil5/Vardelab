@@ -264,3 +264,38 @@ export async function getManagedProject(id: string) {
 export type ManagedProject = NonNullable<
   Awaited<ReturnType<typeof getManagedProject>>
 >;
+
+/**
+ * Campos editables de la plantilla de un proyecto propio, para el formulario de
+ * edición. `null` si no existe o no es del usuario (filtro por `created_by`) →
+ * 404. No incluye `org_id` (la organización no se cambia tras crear) ni
+ * `status` (se gestiona con los controles de publicación).
+ */
+export async function getEditableProject(id: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("projects")
+    .select(
+      "id, titulo, resumen, problema, alcance, entregable, expectativas, modalidad, duracion_semanas",
+    )
+    .eq("id", id)
+    .eq("created_by", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getEditableProject]", error.message);
+    throw error;
+  }
+
+  return data;
+}
+
+export type EditableProject = NonNullable<
+  Awaited<ReturnType<typeof getEditableProject>>
+>;
