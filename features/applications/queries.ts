@@ -83,3 +83,97 @@ export async function getMyApplications() {
 export type MyApplication = Awaited<
   ReturnType<typeof getMyApplications>
 >[number];
+
+/**
+ * Roles de un proyecto con las postulaciones de cada uno, para que el gestor las
+ * revise. Verifica la propiedad con `created_by`; la RLS de M4/M12/M13 permite
+ * al gestor leer las postulaciones y el perfil de cada postulante. `null` si el
+ * proyecto no existe o no es del usuario → 404.
+ */
+// Perfil resumido del postulante que ve el gestor.
+export type ApplicantProfile = {
+  id: string;
+  nombre: string | null;
+  carrera: string | null;
+};
+
+export async function getProjectApplications(projectId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // 1) Proyecto + roles + postulaciones. No se embebe el perfil aquí porque
+  // applications.applicant_id referencia auth.users (no profiles), así que
+  // PostgREST no puede inferir la relación; se resuelve con una segunda consulta.
+  const { data: project, error } = await supabase
+    .from("projects")
+    .select(
+      `
+      id,
+      titulo,
+      roles:project_roles (
+        id,
+        nombre,
+        cupos,
+        applications (
+          id,
+          status,
+          mensaje,
+          evidencia,
+          disponibilidad,
+          created_at,
+          applicant_id
+        )
+      )
+    `,
+    )
+    .eq("id", projectId)
+    .eq("created_by", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getProjectApplications]", error.message);
+    throw error;
+  }
+  if (!project) return null;
+
+  // 2) Perfiles de los postulantes (la RLS de M13 permite verlos al gestor).
+  const applicantIds = Array.from(
+    new Set(
+      (project.roles ?? []).flatMap((r) =>
+        (r.applications ?? []).map((a) => a.applicant_id),
+      ),
+    ),
+  );
+
+  const perfiles = new Map<string, ApplicantProfile>();
+  if (applicantIds.length > 0) {
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, nombre, carrera")
+      .in("id", applicantIds);
+    for (const p of profs ?? []) perfiles.set(p.id, p);
+  }
+
+  // 3) Adjuntar el perfil a cada postulación.
+  return {
+    id: project.id,
+    titulo: project.titulo,
+    roles: (project.roles ?? []).map((r) => ({
+      id: r.id,
+      nombre: r.nombre,
+      cupos: r.cupos,
+      applications: (r.applications ?? []).map((a) => ({
+        ...a,
+        applicant: perfiles.get(a.applicant_id) ?? null,
+      })),
+    })),
+  };
+}
+
+export type ProjectApplications = NonNullable<
+  Awaited<ReturnType<typeof getProjectApplications>>
+>;
