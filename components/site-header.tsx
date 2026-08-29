@@ -45,9 +45,12 @@ export async function SiteHeader() {
                   Mis postulaciones
                 </Link>
               )}
-              <span className="hidden text-sm text-muted sm:inline">
+              <Link
+                href="/perfil"
+                className="hidden text-sm font-medium text-muted transition-colors hover:text-electric sm:inline"
+              >
                 {user.nombre}
-              </span>
+              </Link>
               <form action={signOut}>
                 <button
                   type="submit"
