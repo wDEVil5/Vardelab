@@ -6,7 +6,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getRoleForApplication } from "@/features/projects/queries";
 import { getCurrentUser } from "@/features/auth/queries";
-import { getMyApplicationRoleIds } from "@/features/applications/queries";
+import { getMyActiveApplicationInProject } from "@/features/applications/queries";
 import { ApplyForm } from "@/features/applications/components/apply-form";
 
 export const metadata: Metadata = {
@@ -35,8 +35,10 @@ export default async function PostularPage({ params }: PageProps) {
   const rol = await getRoleForApplication(id, rolId);
   if (!rol) notFound();
 
-  const yaPostulados = await getMyApplicationRoleIds([rolId]);
-  const yaPostulo = yaPostulados.has(rolId);
+  // Regla: un rol por proyecto. Si ya hay una postulación activa en este
+  // proyecto, se bloquea el formulario (sea a este rol o a otro).
+  const miPostulacion = await getMyActiveApplicationInProject(id);
+  const esOtroRol = Boolean(miPostulacion) && miPostulacion!.roleId !== rolId;
   const skills = rol.skills ?? [];
 
   return (
@@ -69,13 +71,20 @@ export default async function PostularPage({ params }: PageProps) {
         )}
       </header>
 
-      {/* Formulario o estado "ya postulaste" */}
+      {/* Formulario, o aviso si ya hay una postulación activa en el proyecto:
+          a este mismo rol, o a otro (la regla es un rol por proyecto). */}
       <div className="mt-8">
-        {yaPostulo ? (
+        {miPostulacion ? (
           <div className="rounded-lg border border-border bg-surface/50 p-6 text-center">
-            <p className="font-medium text-ink">Ya postulaste a este rol</p>
+            <p className="font-medium text-ink">
+              {esOtroRol
+                ? "Ya tienes una postulación activa en este proyecto"
+                : "Ya postulaste a este rol"}
+            </p>
             <p className="mt-1 text-sm text-muted">
-              Tu postulación está registrada. Te avisaremos si hay novedades.
+              {esOtroRol
+                ? `Solo puedes postular a un rol por proyecto (postulaste a "${miPostulacion.roleNombre}").`
+                : "Tu postulación está registrada. Te avisaremos si hay novedades."}
             </p>
             <Link
               href={`/proyectos/${id}`}
