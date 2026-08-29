@@ -80,7 +80,12 @@ export default async function MisProyectosPage() {
                 className="flex items-start justify-between gap-4 rounded-lg border border-border bg-white p-5"
               >
                 <div className="flex flex-col gap-1">
-                  <span className="font-semibold text-ink">{p.titulo}</span>
+                  <Link
+                    href={`/mis-proyectos/${p.id}`}
+                    className="font-semibold text-ink hover:text-electric"
+                  >
+                    {p.titulo}
+                  </Link>
                   <span className="text-sm text-muted">
                     {p.organization?.nombre} · {numRoles}{" "}
                     {numRoles === 1 ? "rol" : "roles"}
