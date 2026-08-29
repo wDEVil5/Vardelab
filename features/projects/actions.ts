@@ -144,3 +144,127 @@ export async function deleteRole(formData: FormData): Promise<void> {
 
   revalidatePath(`/mis-proyectos/${projectId}`);
 }
+
+export type AddRoleSkillState = { error?: string };
+
+const NIVELES = ["basico", "intermedio", "avanzado"] as const;
+
+/**
+ * Asocia una habilidad exigida a un rol, con su nivel mínimo. La RLS
+ * `project_role_skills_write_manager` (M3) exige gestionar el proyecto. El
+ * `unique(project_role_id, skill_id)` evita duplicados (se traduce a mensaje).
+ */
+export async function addRoleSkill(
+  _prevState: AddRoleSkillState,
+  formData: FormData,
+): Promise<AddRoleSkillState> {
+  const projectId = String(formData.get("projectId") ?? "");
+  const roleId = String(formData.get("roleId") ?? "");
+  const skillId = String(formData.get("skillId") ?? "");
+  const nivel = String(formData.get("nivel") ?? "");
+
+  if (!roleId || !skillId) return { error: "Selecciona una habilidad." };
+  if (!NIVELES.includes(nivel as (typeof NIVELES)[number])) {
+    return { error: "Selecciona un nivel válido." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("project_role_skills").insert({
+    project_role_id: roleId,
+    skill_id: skillId,
+    nivel_minimo: nivel as (typeof NIVELES)[number],
+  });
+
+  if (error) {
+    if (error.code === "23505") {
+      return { error: "Esa habilidad ya está en el rol." };
+    }
+    console.error("[addRoleSkill]", error.message);
+    return { error: "No se pudo agregar la habilidad." };
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}`);
+  return {};
+}
+
+/** Quita una habilidad de un rol. La RLS restringe a quien gestiona el proyecto. */
+export async function deleteRoleSkill(formData: FormData): Promise<void> {
+  const projectId = String(formData.get("projectId") ?? "");
+  const roleId = String(formData.get("roleId") ?? "");
+  const skillId = String(formData.get("skillId") ?? "");
+  if (!roleId || !skillId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("project_role_skills")
+    .delete()
+    .eq("project_role_id", roleId)
+    .eq("skill_id", skillId);
+
+  if (error) {
+    console.error("[deleteRoleSkill]", error.message);
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}`);
+}
+
+export type PublishState = { error?: string };
+
+/**
+ * Publica un proyecto (`borrador → publicado`). Simplificación temporal: publica
+ * directo, sin el paso `en_revisión` — este se insertará cuando exista la
+ * vertical del moderador. Requiere al menos un rol. La RLS
+ * `projects_update_manager` (M3) exige gestionar el proyecto.
+ */
+export async function publishProject(
+  _prevState: PublishState,
+  formData: FormData,
+): Promise<PublishState> {
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!projectId) return { error: "Falta el proyecto." };
+
+  const supabase = await createClient();
+
+  // Regla de negocio: no se publica un proyecto sin roles.
+  const { count } = await supabase
+    .from("project_roles")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", projectId);
+
+  if (!count || count < 1) {
+    return { error: "Agrega al menos un rol antes de publicar." };
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update({ status: "publicado" })
+    .eq("id", projectId);
+
+  if (error) {
+    console.error("[publishProject]", error.message);
+    return { error: "No se pudo publicar el proyecto." };
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}`);
+  revalidatePath("/proyectos");
+  return {};
+}
+
+/** Regresa un proyecto publicado a borrador (para editarlo o retirarlo). */
+export async function unpublishProject(formData: FormData): Promise<void> {
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!projectId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("projects")
+    .update({ status: "borrador" })
+    .eq("id", projectId);
+
+  if (error) {
+    console.error("[unpublishProject]", error.message);
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}`);
+  revalidatePath("/proyectos");
+}
