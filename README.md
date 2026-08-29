@@ -75,15 +75,22 @@ Un patrocinador describe una necesidad mediante una **plantilla obligatoria**; u
 
 ## 🚦 Estado del proyecto
 
-> **Fase actual: construcción del MVP (fundación técnica lista).**
+> **Fase actual: construcción del MVP — el loop principal ya funciona.**
 
-La **especificación de producto (PRD) está completa** y las decisiones técnicas están tomadas. El proyecto ya pasó del papel al código: están el **scaffold** (Next.js + Supabase), el **modelo de datos completo** (8 migraciones · 17 tablas con Row Level Security), los **tipos TypeScript** generados desde el esquema y el **despliegue de migraciones por CI**. El siguiente paso es la primera vertical de interfaz (público → autenticación → estudiante).
+La **especificación de producto (PRD) está completa** y el proyecto avanza en código. Están el **scaffold** (Next.js + Supabase), el **modelo de datos completo** (14 migraciones · 17 tablas con Row Level Security), los **tipos TypeScript** generados desde el esquema y el **despliegue de migraciones por CI**. Sobre esa base ya está implementado el **circuito central del producto**:
+
+- **Público** — catálogo de proyectos y ficha de detalle (SSR).
+- **Autenticación** — registro con rol, ingreso y sesión.
+- **Estudiante** — postular a un rol y seguir/retirar sus postulaciones.
+- **Patrocinador** — crear organización, crear/editar/publicar proyectos con roles y habilidades, y **revisar postulaciones** (aceptar/rechazar).
+
+Corre en local contra Supabase. Falta la **pasada de diseño** (alinear con Figma), la **moderación** de proyectos y el despliegue a producción.
 
 | Fase | Descripción | Estado |
 |------|-------------|--------|
 | 0 · Descubrimiento | Entrevistas y validación del problema | 🟡 En progreso |
 | 1 · Prototipo | Flujo completo en Figma, probado con usuarios | 🟡 En progreso |
-| 2 · MVP | Flujo publicación → portafolio en producción | 🟡 En progreso (base de datos lista) |
+| 2 · MVP | Flujo publicación → portafolio en producción | 🟡 En progreso (loop principal en código; falta portafolio, diseño y deploy) |
 | 3 · Piloto | 10 proyectos, 30–50 estudiantes, 8 semanas | ⬜ Pendiente |
 | 4 · Institucionalización | Presentar resultados y buscar continuidad | ⬜ Pendiente |
 
@@ -145,7 +152,7 @@ flowchart TD
 
 ## 📁 Estructura del repositorio
 
-> Las carpetas base (`app/`, `lib/supabase/`, `types/`, `supabase/`) ya existen; `components/`, `features/` y `tests/` se completan durante la Fase 2.
+> `app/`, `components/`, `features/`, `lib/supabase/`, `types/` y `supabase/` están en uso. `tests/` (incluidas las pruebas de políticas RLS) se completa durante la Fase 2.
 
 ```
 campuslab/
