@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/features/auth/queries";
 import { getMyOrganization } from "@/features/organizations/queries";
 import { updateOrganization } from "@/features/organizations/actions";
 import { OrgForm } from "@/features/organizations/components/org-form";
+import { DeleteOrgButton } from "@/features/organizations/components/delete-org-button";
 
 export const metadata: Metadata = {
   title: "Editar organización · CampusLab",
@@ -46,6 +47,10 @@ export default async function EditarOrganizacionPage({ params }: PageProps) {
           pendingText="Guardando…"
           org={org}
         />
+      </div>
+
+      <div className="mt-10">
+        <DeleteOrgButton orgId={org.id} />
       </div>
     </main>
   );
