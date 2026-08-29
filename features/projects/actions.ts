@@ -82,6 +82,68 @@ export async function createProject(
   redirect("/mis-proyectos?creado=1");
 }
 
+/**
+ * Edita la plantilla de un proyecto propio. No toca la organización ni el estado
+ * (publicación). La RLS `projects_update_manager` (M3) exige gestionar el
+ * proyecto; el update se filtra por `id`.
+ */
+export async function updateProject(
+  _prevState: CreateProjectState,
+  formData: FormData,
+): Promise<CreateProjectState> {
+  const id = String(formData.get("projectId") ?? "");
+  const titulo = String(formData.get("titulo") ?? "").trim();
+  const resumen = String(formData.get("resumen") ?? "").trim();
+  const problema = String(formData.get("problema") ?? "").trim();
+  const alcance = String(formData.get("alcance") ?? "").trim();
+  const entregable = String(formData.get("entregable") ?? "").trim();
+  const expectativas = String(formData.get("expectativas") ?? "").trim();
+  const modalidad = String(formData.get("modalidad") ?? "");
+  const duracionRaw = String(formData.get("duracion_semanas") ?? "").trim();
+
+  if (!id) return { error: "Falta el proyecto." };
+  if (!titulo) return { error: "El proyecto necesita un título." };
+  if (!problema || !alcance || !entregable) {
+    return { error: "Completa problema, alcance y entregable." };
+  }
+  if (!MODALIDADES.includes(modalidad as (typeof MODALIDADES)[number])) {
+    return { error: "Selecciona una modalidad válida." };
+  }
+
+  let duracion: number | null = null;
+  if (duracionRaw) {
+    const n = Number(duracionRaw);
+    if (!Number.isInteger(n) || n < 1 || n > 52) {
+      return { error: "La duración debe ser un número de semanas entre 1 y 52." };
+    }
+    duracion = n;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("projects")
+    .update({
+      titulo,
+      resumen: resumen || null,
+      problema,
+      alcance,
+      entregable,
+      expectativas: expectativas || null,
+      modalidad: modalidad as (typeof MODALIDADES)[number],
+      duracion_semanas: duracion,
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("[updateProject]", error.message);
+    return { error: "No se pudieron guardar los cambios. Inténtalo de nuevo." };
+  }
+
+  revalidatePath(`/mis-proyectos/${id}`);
+  revalidatePath("/proyectos");
+  redirect(`/mis-proyectos/${id}`);
+}
+
 export type AddRoleState = { error?: string };
 
 /**
