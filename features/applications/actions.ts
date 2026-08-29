@@ -98,3 +98,39 @@ export async function withdrawApplication(formData: FormData): Promise<void> {
 
   revalidatePath("/mis-postulaciones");
 }
+
+/**
+ * Resuelve una postulación (aceptar/rechazar) desde el lado del gestor. Solo
+ * actúa sobre postulaciones `enviada` (no revierte una retirada). La RLS
+ * `applications_update_manager` (M12) exige gestionar el rol; el filtro por
+ * `status` acota la transición.
+ */
+async function resolveApplication(
+  formData: FormData,
+  nuevoEstado: "aceptada" | "rechazada",
+): Promise<void> {
+  const applicationId = String(formData.get("applicationId") ?? "");
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!applicationId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("applications")
+    .update({ status: nuevoEstado })
+    .eq("id", applicationId)
+    .eq("status", "enviada");
+
+  if (error) {
+    console.error("[resolveApplication]", error.message);
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}/postulaciones`);
+}
+
+export async function acceptApplication(formData: FormData): Promise<void> {
+  return resolveApplication(formData, "aceptada");
+}
+
+export async function rejectApplication(formData: FormData): Promise<void> {
+  return resolveApplication(formData, "rechazada");
+}
