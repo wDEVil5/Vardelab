@@ -14,6 +14,7 @@ import { RoleSkillsEditor } from "@/features/projects/components/role-skills-edi
 import { PublishControls } from "@/features/projects/components/publish-controls";
 import { DeleteProjectButton } from "@/features/projects/components/delete-project-button";
 import { getActiveSkills, type Skill } from "@/features/skills/queries";
+import { getProjectTeam } from "@/features/teams/queries";
 
 export const metadata: Metadata = {
   title: "Gestionar proyecto · CampusLab",
@@ -38,7 +39,10 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
   if (!project) notFound();
 
   const roles = project.roles ?? [];
-  const catalog = await getActiveSkills();
+  const [catalog, team] = await Promise.all([
+    getActiveSkills(),
+    getProjectTeam(project.id),
+  ]);
   const estado = ESTADO[project.status] ?? {
     label: project.status,
     tone: "neutral" as BadgeTone,
@@ -106,6 +110,33 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
       <div className="mt-6">
         <AddRoleForm projectId={project.id} />
       </div>
+
+      {/* Equipo */}
+      {team && team.members.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold text-ink">
+            Equipo ({team.members.length})
+          </h2>
+          <ul className="mt-4 flex flex-col gap-2">
+            {team.members.map((m) => (
+              <li
+                key={m.userId}
+                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-white p-4"
+              >
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-medium text-ink">
+                    {m.nombre}
+                  </span>
+                  {m.carrera && (
+                    <span className="text-xs text-muted">{m.carrera}</span>
+                  )}
+                </div>
+                {m.rol && <Badge tone="brand">{m.rol}</Badge>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Publicación */}
       <section className="mt-10">
