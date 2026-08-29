@@ -8,7 +8,10 @@ import {
   type ProjectDetail,
 } from "@/features/projects/queries";
 import { getCurrentUser } from "@/features/auth/queries";
-import { getMyApplicationRoleIds } from "@/features/applications/queries";
+import {
+  getMyActiveApplicationInProject,
+  type MyProjectApplication,
+} from "@/features/applications/queries";
 
 // Etiquetas legibles de los enums para la interfaz.
 const MODALIDAD_LABEL: Record<string, string> = {
@@ -52,10 +55,12 @@ export default async function ProyectoPage({ params }: PageProps) {
   const org = project.organization;
   const roles = project.roles ?? [];
 
-  // Roles a los que el usuario ya postuló, para marcar el estado en cada CTA.
-  const appliedRoleIds = user
-    ? await getMyApplicationRoleIds(roles.map((r) => r.id))
-    : new Set<string>();
+  // Postulación activa del usuario en este proyecto (si la hay). Regla: a lo
+  // sumo un rol por proyecto, así que si existe, el resto de roles no ofrece
+  // postular y el rol postulado muestra su estado.
+  const miPostulacion = user
+    ? await getMyActiveApplicationInProject(project.id)
+    : null;
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
@@ -111,7 +116,7 @@ export default async function ProyectoPage({ params }: PageProps) {
                 rol={rol}
                 projectId={project.id}
                 isAuthenticated={Boolean(user)}
-                yaPostulo={appliedRoleIds.has(rol.id)}
+                miPostulacion={miPostulacion}
               />
             ))}
           </div>
@@ -140,19 +145,28 @@ function Section({
   );
 }
 
+// Estado de la postulación activa → etiqueta para el rol postulado.
+const ESTADO_ROL: Record<string, string> = {
+  enviada: "Ya postulaste a este rol",
+  aceptada: "Aceptado en este rol",
+};
+
 /** Tarjeta de un rol con sus habilidades exigidas y el CTA de postulación. */
 function RoleCard({
   rol,
   projectId,
   isAuthenticated,
-  yaPostulo,
+  miPostulacion,
 }: {
   rol: ProjectDetail["roles"][number];
   projectId: string;
   isAuthenticated: boolean;
-  yaPostulo: boolean;
+  miPostulacion: MyProjectApplication | null;
 }) {
   const skills = rol.skills ?? [];
+  // ¿Este rol es al que postulé, o postulé a otro del mismo proyecto?
+  const esMiRol = miPostulacion?.roleId === rol.id;
+  const tieneOtra = Boolean(miPostulacion) && !esMiRol;
   return (
     <article className="rounded-lg border border-border bg-white p-5">
       <div className="flex items-start justify-between gap-4">
@@ -182,8 +196,9 @@ function RoleCard({
         </div>
       )}
 
-      {/* CTA según el estado: sin sesión → Ingresar; ya postuló → aviso; con
-          sesión y sin postular → enlace al formulario de postulación (E-03). */}
+      {/* CTA según el estado. La regla es un rol por proyecto: si ya hay una
+          postulación activa, el rol postulado muestra su estado y el resto
+          queda deshabilitado. Sin sesión → Ingresar; libre → formulario (E-03). */}
       <div className="mt-5">
         {!isAuthenticated ? (
           <Link
@@ -192,8 +207,14 @@ function RoleCard({
           >
             Ingresar para postular
           </Link>
-        ) : yaPostulo ? (
-          <Badge tone="success">Ya postulaste</Badge>
+        ) : esMiRol ? (
+          <Badge tone="success">
+            {ESTADO_ROL[miPostulacion!.status] ?? "Ya postulaste a este rol"}
+          </Badge>
+        ) : tieneOtra ? (
+          <p className="text-sm text-muted">
+            Ya tienes una postulación activa en este proyecto.
+          </p>
         ) : (
           <Link
             href={`/proyectos/${projectId}/postular/${rol.id}`}
