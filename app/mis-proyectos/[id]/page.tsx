@@ -12,6 +12,7 @@ import { deleteRole } from "@/features/projects/actions";
 import { AddRoleForm } from "@/features/projects/components/add-role-form";
 import { RoleSkillsEditor } from "@/features/projects/components/role-skills-editor";
 import { PublishControls } from "@/features/projects/components/publish-controls";
+import { DeleteProjectButton } from "@/features/projects/components/delete-project-button";
 import { getActiveSkills, type Skill } from "@/features/skills/queries";
 
 export const metadata: Metadata = {
@@ -112,6 +113,11 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
         <div className="mt-3">
           <PublishControls projectId={project.id} status={project.status} />
         </div>
+      </section>
+
+      {/* Zona de eliminación */}
+      <section className="mt-10">
+        <DeleteProjectButton projectId={project.id} />
       </section>
     </main>
   );
