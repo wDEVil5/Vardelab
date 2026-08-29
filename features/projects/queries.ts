@@ -211,3 +211,56 @@ export async function getMyProjects() {
 }
 
 export type MyProject = Awaited<ReturnType<typeof getMyProjects>>[number];
+
+/**
+ * Proyecto para su gestión por el patrocinador (borrador incluido), con sus
+ * roles y las habilidades de cada rol. Devuelve `null` si no existe o el usuario
+ * no puede gestionarlo — la RLS `projects_select_published_or_manager` deja al
+ * gestor ver los propios; además se filtra por `created_by` para acotar a los
+ * suyos y no exponer proyectos publicados de terceros por esta vía.
+ */
+export async function getManagedProject(id: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("projects")
+    .select(
+      `
+      id,
+      titulo,
+      resumen,
+      status,
+      modalidad,
+      duracion_semanas,
+      roles:project_roles (
+        id,
+        nombre,
+        descripcion,
+        cupos,
+        skills:project_role_skills (
+          nivel_minimo,
+          skill:skills ( id, nombre )
+        )
+      )
+    `,
+    )
+    .eq("id", id)
+    .eq("created_by", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getManagedProject]", error.message);
+    throw error;
+  }
+
+  return data;
+}
+
+export type ManagedProject = NonNullable<
+  Awaited<ReturnType<typeof getManagedProject>>
+>;

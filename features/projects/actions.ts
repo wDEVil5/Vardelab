@@ -81,3 +81,66 @@ export async function createProject(
   revalidatePath("/mis-proyectos");
   redirect("/mis-proyectos?creado=1");
 }
+
+export type AddRoleState = { error?: string };
+
+/**
+ * Agrega un rol a un proyecto. La RLS `project_roles_write_manager` (M3) exige
+ * que el usuario gestione el proyecto; aquí se validan los datos del rol.
+ */
+export async function addRole(
+  _prevState: AddRoleState,
+  formData: FormData,
+): Promise<AddRoleState> {
+  const projectId = String(formData.get("projectId") ?? "");
+  const nombre = String(formData.get("nombre") ?? "").trim();
+  const descripcion = String(formData.get("descripcion") ?? "").trim();
+  const cuposRaw = String(formData.get("cupos") ?? "").trim();
+
+  if (!projectId) return { error: "Falta el proyecto." };
+  if (!nombre) return { error: "El rol necesita un nombre." };
+
+  // Cupos: entero ≥ 1 (la tabla tiene CHECK cupos > 0). Por defecto 1.
+  const cupos = cuposRaw ? Number(cuposRaw) : 1;
+  if (!Number.isInteger(cupos) || cupos < 1) {
+    return { error: "Los cupos deben ser un número entero de 1 o más." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("project_roles").insert({
+    project_id: projectId,
+    nombre,
+    descripcion: descripcion || null,
+    cupos,
+  });
+
+  if (error) {
+    console.error("[addRole]", error.message);
+    return { error: "No se pudo agregar el rol. Inténtalo de nuevo." };
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}`);
+  return {};
+}
+
+/**
+ * Elimina un rol de un proyecto. La RLS restringe a quien gestiona el proyecto;
+ * el `project_id` del formulario solo se usa para revalidar la vista.
+ */
+export async function deleteRole(formData: FormData): Promise<void> {
+  const roleId = String(formData.get("roleId") ?? "");
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!roleId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("project_roles")
+    .delete()
+    .eq("id", roleId);
+
+  if (error) {
+    console.error("[deleteRole]", error.message);
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}`);
+}
