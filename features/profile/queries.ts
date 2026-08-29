@@ -36,3 +36,33 @@ export type ProfileLinks = {
   linkedin?: string;
   sitio?: string;
 };
+
+/**
+ * Habilidades declaradas por el usuario actual, con el nombre de cada skill.
+ * Vacío si no hay sesión. La RLS `profile_skills_select_public_or_own` (M2)
+ * permite ver las propias.
+ */
+export async function getMyProfileSkills() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("profile_skills")
+    .select("skill_id, nivel, skill:skills ( id, nombre )")
+    .eq("profile_id", user.id);
+
+  if (error) {
+    console.error("[getMyProfileSkills]", error.message);
+    return [];
+  }
+
+  return data;
+}
+
+export type MyProfileSkill = Awaited<
+  ReturnType<typeof getMyProfileSkills>
+>[number];

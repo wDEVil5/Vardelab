@@ -71,3 +71,67 @@ export async function updateProfile(
   revalidatePath("/perfil");
   redirect("/perfil?guardado=1");
 }
+
+export type AddSkillState = { error?: string };
+
+const NIVELES = ["basico", "intermedio", "avanzado"] as const;
+
+/**
+ * Agrega una habilidad al perfil propio, con su nivel. La RLS
+ * `profile_skills_write_own` (M2) exige que sea el perfil del usuario.
+ */
+export async function addProfileSkill(
+  _prevState: AddSkillState,
+  formData: FormData,
+): Promise<AddSkillState> {
+  const skillId = String(formData.get("skillId") ?? "");
+  const nivel = String(formData.get("nivel") ?? "");
+
+  if (!skillId) return { error: "Selecciona una habilidad." };
+  if (!NIVELES.includes(nivel as (typeof NIVELES)[number])) {
+    return { error: "Selecciona un nivel válido." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/ingresar");
+
+  const { error } = await supabase.from("profile_skills").insert({
+    profile_id: user.id,
+    skill_id: skillId,
+    nivel: nivel as (typeof NIVELES)[number],
+  });
+
+  if (error) {
+    if (error.code === "23505") return { error: "Esa habilidad ya está en tu perfil." };
+    console.error("[addProfileSkill]", error.message);
+    return { error: "No se pudo agregar la habilidad." };
+  }
+
+  revalidatePath("/perfil");
+  return {};
+}
+
+/** Quita una habilidad del perfil propio. */
+export async function deleteProfileSkill(formData: FormData): Promise<void> {
+  const skillId = String(formData.get("skillId") ?? "");
+  if (!skillId) return;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { error } = await supabase
+    .from("profile_skills")
+    .delete()
+    .eq("profile_id", user.id)
+    .eq("skill_id", skillId);
+
+  if (error) console.error("[deleteProfileSkill]", error.message);
+
+  revalidatePath("/perfil");
+}
