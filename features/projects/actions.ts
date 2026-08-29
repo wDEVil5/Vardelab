@@ -330,3 +330,68 @@ export async function unpublishProject(formData: FormData): Promise<void> {
   revalidatePath(`/mis-proyectos/${projectId}`);
   revalidatePath("/proyectos");
 }
+
+export type DeleteProjectState = { error?: string };
+
+/**
+ * Elimina un proyecto propio. Reglas de seguridad (por las cascadas: borrar un
+ * proyecto arrastra roles, postulaciones, equipos, hitos y evaluaciones):
+ *   1. Solo en estado `borrador` (un proyecto publicado se despublica primero).
+ *   2. Sin postulaciones (protege el registro de los estudiantes).
+ * La RLS `projects_delete_manager` (M3) ya restringe a quien gestiona el
+ * proyecto; estas guardas agregan la protección de negocio y mensajes claros.
+ */
+export async function deleteProject(
+  _prevState: DeleteProjectState,
+  formData: FormData,
+): Promise<DeleteProjectState> {
+  const id = String(formData.get("projectId") ?? "");
+  if (!id) return { error: "Falta el proyecto." };
+
+  const supabase = await createClient();
+
+  // 1) Debe estar en borrador.
+  const { data: proj } = await supabase
+    .from("projects")
+    .select("status")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!proj) redirect("/mis-proyectos"); // ya no existe
+  if (proj.status !== "borrador") {
+    return {
+      error:
+        "Solo puedes eliminar un proyecto en borrador. Vuélvelo a borrador primero.",
+    };
+  }
+
+  // 2) No debe tener postulaciones (en ninguno de sus roles).
+  const { data: roles } = await supabase
+    .from("project_roles")
+    .select("id")
+    .eq("project_id", id);
+  const roleIds = (roles ?? []).map((r) => r.id);
+
+  if (roleIds.length > 0) {
+    const { count } = await supabase
+      .from("applications")
+      .select("id", { count: "exact", head: true })
+      .in("project_role_id", roleIds);
+    if (count && count > 0) {
+      return {
+        error:
+          "No puedes eliminar un proyecto que ya tiene postulaciones. Considera dejarlo en borrador.",
+      };
+    }
+  }
+
+  // 3) Eliminar (la RLS confirma que es gestionable por el usuario).
+  const { error } = await supabase.from("projects").delete().eq("id", id);
+  if (error) {
+    console.error("[deleteProject]", error.message);
+    return { error: "No se pudo eliminar el proyecto. Inténtalo de nuevo." };
+  }
+
+  revalidatePath("/mis-proyectos");
+  redirect("/mis-proyectos?eliminado=1");
+}
