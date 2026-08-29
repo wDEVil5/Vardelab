@@ -102,7 +102,7 @@ Corre en local contra Supabase. Falta la **pasada de diseño** (alinear con Figm
 | Backend administrado | **Supabase** | Autenticación, PostgreSQL, almacenamiento y políticas de acceso |
 | Base de datos | **PostgreSQL** | Modelo relacional (proyectos, roles, postulaciones, equipos…) |
 | Seguridad | **Row Level Security** | Permisos por rol y por propiedad del registro, en la base |
-| Correo transaccional | **AWS SES** | Confirmación de cuentas, recuperación de contraseña y notificaciones mediante correos personales |
+| Correo transaccional | **Brevo/AWS SES** | Confirmación de cuentas, recuperación de contraseña y notificaciones mediante correos personales |
 | Despliegue | **Vercel** | Entrega continua + dominio propio (HTTPS) |
 | CI/CD | **GitHub Actions** | Despliegue automático de migraciones al mergear a `main` |
 | Diseño | **Figma** | Prototipos y pruebas antes de programar |
