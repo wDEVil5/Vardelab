@@ -72,6 +72,7 @@ function RoleApplications({
 }) {
   const apps = rol.applications ?? [];
   const aceptadas = apps.filter((a) => a.status === "aceptada").length;
+  const cuposLlenos = aceptadas >= rol.cupos;
 
   return (
     <section>
@@ -132,20 +133,25 @@ function RoleApplications({
 
                 {/* Acciones solo para postulaciones pendientes */}
                 {app.status === "enviada" && (
-                  <div className="flex gap-2 border-t border-border pt-3">
-                    <form action={acceptApplication}>
-                      <input type="hidden" name="applicationId" value={app.id} />
-                      <input type="hidden" name="projectId" value={projectId} />
-                      <button
-                        type="submit"
-                        className={buttonClasses({
-                          variant: "primary",
-                          size: "sm",
-                        })}
-                      >
-                        Aceptar
-                      </button>
-                    </form>
+                  <div className="flex items-center gap-2 border-t border-border pt-3">
+                    {/* Aceptar solo si quedan cupos (la guarda de servidor es la barrera real). */}
+                    {cuposLlenos ? (
+                      <span className="text-xs text-muted">Cupos completos</span>
+                    ) : (
+                      <form action={acceptApplication}>
+                        <input type="hidden" name="applicationId" value={app.id} />
+                        <input type="hidden" name="projectId" value={projectId} />
+                        <button
+                          type="submit"
+                          className={buttonClasses({
+                            variant: "primary",
+                            size: "sm",
+                          })}
+                        >
+                          Aceptar
+                        </button>
+                      </form>
+                    )}
                     <form action={rejectApplication}>
                       <input type="hidden" name="applicationId" value={app.id} />
                       <input type="hidden" name="projectId" value={projectId} />
