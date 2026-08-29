@@ -108,3 +108,44 @@ export async function updateOrganization(
   revalidatePath("/mis-organizaciones");
   redirect("/mis-organizaciones?editada=1");
 }
+
+export type DeleteOrgState = { error?: string };
+
+/**
+ * Elimina una organización propia. Regla de seguridad (por la cascada: borrar
+ * una organización arrastra TODOS sus proyectos y, con ellos, roles,
+ * postulaciones, equipos, hitos y evaluaciones): solo se permite si la
+ * organización no tiene proyectos. La RLS `organizations_delete_own` (M3) ya
+ * restringe al dueño; esta guarda agrega la protección de negocio.
+ */
+export async function deleteOrganization(
+  _prevState: DeleteOrgState,
+  formData: FormData,
+): Promise<DeleteOrgState> {
+  const id = String(formData.get("orgId") ?? "");
+  if (!id) return { error: "Falta la organización." };
+
+  const supabase = await createClient();
+
+  // No debe tener proyectos.
+  const { count } = await supabase
+    .from("projects")
+    .select("id", { count: "exact", head: true })
+    .eq("org_id", id);
+
+  if (count && count > 0) {
+    return {
+      error:
+        "No puedes eliminar una organización con proyectos. Elimina o mueve sus proyectos primero.",
+    };
+  }
+
+  const { error } = await supabase.from("organizations").delete().eq("id", id);
+  if (error) {
+    console.error("[deleteOrganization]", error.message);
+    return { error: "No se pudo eliminar la organización. Inténtalo de nuevo." };
+  }
+
+  revalidatePath("/mis-organizaciones");
+  redirect("/mis-organizaciones?eliminada=1");
+}
