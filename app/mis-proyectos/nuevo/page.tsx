@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { buttonClasses } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/features/auth/queries";
 import { getMyOrganizations } from "@/features/organizations/queries";
 import { CreateProjectForm } from "@/features/projects/components/create-project-form";
@@ -40,9 +42,18 @@ export default async function NuevoProyectoPage() {
               Todavía no tienes una organización
             </p>
             <p className="mt-1 text-sm text-muted">
-              Un proyecto se crea bajo una organización. Pronto podrás crear la
-              tuya desde aquí.
+              Un proyecto se crea bajo una organización. Crea la tuya para
+              empezar.
             </p>
+            <Link
+              href="/mis-organizaciones/nueva"
+              className={cn(
+                "mt-4 inline-flex",
+                buttonClasses({ variant: "primary", size: "sm" }),
+              )}
+            >
+              Crear organización
+            </Link>
           </div>
         ) : (
           <CreateProjectForm organizations={organizations} />
