@@ -27,14 +27,14 @@ values
    'authenticated', 'authenticated', 'investigacion@demo.cl',
    crypt('demo1234', gen_salt('bf')), now(), now(), now(),
    '{"provider":"email","providers":["email"]}',
-   '{"nombre":"Camila Rojas"}',
+   '{"nombre":"Camila Rojas","rol":"patrocinador"}',
    '', '', '', '', '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000',
    '22222222-2222-2222-2222-222222222222',
    'authenticated', 'authenticated', 'semilla@demo.cl',
    crypt('demo1234', gen_salt('bf')), now(), now(), now(),
    '{"provider":"email","providers":["email"]}',
-   '{"nombre":"Diego Fuentes"}',
+   '{"nombre":"Diego Fuentes","rol":"patrocinador"}',
    '', '', '', '', '', '', '', '')
 on conflict (id) do nothing;
 
