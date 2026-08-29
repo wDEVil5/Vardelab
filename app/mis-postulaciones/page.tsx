@@ -8,6 +8,8 @@ import { getCurrentUser } from "@/features/auth/queries";
 import { getMyApplications } from "@/features/applications/queries";
 import { withdrawApplication } from "@/features/applications/actions";
 import { getMyTeams } from "@/features/teams/queries";
+import { getMilestonesWithSubmissions } from "@/features/milestones/queries";
+import { MilestoneSubmissions } from "@/features/submissions/components/milestone-submissions";
 
 export const metadata: Metadata = {
   title: "Mis postulaciones · CampusLab",
@@ -31,6 +33,16 @@ export default async function MisPostulacionesPage() {
     getMyTeams(),
   ]);
 
+  // Hitos (con entregas) de cada proyecto en el que el estudiante tiene equipo.
+  const equiposConHitos = await Promise.all(
+    equipos.map(async (eq) => ({
+      ...eq,
+      hitos: eq.projectId
+        ? await getMilestonesWithSubmissions(eq.projectId)
+        : [],
+    })),
+  );
+
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
       <header className="flex flex-col gap-2">
@@ -41,11 +53,11 @@ export default async function MisPostulacionesPage() {
       </header>
 
       {/* Equipos a los que fui aceptado */}
-      {equipos.length > 0 && (
+      {equiposConHitos.length > 0 && (
         <section className="mt-8">
           <h2 className="text-lg font-semibold text-ink">Mis equipos</h2>
           <div className="mt-3 flex flex-col gap-3">
-            {equipos.map((eq) => (
+            {equiposConHitos.map((eq) => (
               <div
                 key={eq.teamId}
                 className="rounded-lg border border-border bg-white p-5"
@@ -56,6 +68,8 @@ export default async function MisPostulacionesPage() {
                 >
                   {eq.projectTitulo}
                 </Link>
+
+                {/* Integrantes */}
                 <ul className="mt-3 flex flex-col gap-1.5">
                   {eq.members.map((m) => (
                     <li
@@ -64,14 +78,29 @@ export default async function MisPostulacionesPage() {
                     >
                       <span className="text-ink">
                         {m.nombre}
-                        {m.esYo && (
-                          <span className="text-muted"> (tú)</span>
-                        )}
+                        {m.esYo && <span className="text-muted"> (tú)</span>}
                       </span>
                       {m.rol && <Badge tone="outline">{m.rol}</Badge>}
                     </li>
                   ))}
                 </ul>
+
+                {/* Hitos y entregas */}
+                {eq.hitos.length > 0 && eq.projectId && (
+                  <div className="mt-5 flex flex-col gap-3 border-t border-border pt-4">
+                    <p className="text-sm font-medium text-ink">
+                      Hitos y entregas
+                    </p>
+                    {eq.hitos.map((hito) => (
+                      <MilestoneSubmissions
+                        key={hito.id}
+                        milestone={hito}
+                        projectId={eq.projectId!}
+                        currentUserId={user.id}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

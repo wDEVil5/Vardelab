@@ -15,6 +15,9 @@ import { PublishControls } from "@/features/projects/components/publish-controls
 import { DeleteProjectButton } from "@/features/projects/components/delete-project-button";
 import { getActiveSkills, type Skill } from "@/features/skills/queries";
 import { getProjectTeam } from "@/features/teams/queries";
+import { getProjectMilestones, type Milestone } from "@/features/milestones/queries";
+import { deleteMilestone } from "@/features/milestones/actions";
+import { AddMilestoneForm } from "@/features/milestones/components/add-milestone-form";
 
 export const metadata: Metadata = {
   title: "Gestionar proyecto · CampusLab",
@@ -39,9 +42,10 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
   if (!project) notFound();
 
   const roles = project.roles ?? [];
-  const [catalog, team] = await Promise.all([
+  const [catalog, team, milestones] = await Promise.all([
     getActiveSkills(),
     getProjectTeam(project.id),
+    getProjectMilestones(project.id),
   ]);
   const estado = ESTADO[project.status] ?? {
     label: project.status,
@@ -138,6 +142,27 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
         </section>
       )}
 
+      {/* Hitos */}
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold text-ink">
+          Hitos ({milestones.length})
+        </h2>
+        {milestones.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">
+            Define los hitos del proyecto: el plan de trabajo por etapas.
+          </p>
+        ) : (
+          <ul className="mt-4 flex flex-col gap-2">
+            {milestones.map((hito) => (
+              <MilestoneRow key={hito.id} hito={hito} projectId={project.id} />
+            ))}
+          </ul>
+        )}
+        <div className="mt-4">
+          <AddMilestoneForm projectId={project.id} />
+        </div>
+      </section>
+
       {/* Publicación */}
       <section className="mt-10">
         <h2 className="text-lg font-semibold text-ink">Publicación</h2>
@@ -187,6 +212,56 @@ function RoleRow({
 
       <form action={deleteRole}>
         <input type="hidden" name="roleId" value={rol.id} />
+        <input type="hidden" name="projectId" value={projectId} />
+        <button
+          type="submit"
+          className={buttonClasses({ variant: "ghost", size: "sm" })}
+        >
+          Eliminar
+        </button>
+      </form>
+    </li>
+  );
+}
+
+// Estado del hito → etiqueta y tono.
+const ESTADO_HITO: Record<string, { label: string; tone: BadgeTone }> = {
+  pendiente: { label: "Pendiente", tone: "neutral" },
+  en_progreso: { label: "En progreso", tone: "brand" },
+  entregado: { label: "Entregado", tone: "brand" },
+  aprobado: { label: "Aprobado", tone: "success" },
+};
+
+function MilestoneRow({
+  hito,
+  projectId,
+}: {
+  hito: Milestone;
+  projectId: string;
+}) {
+  const estado = ESTADO_HITO[hito.estado] ?? {
+    label: hito.estado,
+    tone: "neutral" as BadgeTone,
+  };
+  return (
+    <li className="flex items-start justify-between gap-4 rounded-lg border border-border bg-white p-4">
+      <div className="flex flex-col gap-0.5">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-ink">{hito.titulo}</span>
+          <Badge tone={estado.tone}>{estado.label}</Badge>
+        </div>
+        {hito.descripcion && (
+          <p className="text-sm text-muted">{hito.descripcion}</p>
+        )}
+        {hito.fecha_limite && (
+          <span className="text-xs text-muted">
+            Fecha límite: {hito.fecha_limite}
+          </span>
+        )}
+      </div>
+
+      <form action={deleteMilestone}>
+        <input type="hidden" name="milestoneId" value={hito.id} />
         <input type="hidden" name="projectId" value={projectId} />
         <button
           type="submit"
