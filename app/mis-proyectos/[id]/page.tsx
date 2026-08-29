@@ -58,12 +58,20 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
           {project.resumen && (
             <p className="text-sm text-muted">{project.resumen}</p>
           )}
-          <Link
-            href={`/mis-proyectos/${project.id}/editar`}
-            className="mt-1 w-fit text-sm text-electric hover:underline"
-          >
-            Editar datos del proyecto
-          </Link>
+          <div className="mt-1 flex gap-4">
+            <Link
+              href={`/mis-proyectos/${project.id}/editar`}
+              className="text-sm text-electric hover:underline"
+            >
+              Editar datos
+            </Link>
+            <Link
+              href={`/mis-proyectos/${project.id}/postulaciones`}
+              className="text-sm text-electric hover:underline"
+            >
+              Ver postulaciones
+            </Link>
+          </div>
         </div>
         <Badge tone={estado.tone}>{estado.label}</Badge>
       </header>
