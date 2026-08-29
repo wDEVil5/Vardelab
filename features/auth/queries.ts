@@ -15,17 +15,21 @@ export async function getCurrentUser() {
 
   if (!user) return null;
 
-  // El nombre vive en profiles (lo crea el trigger al registrarse). Se lee
-  // aparte; si por algún motivo no existe, se cae al email.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("nombre")
-    .eq("id", user.id)
-    .maybeSingle();
+  // El nombre vive en profiles (lo crea el trigger al registrarse) y los roles
+  // en user_roles. Se leen aparte; la RLS limita ambos a lo propio del usuario.
+  const [{ data: profile }, { data: roles }] = await Promise.all([
+    supabase.from("profiles").select("nombre").eq("id", user.id).maybeSingle(),
+    supabase.from("user_roles").select("role").eq("user_id", user.id),
+  ]);
+
+  const rolesList = (roles ?? []).map((r) => r.role);
 
   return {
     id: user.id,
     email: user.email ?? "",
     nombre: profile?.nombre ?? user.email ?? "",
+    roles: rolesList,
+    esPatrocinador: rolesList.includes("patrocinador"),
+    esEstudiante: rolesList.includes("estudiante"),
   };
 }

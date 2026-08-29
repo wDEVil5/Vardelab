@@ -169,3 +169,45 @@ export async function getRoleForApplication(projectId: string, roleId: string) {
 export type RoleForApplication = NonNullable<
   Awaited<ReturnType<typeof getRoleForApplication>>
 >;
+
+/**
+ * Proyectos creados por el usuario actual (lado del patrocinador), de más
+ * reciente a más antiguo, con su organización y el conteo de roles. Incluye
+ * borradores. La RLS (`projects_select_published_or_manager`) ya deja al gestor
+ * ver los propios aunque no estén publicados.
+ */
+export async function getMyProjects() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("projects")
+    .select(
+      `
+      id,
+      titulo,
+      status,
+      modalidad,
+      duracion_semanas,
+      created_at,
+      organization:organizations ( nombre ),
+      roles:project_roles ( id )
+    `,
+    )
+    .eq("created_by", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[getMyProjects]", error.message);
+    throw error;
+  }
+
+  return data;
+}
+
+export type MyProject = Awaited<ReturnType<typeof getMyProjects>>[number];
