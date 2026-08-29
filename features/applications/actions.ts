@@ -128,9 +128,63 @@ async function resolveApplication(
 }
 
 /**
+ * Suma un usuario al equipo del proyecto (creando el equipo si aún no existe).
+ * Idempotente: no duplica si ya es miembro. La RLS `teams_*_manager` y
+ * `team_members_write_manager` (M4) exigen gestionar el proyecto.
+ */
+async function addToProjectTeam(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projectId: string,
+  userId: string,
+  roleId: string,
+): Promise<void> {
+  // Equipo del proyecto (uno por proyecto: teams.project_id es UNIQUE).
+  let { data: team } = await supabase
+    .from("teams")
+    .select("id")
+    .eq("project_id", projectId)
+    .maybeSingle();
+
+  if (!team) {
+    // No se usa `.insert().select()`: el RETURNING exige pasar la policy de
+    // SELECT en la misma sentencia y con RLS puede devolver null. Se inserta y
+    // luego se vuelve a consultar por project_id (UNIQUE).
+    const { error } = await supabase
+      .from("teams")
+      .insert({ project_id: projectId });
+    if (error) {
+      console.error("[addToProjectTeam:create]", error.message);
+      return;
+    }
+    const { data } = await supabase
+      .from("teams")
+      .select("id")
+      .eq("project_id", projectId)
+      .maybeSingle();
+    team = data;
+  }
+  if (!team) return;
+
+  // No duplicar la membresía.
+  const { data: existente } = await supabase
+    .from("team_members")
+    .select("id")
+    .eq("team_id", team.id)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existente) return;
+
+  const { error } = await supabase
+    .from("team_members")
+    .insert({ team_id: team.id, user_id: userId, project_role_id: roleId });
+  if (error) console.error("[addToProjectTeam:member]", error.message);
+}
+
+/**
  * Acepta una postulación respetando los cupos del rol: si el rol ya tiene tantas
  * aceptadas como cupos, no acepta más (guarda de servidor, defensa en profundidad
  * junto con la UI que oculta el botón). Solo actúa sobre postulaciones `enviada`.
+ * Al aceptar, suma al estudiante al equipo del proyecto (lo crea si no existe).
  */
 export async function acceptApplication(formData: FormData): Promise<void> {
   const applicationId = String(formData.get("applicationId") ?? "");
@@ -139,10 +193,10 @@ export async function acceptApplication(formData: FormData): Promise<void> {
 
   const supabase = await createClient();
 
-  // Rol y estado de la postulación.
+  // Postulante, rol y estado de la postulación.
   const { data: app } = await supabase
     .from("applications")
-    .select("project_role_id, status")
+    .select("applicant_id, project_role_id, status")
     .eq("id", applicationId)
     .maybeSingle();
 
@@ -150,7 +204,7 @@ export async function acceptApplication(formData: FormData): Promise<void> {
     const [{ data: role }, { count }] = await Promise.all([
       supabase
         .from("project_roles")
-        .select("cupos")
+        .select("cupos, project_id")
         .eq("id", app.project_role_id)
         .maybeSingle(),
       supabase
@@ -167,7 +221,17 @@ export async function acceptApplication(formData: FormData): Promise<void> {
         .update({ status: "aceptada" })
         .eq("id", applicationId)
         .eq("status", "enviada");
-      if (error) console.error("[acceptApplication]", error.message);
+      if (error) {
+        console.error("[acceptApplication]", error.message);
+      } else {
+        // Aceptada: sumar al estudiante al equipo del proyecto.
+        await addToProjectTeam(
+          supabase,
+          role.project_id,
+          app.applicant_id,
+          app.project_role_id,
+        );
+      }
     }
   }
 

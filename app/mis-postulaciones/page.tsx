@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/features/auth/queries";
 import { getMyApplications } from "@/features/applications/queries";
 import { withdrawApplication } from "@/features/applications/actions";
+import { getMyTeams } from "@/features/teams/queries";
 
 export const metadata: Metadata = {
   title: "Mis postulaciones · CampusLab",
@@ -25,7 +26,10 @@ export default async function MisPostulacionesPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/ingresar?next=/mis-postulaciones");
 
-  const postulaciones = await getMyApplications();
+  const [postulaciones, equipos] = await Promise.all([
+    getMyApplications(),
+    getMyTeams(),
+  ]);
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
@@ -35,6 +39,44 @@ export default async function MisPostulacionesPage() {
           El estado de los roles a los que postulaste.
         </p>
       </header>
+
+      {/* Equipos a los que fui aceptado */}
+      {equipos.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-lg font-semibold text-ink">Mis equipos</h2>
+          <div className="mt-3 flex flex-col gap-3">
+            {equipos.map((eq) => (
+              <div
+                key={eq.teamId}
+                className="rounded-lg border border-border bg-white p-5"
+              >
+                <Link
+                  href={`/proyectos/${eq.projectId}`}
+                  className="font-semibold text-ink hover:text-electric"
+                >
+                  {eq.projectTitulo}
+                </Link>
+                <ul className="mt-3 flex flex-col gap-1.5">
+                  {eq.members.map((m) => (
+                    <li
+                      key={m.userId}
+                      className="flex items-center justify-between gap-3 text-sm"
+                    >
+                      <span className="text-ink">
+                        {m.nombre}
+                        {m.esYo && (
+                          <span className="text-muted"> (tú)</span>
+                        )}
+                      </span>
+                      {m.rol && <Badge tone="outline">{m.rol}</Badge>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {postulaciones.length === 0 ? (
         <div className="mt-8 rounded-lg border border-dashed border-border bg-surface/50 px-6 py-16 text-center">
