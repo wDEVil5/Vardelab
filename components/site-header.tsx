@@ -1,25 +1,45 @@
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { NavLink } from "@/components/nav-link";
+import { MobileMenu, type MobileNavItem } from "@/components/mobile-menu";
 import { signOut } from "@/features/auth/actions";
 import { getCurrentUser } from "@/features/auth/queries";
 
 /**
  * Cabecera global. Server Component: lee la sesión en el servidor y muestra el
- * estado según haya usuario o no. El cierre de sesión usa la Server Action
- * `signOut` a través de un <form> (no requiere JS en el cliente).
+ * estado según haya usuario o no. En desktop, navegación inline; en móvil, un
+ * menú hamburguesa (`MobileMenu`). El cierre de sesión usa la Server Action
+ * `signOut`.
  */
 export async function SiteHeader() {
   const user = await getCurrentUser();
 
+  // Enlaces del menú móvil según la sesión (la acción de sesión la resuelve el
+  // propio menú a partir de `userName`).
+  const mobileItems: MobileNavItem[] = [
+    { href: "/proyectos", label: "Explorar" },
+    ...(user?.esPatrocinador
+      ? [
+          { href: "/mis-organizaciones", label: "Organizaciones" },
+          { href: "/mis-proyectos", label: "Mis proyectos" },
+        ]
+      : []),
+    ...(user?.esEstudiante
+      ? [{ href: "/mis-postulaciones", label: "Mis postulaciones" }]
+      : []),
+    ...(user ? [{ href: "/perfil", label: "Mi perfil" }] : []),
+    ...(!user ? [{ href: "/organizaciones", label: "Para organizaciones" }] : []),
+  ];
+
   return (
-    <header className="border-b border-border bg-white">
+    <header className="relative border-b border-border bg-white">
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-6">
         <Link href="/" className="font-bold text-ink">
           CampusLab
         </Link>
 
-        <nav className="flex items-center gap-5">
+        {/* Navegación desktop. */}
+        <nav className="hidden items-center gap-5 md:flex">
           <NavLink href="/proyectos">Explorar</NavLink>
 
           {user?.esPatrocinador && (
@@ -43,7 +63,7 @@ export async function SiteHeader() {
             <>
               <Link
                 href="/perfil"
-                className="hidden text-sm font-medium text-muted transition-colors hover:text-electric sm:inline"
+                className="text-sm font-medium text-muted transition-colors hover:text-electric"
               >
                 {user.nombre}
               </Link>
@@ -65,6 +85,9 @@ export async function SiteHeader() {
             </Link>
           )}
         </nav>
+
+        {/* Navegación móvil. */}
+        <MobileMenu items={mobileItems} userName={user?.nombre ?? null} />
       </div>
     </header>
   );
