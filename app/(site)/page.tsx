@@ -5,32 +5,31 @@ import { getPublishedProjects } from "@/features/projects/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
 
 /**
- * P-01 · Landing pública. Server Component: presenta la propuesta y destaca un
- * proyecto real del catálogo. Alineada al diseño de Figma (frame P-01), sobre
- * los tokens de Foundations.
+ * P-01 · Landing pública. Server Component: presenta CampusLab a estudiantes y
+ * organizaciones y los lleva a una acción. Página de presentación (no un panel
+ * autenticado), sobre los tokens de Foundations. Piloto independiente: sin
+ * métricas, testimonios ni logos ficticios.
  */
 export default async function Home() {
-  // Proyecto destacado: el más reciente del catálogo público (si hay).
   const publicados = await getPublishedProjects();
-  const destacado = publicados[0] ?? null;
+  // Composición del hero: tarjetas reales del catálogo (sin ilustraciones).
+  const heroProyectos = publicados.slice(0, 2);
 
   return (
-    <main className="flex-1 bg-surface">
-      <div className="mx-auto w-full max-w-5xl px-6 py-12 sm:py-16">
-        {/* Hero: propuesta a la izquierda, tarjeta de marca a la derecha. */}
-        <section className="grid items-center gap-10 lg:grid-cols-2">
-          <div className="flex flex-col items-start gap-5">
-            <span className="rounded-full bg-electric/10 px-3 py-1 text-sm font-medium text-electric">
-              Para estudiantes UNAB
-            </span>
+    <main className="flex-1 bg-white">
+      {/* 1 · HERO */}
+      <section className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-24">
+        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+          <div className="flex flex-col items-start gap-6">
             <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-              Convierte tu talento en experiencia real
+              Desafíos reales. Talento que se demuestra.
             </h1>
             <p className="max-w-md text-lg text-muted">
-              Microproyectos reales que conectan estudiantes con necesidades de
-              organizaciones.
+              CampusLab conecta estudiantes con organizaciones para resolver
+              microproyectos claros, con objetivos, acompañamiento y evidencia de
+              resultado.
             </p>
-            <div className="mt-2 flex flex-col items-start gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/proyectos"
                 className={cn(
@@ -42,45 +41,26 @@ export default async function Home() {
               </Link>
               <Link
                 href="/registro?rol=patrocinador"
-                className="text-sm font-medium text-electric hover:underline"
+                className={cn(
+                  buttonClasses({ variant: "secondary" }),
+                  "h-11 border border-border bg-white px-6 text-base",
+                )}
               >
-                Soy una organización →
+                Publicar un desafío
               </Link>
             </div>
           </div>
 
-          {/* Tarjeta de marca: del desafío al portafolio + métricas del piloto. */}
-          <div className="flex flex-col gap-4 rounded-2xl bg-ink p-8 text-white">
-            <span className="font-medium text-white/90">CampusLab</span>
-            <h2 className="text-2xl font-bold">Del desafío a tu portafolio</h2>
-            <p className="text-white/70">
-              Un piloto guiado, con evidencia verificable y acompañamiento.
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-4 rounded-xl bg-white/5 p-6">
-              <div className="flex flex-col gap-1">
-                <span className="text-3xl font-bold text-white">10+</span>
-                <span className="text-sm text-white/60">proyectos piloto</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-3xl font-bold text-sprout">4 sem</span>
-                <span className="text-sm text-white/60">duración promedio</span>
-              </div>
+          {/* Composición con tarjetas reales de proyecto. */}
+          {heroProyectos.length > 0 && (
+            <div className="flex flex-col gap-4">
+              {heroProyectos.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
             </div>
-          </div>
-        </section>
-
-        {/* Proyecto destacado: una ficha real del catálogo. */}
-        {destacado && (
-          <section className="mt-16">
-            <h2 className="text-lg font-semibold text-ink">
-              Proyecto destacado
-            </h2>
-            <div className="mt-4 max-w-md">
-              <ProjectCard project={destacado} />
-            </div>
-          </section>
-        )}
-      </div>
+          )}
+        </div>
+      </section>
     </main>
   );
 }
