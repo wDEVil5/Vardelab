@@ -10,6 +10,7 @@ import { withdrawApplication } from "@/features/applications/actions";
 import { getMyTeams } from "@/features/teams/queries";
 import { getMilestonesWithSubmissions } from "@/features/milestones/queries";
 import { MilestoneSubmissions } from "@/features/submissions/components/milestone-submissions";
+import { getMyEvaluationsByProject } from "@/features/evaluations/queries";
 
 export const metadata: Metadata = {
   title: "Mis postulaciones · CampusLab",
@@ -28,9 +29,10 @@ export default async function MisPostulacionesPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/ingresar?next=/mis-postulaciones");
 
-  const [postulaciones, equipos] = await Promise.all([
+  const [postulaciones, equipos, evaluaciones] = await Promise.all([
     getMyApplications(),
     getMyTeams(),
+    getMyEvaluationsByProject(),
   ]);
 
   // Hitos (con entregas) de cada proyecto en el que el estudiante tiene equipo.
@@ -84,6 +86,26 @@ export default async function MisPostulacionesPage() {
                     </li>
                   ))}
                 </ul>
+
+                {/* Evaluación del gestor (privada, solo la ve el estudiante) */}
+                {eq.projectId &&
+                  evaluaciones.get(eq.projectId)?.puntaje != null && (
+                    <div className="mt-4 rounded-lg border border-border bg-surface/50 p-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-ink">
+                          Tu evaluación
+                        </span>
+                        <Badge tone="brand">
+                          {evaluaciones.get(eq.projectId)!.puntaje} / 5
+                        </Badge>
+                      </div>
+                      {evaluaciones.get(eq.projectId)!.comentario && (
+                        <p className="mt-1 text-sm text-muted">
+                          {evaluaciones.get(eq.projectId)!.comentario}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                 {/* Hitos y entregas */}
                 {eq.hitos.length > 0 && eq.projectId && (
