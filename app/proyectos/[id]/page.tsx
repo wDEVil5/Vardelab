@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
+import { cn } from "@/lib/utils";
 import {
   getPublishedProjectById,
   type ProjectDetail,
@@ -62,66 +64,107 @@ export default async function ProyectoPage({ params }: PageProps) {
     ? await getMyActiveApplicationInProject(project.id)
     : null;
 
+  // Cupos totales (suma de los roles) para el estado del proyecto.
+  const cuposTotales = roles.reduce((total, rol) => total + rol.cupos, 0);
+
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
-      {/* Volver al catálogo */}
-      <Link
-        href="/proyectos"
-        className="text-sm text-muted transition-colors hover:text-electric"
-      >
-        ← Volver a proyectos
-      </Link>
+    <main className="flex-1 bg-surface">
+      <div className="mx-auto w-full max-w-5xl px-6 py-10">
+        {/* Volver al catálogo */}
+        <Link
+          href="/proyectos"
+          className="text-sm text-muted transition-colors hover:text-electric"
+        >
+          ← Volver a proyectos
+        </Link>
 
-      {/* Encabezado */}
-      <header className="mt-6 flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted">{org?.nombre}</span>
-          {org?.verificacion === "verificado" && (
-            <Badge tone="success">Verificada</Badge>
+        {/* Encabezado */}
+        <header className="mt-6 flex flex-col gap-2">
+          <span className="text-sm font-medium text-muted">
+            Detalle de proyecto
+          </span>
+          <h1 className="text-3xl font-bold text-ink sm:text-4xl">
+            {project.titulo}
+          </h1>
+          {org?.nombre && (
+            <span className="flex items-center gap-1.5 text-muted">
+              {org.nombre}
+              {org.verificacion === "verificado" && <VerifiedBadge />}
+            </span>
           )}
-        </div>
+        </header>
 
-        <h1 className="text-3xl font-bold text-ink">{project.titulo}</h1>
+        <div className="mt-8 grid gap-6 lg:grid-cols-3">
+          {/* Contenido principal */}
+          <div className="flex flex-col gap-6 lg:col-span-2">
+            <div className="flex flex-col gap-8 rounded-2xl border border-border bg-white p-6 sm:p-8">
+              {project.resumen && (
+                <p className="text-lg text-muted">{project.resumen}</p>
+              )}
+              <Section titulo="El desafío" contenido={project.problema} />
+              <Section titulo="Alcance" contenido={project.alcance} />
+              <Section titulo="Entregable" contenido={project.entregable} />
+              <Section titulo="Expectativas" contenido={project.expectativas} />
+            </div>
 
-        {project.resumen && <p className="text-muted">{project.resumen}</p>}
-
-        <div className="flex flex-wrap items-center gap-2">
-          {project.modalidad && (
-            <Badge tone="brand">
-              {MODALIDAD_LABEL[project.modalidad] ?? project.modalidad}
-            </Badge>
-          )}
-          {project.duracion_semanas && (
-            <Badge>{project.duracion_semanas} semanas</Badge>
-          )}
-        </div>
-      </header>
-
-      {/* Plantilla del proyecto */}
-      <div className="mt-10 flex flex-col gap-8">
-        <Section titulo="El problema" contenido={project.problema} />
-        <Section titulo="Alcance" contenido={project.alcance} />
-        <Section titulo="Entregable" contenido={project.entregable} />
-        <Section titulo="Expectativas" contenido={project.expectativas} />
-      </div>
-
-      {/* Roles */}
-      {roles.length > 0 && (
-        <section className="mt-12">
-          <h2 className="text-xl font-semibold text-ink">Roles disponibles</h2>
-          <div className="mt-4 flex flex-col gap-4">
-            {roles.map((rol) => (
-              <RoleCard
-                key={rol.id}
-                rol={rol}
-                projectId={project.id}
-                isAuthenticated={Boolean(user)}
-                miPostulacion={miPostulacion}
-              />
-            ))}
+            {/* Roles */}
+            {roles.length > 0 && (
+              <section id="roles" className="scroll-mt-6">
+                <h2 className="text-xl font-semibold text-ink">
+                  Roles disponibles
+                </h2>
+                <div className="mt-4 flex flex-col gap-4">
+                  {roles.map((rol) => (
+                    <RoleCard
+                      key={rol.id}
+                      rol={rol}
+                      projectId={project.id}
+                      isAuthenticated={Boolean(user)}
+                      miPostulacion={miPostulacion}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
-        </section>
-      )}
+
+          {/* Tarjeta lateral: estado, compromiso y CTA a los roles. */}
+          <aside className="lg:col-span-1">
+            <div className="sticky top-6 flex flex-col gap-4 rounded-2xl border border-border bg-white p-6">
+              <span className="font-semibold text-sprout">
+                Abierto{cuposTotales > 0 && ` · ${cuposTotales} ${cuposTotales === 1 ? "cupo" : "cupos"}`}
+              </span>
+              <p className="text-sm text-muted">
+                Tu rol puede generar evidencia real para tu portafolio.
+              </p>
+
+              {/* Compromiso: duración, modalidad y tamaño del equipo. */}
+              <div className="flex flex-wrap gap-2">
+                {project.duracion_semanas && (
+                  <Badge>{project.duracion_semanas} semanas</Badge>
+                )}
+                {project.modalidad && (
+                  <Badge tone="brand">
+                    {MODALIDAD_LABEL[project.modalidad] ?? project.modalidad}
+                  </Badge>
+                )}
+                {cuposTotales > 0 && (
+                  <Badge tone="outline">Equipo de {cuposTotales}</Badge>
+                )}
+              </div>
+
+              {roles.length > 0 && (
+                <a
+                  href="#roles"
+                  className={cn(buttonClasses({ variant: "primary" }), "w-full")}
+                >
+                  Postular a un rol
+                </a>
+              )}
+            </div>
+          </aside>
+        </div>
+      </div>
     </main>
   );
 }
