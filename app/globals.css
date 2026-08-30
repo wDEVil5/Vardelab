@@ -55,4 +55,44 @@ body {
   .animate-rise {
     animation: fade-in 600ms ease-out both;
   }
+
+  /* Pulso de luz que recorre el conector hacia abajo (flujo de la
+     transformación). GPU: solo transform/opacity. */
+  @keyframes flow-down {
+    0% {
+      transform: translate(-50%, -10px);
+      opacity: 0;
+    }
+    25% {
+      opacity: 1;
+    }
+    75% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, 26px);
+      opacity: 0;
+    }
+  }
+  .animate-flow-down {
+    /* `backwards` mantiene el estado inicial (invisible) durante el retardo,
+       para que el pulso no aparezca hasta que la composición terminó de entrar. */
+    animation: flow-down 2s ease-in-out infinite backwards;
+  }
+
+  /* Halo ambiental que "respira" detrás de la composición. */
+  @keyframes breathe {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.45;
+    }
+    50% {
+      transform: scale(1.15);
+      opacity: 0.75;
+    }
+  }
+  .animate-breathe {
+    animation: breathe 7s ease-in-out infinite;
+  }
 }
