@@ -15,7 +15,7 @@ export async function getMyProfile() {
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, nombre, carrera, semestre, bio, intereses, disponibilidad, enlaces",
+      "id, nombre, carrera, semestre, bio, intereses, disponibilidad, enlaces, visibility",
     )
     .eq("id", user.id)
     .maybeSingle();
