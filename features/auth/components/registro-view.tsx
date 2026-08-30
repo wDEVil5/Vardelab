@@ -9,10 +9,17 @@ import {
 } from "@/features/auth/components/auth-shell";
 import { SignupForm, type Rol } from "@/features/auth/components/signup-form";
 
-// Pasos según el rol elegido: el registro se adapta a quién eres.
-const PASOS: Record<Rol, { titulo: string; pasos: { titulo: string; texto: string }[] }> = {
+// Contenido del carrusel según el rol elegido: el panel habla de quién eres.
+const CONTENIDO: Record<
+  Rol,
+  {
+    pasosTitulo: string;
+    pasos: { titulo: string; texto: string }[];
+    valor: { eyebrow: string; titulo: string; texto: string };
+  }
+> = {
   estudiante: {
-    titulo: "Un camino simple para empezar",
+    pasosTitulo: "Un camino simple para empezar",
     pasos: [
       { titulo: "Completa tu perfil", texto: "Cuéntanos qué sabes hacer." },
       { titulo: "Explora un microproyecto", texto: "Elige un desafío real." },
@@ -21,9 +28,15 @@ const PASOS: Record<Rol, { titulo: string; pasos: { titulo: string; texto: strin
         texto: "Construye evidencia para tu portafolio.",
       },
     ],
+    valor: {
+      eyebrow: "Evidencia verificable",
+      titulo: "Tu trabajo, demostrable",
+      texto:
+        "Cada participación queda ligada a una organización real: es un hecho, no una línea más de CV.",
+    },
   },
   patrocinador: {
-    titulo: "Del desafío a tu equipo",
+    pasosTitulo: "Del desafío a tu equipo",
     pasos: [
       { titulo: "Publica un desafío", texto: "Describe una necesidad acotada." },
       {
@@ -35,37 +48,36 @@ const PASOS: Record<Rol, { titulo: string; pasos: { titulo: string; texto: strin
         texto: "Sigue los hitos y evalúa el trabajo.",
       },
     ],
+    valor: {
+      eyebrow: "Talento cerca",
+      titulo: "Estudiantes resolviendo",
+      texto:
+        "Suma un equipo motivado a una necesidad concreta, con acompañamiento y resultados por hitos.",
+    },
   },
 };
 
-/** A-01 · Vista de registro: el rol elegido controla los pasos del carrusel. */
+/** A-01 · Vista de registro: el rol elegido controla el carrusel del panel. */
 export function RegistroView() {
   const [rol, setRol] = useState<Rol>("estudiante");
-  const contenido = PASOS[rol];
+  const c = CONTENIDO[rol];
 
   const slides = [
-    <AuthSlide key="pasos" eyebrow="Así funciona" titulo={contenido.titulo}>
+    <AuthSlide key="pasos" eyebrow="Así funciona" titulo={c.pasosTitulo}>
       <div className="flex flex-col gap-4">
-        {contenido.pasos.map((paso, i) => (
+        {c.pasos.map((paso, i) => (
           <AuthShellStep
             key={paso.titulo}
             n={i + 1}
             titulo={paso.titulo}
             texto={paso.texto}
-            active={i === contenido.pasos.length - 1}
+            active={i === c.pasos.length - 1}
           />
         ))}
       </div>
     </AuthSlide>,
-    <AuthSlide
-      key="evidencia"
-      eyebrow="Evidencia verificable"
-      titulo="Tu trabajo, demostrable"
-    >
-      <p className="text-sm text-white/60">
-        Cada participación queda ligada a una organización real: es un hecho, no
-        una línea más de CV.
-      </p>
+    <AuthSlide key="valor" eyebrow={c.valor.eyebrow} titulo={c.valor.titulo}>
+      <p className="text-sm text-white/60">{c.valor.texto}</p>
     </AuthSlide>,
     <AuthSlide key="piloto" eyebrow="El piloto" titulo="Microproyectos guiados">
       <p className="text-sm text-white/60">
@@ -76,7 +88,7 @@ export function RegistroView() {
   ];
 
   return (
-    <AuthShell slides={slides}>
+    <AuthShell slides={slides} resetKey={rol}>
       <div className="rounded-2xl border border-border bg-white p-8">
         <h1 className="text-2xl font-bold text-ink">Crea tu cuenta</h1>
         <p className="mt-1 text-sm text-muted">

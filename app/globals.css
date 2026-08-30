@@ -33,3 +33,19 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/* Fundido suave para las transiciones del carrusel de auth. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 400ms ease-out;
+}
