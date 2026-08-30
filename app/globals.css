@@ -47,5 +47,12 @@ body {
 }
 
 .animate-fade-in {
-  animation: fade-in 400ms ease-out;
+  animation: fade-in 400ms ease-out both;
+}
+
+/* Entrada en carga (sobre el pliegue): respeta reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-rise {
+    animation: fade-in 600ms ease-out both;
+  }
 }
