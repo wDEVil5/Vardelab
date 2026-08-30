@@ -46,7 +46,7 @@ export function ProjectCard({ project }: { project: ProjectCardData }) {
   ].filter(Boolean);
 
   return (
-    <article className="flex flex-col gap-3 rounded-lg border border-border bg-white p-5">
+    <article className="flex h-full flex-col gap-3 rounded-lg border border-border bg-white p-5">
       {/* Estado: los proyectos del catálogo están abiertos. */}
       <div>
         <Badge tone="success">
@@ -89,10 +89,10 @@ export function ProjectCard({ project }: { project: ProjectCardData }) {
         <p className="text-xs text-muted">{meta.join(" · ")}</p>
       )}
 
-      {/* CTA */}
+      {/* CTA: mt-auto empuja el botón al fondo para alinearlo entre tarjetas. */}
       <Link
         href={`/proyectos/${project.id}`}
-        className={cn(buttonClasses({ variant: "primary" }), "mt-1 w-full")}
+        className={cn(buttonClasses({ variant: "primary" }), "mt-auto w-full")}
       >
         Ver proyecto →
       </Link>
