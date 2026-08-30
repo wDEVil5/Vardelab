@@ -14,6 +14,8 @@ export default async function Home() {
   const publicados = await getPublishedProjects();
   // Composición del hero: tarjetas reales del catálogo (sin ilustraciones).
   const heroProyectos = publicados.slice(0, 2);
+  // Destacados: hasta 3 tarjetas, consistentes con el catálogo (P-02).
+  const destacados = publicados.slice(0, 3);
 
   return (
     <main className="flex-1 bg-white">
@@ -61,6 +63,30 @@ export default async function Home() {
           )}
         </div>
       </section>
+
+      {/* 2 · PROYECTOS DESTACADOS */}
+      {destacados.length > 0 && (
+        <section className="bg-surface">
+          <div className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
+            <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+              Proyectos con un objetivo claro.
+            </h2>
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {destacados.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+            <div className="mt-8">
+              <Link
+                href="/proyectos"
+                className="text-sm font-medium text-electric hover:underline"
+              >
+                Ver todos los proyectos →
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
     </main>
   );
 }
