@@ -190,6 +190,31 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* 4.5 · PROPONER UN DESAFÍO (growth loop: el estudiante detecta necesidades) */}
+      <section className="mx-auto w-full max-w-5xl px-6 pb-4 sm:pb-8">
+        <Reveal>
+          <div className="flex flex-col gap-4 rounded-2xl border border-electric/20 bg-electric/5 p-8 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-lg font-semibold text-ink">
+                ¿Conoces una organización con un desafío?
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                Proponlo y ayúdanos a sumar proyectos reales para más estudiantes.
+              </p>
+            </div>
+            <Link
+              href="/proponer"
+              className={cn(
+                buttonClasses({ variant: "primary" }),
+                "h-11 shrink-0 px-6 text-base",
+              )}
+            >
+              Proponer un desafío
+            </Link>
+          </div>
+        </Reveal>
+      </section>
+
       {/* 5 · PRINCIPIOS (espacio diferenciador, anclado con scroll storytelling) */}
       <PinnedPrinciples items={PRINCIPIOS} />
 
