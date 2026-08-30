@@ -191,7 +191,7 @@ export default async function Home() {
       </section>
 
       {/* 4.5 · PROPONER UN DESAFÍO (growth loop: el estudiante detecta necesidades) */}
-      <section className="mx-auto w-full max-w-5xl px-6 pb-4 sm:pb-8">
+      <section className="mx-auto w-full max-w-5xl px-6 py-12 sm:py-16">
         <Reveal>
           <div className="flex flex-col gap-4 rounded-2xl border border-electric/20 bg-electric/5 p-8 sm:flex-row sm:items-center sm:justify-between">
             <div>
