@@ -48,21 +48,21 @@ export function ChipScroller({
         <div
           ref={ref}
           onScroll={update}
-          className="flex gap-2 overflow-x-auto scroll-smooth py-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex gap-2 overflow-x-auto scroll-smooth py-1 scrollbar-none"
         >
           {children}
         </div>
         <div
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-surface to-transparent transition-opacity duration-200",
+            "pointer-events-none absolute inset-y-0 left-0 w-10 bg-linear-to-r from-surface to-transparent transition-opacity duration-200",
             showLeft ? "opacity-100" : "opacity-0",
           )}
         />
         <div
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-surface to-transparent transition-opacity duration-200",
+            "pointer-events-none absolute inset-y-0 right-0 w-10 bg-linear-to-l from-surface to-transparent transition-opacity duration-200",
             showRight ? "opacity-100" : "opacity-0",
           )}
         />
