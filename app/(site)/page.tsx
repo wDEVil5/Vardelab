@@ -36,7 +36,7 @@ export default async function Home() {
               microproyectos claros, con objetivos, acompañamiento y evidencia de
               resultado.
             </p>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <Link
                 href="/proyectos"
                 className={cn(
@@ -47,13 +47,13 @@ export default async function Home() {
                 Explorar proyectos
               </Link>
               <Link
-                href="/registro?rol=patrocinador"
-                className={cn(
-                  buttonClasses({ variant: "secondary" }),
-                  "h-11 border border-border bg-white px-6 text-base",
-                )}
+                href="/organizaciones"
+                className="group inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors hover:text-electric"
               >
-                Publicar un desafío
+                Para organizaciones
+                <span className="transition-transform group-hover:translate-x-0.5">
+                  →
+                </span>
               </Link>
             </div>
           </div>
@@ -80,6 +80,7 @@ export default async function Home() {
               <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
                 Proyectos con un objetivo claro.
               </h2>
+              <p className="mt-2 text-muted">Roles abiertos para estudiantes.</p>
             </Reveal>
             <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {destacados.map((project, i) => (
@@ -213,7 +214,7 @@ export default async function Home() {
             <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-ink sm:text-4xl">
               Convierte una necesidad o una habilidad en un proyecto con impacto.
             </h2>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
               <Link
                 href="/proyectos"
                 className={cn(
@@ -224,13 +225,13 @@ export default async function Home() {
                 Explorar proyectos
               </Link>
               <Link
-                href="/registro?rol=patrocinador"
-                className={cn(
-                  buttonClasses({ variant: "secondary" }),
-                  "h-11 border border-border bg-white px-6 text-base",
-                )}
+                href="/organizaciones"
+                className="group inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors hover:text-electric"
               >
-                Publicar un desafío
+                Para organizaciones
+                <span className="transition-transform group-hover:translate-x-0.5">
+                  →
+                </span>
               </Link>
             </div>
           </div>
