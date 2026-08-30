@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
+import { buttonClasses } from "@/components/ui/button";
 import { getMyProfile, getMyProfileSkills } from "@/features/profile/queries";
+import { setProfileVisibility } from "@/features/profile/actions";
 import { getActiveSkills } from "@/features/skills/queries";
 import { ProfileForm } from "@/features/profile/components/profile-form";
 import { ProfileSkillsEditor } from "@/features/profile/components/profile-skills-editor";
@@ -41,6 +45,51 @@ export default async function PerfilPage() {
         </p>
         <div className="mt-4">
           <ProfileSkillsEditor skills={profileSkills} catalog={catalog} />
+        </div>
+      </section>
+
+      {/* Visibilidad del perfil: habilita (o no) la página pública /u/[id]. */}
+      <section className="mt-10">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-ink">Perfil público</h2>
+          <Badge tone={profile.visibility === "publico" ? "success" : "neutral"}>
+            {profile.visibility === "publico" ? "Público" : "Privado"}
+          </Badge>
+        </div>
+        <p className="mt-1 text-sm text-muted">
+          {profile.visibility === "publico"
+            ? "Tu perfil y tus evidencias públicas son visibles para cualquiera con el enlace."
+            : "Tu perfil es privado. Hazlo público para compartir tu portafolio."}
+        </p>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <form action={setProfileVisibility}>
+            <input
+              type="hidden"
+              name="visibility"
+              value={profile.visibility === "publico" ? "privado" : "publico"}
+            />
+            <button
+              type="submit"
+              className={buttonClasses({
+                variant: profile.visibility === "publico" ? "secondary" : "primary",
+                size: "sm",
+              })}
+            >
+              {profile.visibility === "publico"
+                ? "Hacer privado"
+                : "Hacer público"}
+            </button>
+          </form>
+
+          {profile.visibility === "publico" && (
+            <Link
+              href={`/u/${profile.id}`}
+              className={buttonClasses({ variant: "ghost", size: "sm" })}
+            >
+              Ver mi página pública
+            </Link>
+          )}
         </div>
       </section>
     </main>
