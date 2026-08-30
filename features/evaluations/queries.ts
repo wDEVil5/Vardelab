@@ -77,3 +77,36 @@ export async function getTeamForEvaluation(
     comentario: evaluaciones.get(m.user_id)?.comentario ?? null,
   }));
 }
+
+/**
+ * Evaluaciones que el usuario actual recibió, indexadas por proyecto. La RLS
+ * `evaluations_select_involved_or_manager` (M6) deja al evaluado ver las suyas.
+ * Un proyecto tiene a lo sumo una (un gestor por proyecto), así que se devuelve
+ * un Map project_id → { puntaje, comentario } para cruzar con los equipos.
+ */
+export type MyEvaluation = { puntaje: number | null; comentario: string | null };
+
+export async function getMyEvaluationsByProject(): Promise<Map<string, MyEvaluation>> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return new Map();
+
+  const { data, error } = await supabase
+    .from("evaluations")
+    .select("project_id, puntaje, comentario")
+    .eq("evaluatee_id", user.id);
+
+  if (error) {
+    console.error("[getMyEvaluationsByProject]", error.message);
+    return new Map();
+  }
+
+  const map = new Map<string, MyEvaluation>();
+  for (const e of data ?? []) {
+    map.set(e.project_id, { puntaje: e.puntaje, comentario: e.comentario });
+  }
+  return map;
+}
