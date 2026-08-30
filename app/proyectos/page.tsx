@@ -7,6 +7,7 @@ import {
   type ProjectFilters,
 } from "@/features/projects/filters";
 import { ProjectCard } from "@/features/projects/components/project-card";
+import { CatalogSearch } from "@/features/projects/components/catalog-search";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -67,22 +68,10 @@ export default async function ProyectosPage({ searchParams }: PageProps) {
           <p className="text-muted">Encuentra una oportunidad que calce contigo.</p>
         </header>
 
-        {/* Buscador (GET): conserva los filtros activos como campos ocultos. */}
-        <form action="/proyectos" method="get" className="mt-8">
-          {filters.skill && (
-            <input type="hidden" name="skill" value={filters.skill} />
-          )}
-          {filters.modalidad && (
-            <input type="hidden" name="modalidad" value={filters.modalidad} />
-          )}
-          <input
-            type="search"
-            name="q"
-            defaultValue={filters.q ?? ""}
-            placeholder="Buscar por tema, rol o impacto"
-            className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-ink placeholder:text-muted focus:border-electric focus:outline-none"
-          />
-        </form>
+        {/* Buscador en vivo: actualiza ?q= al escribir/borrar. */}
+        <div className="mt-8">
+          <CatalogSearch placeholder="Buscar por tema, rol o impacto" />
+        </div>
 
         {/* Chips de habilidad */}
         <div className="mt-4 flex flex-wrap gap-2">
@@ -119,13 +108,23 @@ export default async function ProyectosPage({ searchParams }: PageProps) {
           ))}
         </div>
 
-        {/* Conteo */}
-        <p className="mt-8 text-lg font-semibold text-ink">
-          {projects.length}{" "}
-          {projects.length === 1
-            ? "oportunidad abierta"
-            : "oportunidades abiertas"}
-        </p>
+        {/* Conteo + limpiar filtros */}
+        <div className="mt-8 flex items-center justify-between gap-3">
+          <p className="text-lg font-semibold text-ink">
+            {projects.length}{" "}
+            {projects.length === 1
+              ? "oportunidad abierta"
+              : "oportunidades abiertas"}
+          </p>
+          {filtrando && (
+            <Link
+              href="/proyectos"
+              className="text-sm font-medium text-electric hover:underline"
+            >
+              Limpiar filtros
+            </Link>
+          )}
+        </div>
 
         {/* Grilla, estado vacío por filtro, o catálogo vacío */}
         {projects.length === 0 ? (
