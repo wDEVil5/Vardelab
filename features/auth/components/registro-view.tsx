@@ -5,14 +5,12 @@ import Link from "next/link";
 import {
   AuthShell,
   AuthShellStep,
+  AuthSlide,
 } from "@/features/auth/components/auth-shell";
 import { SignupForm, type Rol } from "@/features/auth/components/signup-form";
 
-// Contenido del panel según el rol elegido: el registro se adapta a quién eres.
-const ASIDE: Record<
-  Rol,
-  { titulo: string; pasos: { titulo: string; texto: string }[] }
-> = {
+// Pasos según el rol elegido: el registro se adapta a quién eres.
+const PASOS: Record<Rol, { titulo: string; pasos: { titulo: string; texto: string }[] }> = {
   estudiante: {
     titulo: "Un camino simple para empezar",
     pasos: [
@@ -40,34 +38,45 @@ const ASIDE: Record<
   },
 };
 
-/** A-01 · Vista de registro: el rol elegido controla el panel de marca. */
+/** A-01 · Vista de registro: el rol elegido controla los pasos del carrusel. */
 export function RegistroView() {
   const [rol, setRol] = useState<Rol>("estudiante");
-  const contenido = ASIDE[rol];
+  const contenido = PASOS[rol];
+
+  const slides = [
+    <AuthSlide key="pasos" eyebrow="Así funciona" titulo={contenido.titulo}>
+      <div className="flex flex-col gap-4">
+        {contenido.pasos.map((paso, i) => (
+          <AuthShellStep
+            key={paso.titulo}
+            n={i + 1}
+            titulo={paso.titulo}
+            texto={paso.texto}
+            active={i === contenido.pasos.length - 1}
+          />
+        ))}
+      </div>
+    </AuthSlide>,
+    <AuthSlide
+      key="evidencia"
+      eyebrow="Evidencia verificable"
+      titulo="Tu trabajo, demostrable"
+    >
+      <p className="text-sm text-white/60">
+        Cada participación queda ligada a una organización real: es un hecho, no
+        una línea más de CV.
+      </p>
+    </AuthSlide>,
+    <AuthSlide key="piloto" eyebrow="El piloto" titulo="Microproyectos guiados">
+      <p className="text-sm text-white/60">
+        10+ proyectos piloto · 4 semanas de duración promedio, por hitos y con
+        acompañamiento.
+      </p>
+    </AuthSlide>,
+  ];
 
   return (
-    <AuthShell
-      aside={
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-wide text-electric">
-              Así funciona
-            </span>
-            <span className="text-lg font-semibold text-white">
-              {contenido.titulo}
-            </span>
-          </div>
-          {contenido.pasos.map((paso, i) => (
-            <AuthShellStep
-              key={paso.titulo}
-              n={i + 1}
-              titulo={paso.titulo}
-              texto={paso.texto}
-            />
-          ))}
-        </div>
-      }
-    >
+    <AuthShell slides={slides}>
       <div className="rounded-2xl border border-border bg-white p-8">
         <h1 className="text-2xl font-bold text-ink">Crea tu cuenta</h1>
         <p className="mt-1 text-sm text-muted">
