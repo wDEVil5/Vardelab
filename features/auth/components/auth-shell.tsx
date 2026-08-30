@@ -11,9 +11,11 @@ import { AuthCarousel } from "@/features/auth/components/auth-carousel";
  */
 export function AuthShell({
   slides,
+  resetKey,
   children,
 }: {
   slides: ReactNode[];
+  resetKey?: string;
   children: ReactNode;
 }) {
   return (
@@ -29,7 +31,7 @@ export function AuthShell({
           </p>
         </div>
 
-        <AuthCarousel slides={slides} />
+        <AuthCarousel slides={slides} resetKey={resetKey} />
 
         <p className="text-sm text-white/60">Piloto independiente</p>
       </aside>
