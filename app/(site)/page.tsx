@@ -3,6 +3,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/reveal";
 import { Faq } from "@/components/faq";
+import { PinnedPrinciples } from "@/components/pinned-principles";
 import { getPublishedProjects } from "@/features/projects/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
 
@@ -177,41 +178,8 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 5 · PRINCIPIOS (espacio diferenciador, en oscuro) */}
-      <section className="relative overflow-hidden bg-ink text-white">
-        {/* Glows sutiles: dan profundidad sin coste de animación. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-20 -top-24 size-96 rounded-full bg-electric/15 blur-3xl"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-24 left-1/4 size-72 rounded-full bg-sprout/10 blur-3xl"
-        />
-        <div className="relative mx-auto w-full max-w-5xl px-6 py-20 sm:py-28">
-          <Reveal>
-            <h2 className="max-w-xl text-2xl font-bold tracking-tight sm:text-3xl">
-              Experiencias claras para ambas partes.
-            </h2>
-          </Reveal>
-          <div className="mt-12 grid gap-8 md:grid-cols-3">
-            {PRINCIPIOS.map((p, i) => (
-              <Reveal key={p.titulo} delayMs={i * 100}>
-                <div className="group">
-                  <span className="text-sm font-semibold text-electric">
-                    0{i + 1}
-                  </span>
-                  <h3 className="mt-3 text-lg font-semibold">{p.titulo}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-white/60">
-                    {p.texto}
-                  </p>
-                  <div className="mt-5 h-px w-10 bg-white/20 transition-all duration-300 group-hover:w-20 group-hover:bg-electric" />
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* 5 · PRINCIPIOS (espacio diferenciador, anclado con scroll storytelling) */}
+      <PinnedPrinciples items={PRINCIPIOS} />
 
       {/* 6 · PREGUNTAS FRECUENTES */}
       <section className="mx-auto w-full max-w-3xl px-6 py-16 sm:py-20">
