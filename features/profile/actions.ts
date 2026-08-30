@@ -72,6 +72,31 @@ export async function updateProfile(
   redirect("/perfil?guardado=1");
 }
 
+/**
+ * Hace el perfil público o privado (`profiles.visibility`). Es lo que habilita
+ * la página pública `/u/[id]`: mientras es `privado`, la RLS no deja verlo a
+ * terceros. El nuevo estado llega en el formulario. RLS `profiles_update_own`.
+ */
+export async function setProfileVisibility(formData: FormData): Promise<void> {
+  const nueva = String(formData.get("visibility") ?? "");
+  if (nueva !== "publico" && nueva !== "privado") return;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ visibility: nueva })
+    .eq("id", user.id);
+
+  if (error) console.error("[setProfileVisibility]", error.message);
+
+  revalidatePath("/perfil");
+}
+
 export type AddSkillState = { error?: string };
 
 const NIVELES = ["basico", "intermedio", "avanzado"] as const;
