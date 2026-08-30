@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/reveal";
 import { Faq } from "@/components/faq";
 import { PinnedPrinciples } from "@/components/pinned-principles";
+import { SiteFooter } from "@/components/site-footer";
 import { getPublishedProjects } from "@/features/projects/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
 
@@ -21,7 +22,8 @@ export default async function Home() {
   const destacados = publicados.slice(0, 3);
 
   return (
-    <main className="flex-1 bg-white">
+    <>
+      <main className="flex-1 bg-white">
       {/* 1 · HERO */}
       <section className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-24">
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
@@ -225,7 +227,10 @@ export default async function Home() {
           </div>
         </Reveal>
       </section>
-    </main>
+      </main>
+
+      <SiteFooter />
+    </>
   );
 }
 
