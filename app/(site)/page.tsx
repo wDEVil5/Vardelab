@@ -2,6 +2,7 @@ import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/reveal";
+import { Faq } from "@/components/faq";
 import { getPublishedProjects } from "@/features/projects/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
 
@@ -211,9 +212,47 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* 6 · PREGUNTAS FRECUENTES */}
+      <section className="mx-auto w-full max-w-3xl px-6 py-16 sm:py-20">
+        <Reveal>
+          <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+            Preguntas frecuentes
+          </h2>
+        </Reveal>
+        <Reveal delayMs={80}>
+          <div className="mt-8">
+            <Faq items={FAQ} />
+          </div>
+        </Reveal>
+      </section>
     </main>
   );
 }
+
+// Preguntas frecuentes de la landing.
+const FAQ = [
+  {
+    q: "¿Qué tipo de proyectos se pueden publicar?",
+    a: "Necesidades reales y acotadas —análisis de datos, prototipos, automatizaciones, contenido, investigación—, siempre con un objetivo y un entregable claros.",
+  },
+  {
+    q: "¿Cuánto dura un microproyecto?",
+    a: "Son cortos y acotados, del orden de pocas semanas. La organización define la duración según el alcance del desafío.",
+  },
+  {
+    q: "¿Cómo se seleccionan los estudiantes?",
+    a: "Cada estudiante postula a un rol del proyecto; la organización revisa las postulaciones y elige a quienes mejor calzan con el desafío.",
+  },
+  {
+    q: "¿Qué recibe una organización?",
+    a: "Una necesidad concreta avanzada por un equipo de estudiantes, con seguimiento por hitos y una entrega con evidencia del resultado.",
+  },
+  {
+    q: "¿CampusLab reemplaza un puesto de trabajo?",
+    a: "No. Es una experiencia acotada para resolver un desafío puntual y generar evidencia; no sustituye un empleo ni una contratación.",
+  },
+];
 
 // Principios de CampusLab (sección diferenciadora).
 const PRINCIPIOS = [
