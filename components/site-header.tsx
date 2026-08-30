@@ -14,7 +14,7 @@ export async function SiteHeader() {
   return (
     <header className="border-b border-border">
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-6">
-        <Link href="/proyectos" className="font-bold text-ink">
+        <Link href="/" className="font-bold text-ink">
           CampusLab
         </Link>
 
