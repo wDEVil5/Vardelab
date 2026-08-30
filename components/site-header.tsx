@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
+import { NavLink } from "@/components/nav-link";
 import { signOut } from "@/features/auth/actions";
 import { getCurrentUser } from "@/features/auth/queries";
 
@@ -12,39 +13,34 @@ export async function SiteHeader() {
   const user = await getCurrentUser();
 
   return (
-    <header className="border-b border-border">
-      <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-6">
+    <header className="border-b border-border bg-white">
+      <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-6">
         <Link href="/" className="font-bold text-ink">
           CampusLab
         </Link>
 
-        <nav className="flex items-center gap-3">
+        <nav className="flex items-center gap-5">
+          <NavLink href="/proyectos">Explorar</NavLink>
+
+          {user?.esPatrocinador && (
+            <>
+              <NavLink href="/mis-organizaciones" className="hidden sm:inline">
+                Organizaciones
+              </NavLink>
+              <NavLink href="/mis-proyectos">Mis proyectos</NavLink>
+            </>
+          )}
+          {user?.esEstudiante && (
+            <NavLink href="/mis-postulaciones">Mis postulaciones</NavLink>
+          )}
+          {!user && (
+            <NavLink href="/organizaciones" className="hidden sm:inline">
+              Organizaciones
+            </NavLink>
+          )}
+
           {user ? (
             <>
-              {user.esPatrocinador && (
-                <>
-                  <Link
-                    href="/mis-organizaciones"
-                    className="hidden text-sm text-muted transition-colors hover:text-electric sm:inline"
-                  >
-                    Organizaciones
-                  </Link>
-                  <Link
-                    href="/mis-proyectos"
-                    className="text-sm text-muted transition-colors hover:text-electric"
-                  >
-                    Mis proyectos
-                  </Link>
-                </>
-              )}
-              {user.esEstudiante && (
-                <Link
-                  href="/mis-postulaciones"
-                  className="text-sm text-muted transition-colors hover:text-electric"
-                >
-                  Mis postulaciones
-                </Link>
-              )}
               <Link
                 href="/perfil"
                 className="hidden text-sm font-medium text-muted transition-colors hover:text-electric sm:inline"
@@ -61,20 +57,12 @@ export async function SiteHeader() {
               </form>
             </>
           ) : (
-            <>
-              <Link
-                href="/ingresar"
-                className={buttonClasses({ variant: "ghost", size: "sm" })}
-              >
-                Ingresar
-              </Link>
-              <Link
-                href="/registro"
-                className={buttonClasses({ variant: "primary", size: "sm" })}
-              >
-                Crear cuenta
-              </Link>
-            </>
+            <Link
+              href="/ingresar"
+              className={buttonClasses({ variant: "primary", size: "sm" })}
+            >
+              Acceder
+            </Link>
           )}
         </nav>
       </div>
