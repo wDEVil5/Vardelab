@@ -137,6 +137,93 @@ export default async function Home() {
           </Reveal>
         </div>
       </section>
+
+      {/* 4 · CÓMO FUNCIONA */}
+      <section id="como-funciona" className="scroll-mt-20 bg-surface">
+        <div className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
+          <Reveal>
+            <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+              Del desafío al resultado, paso a paso.
+            </h2>
+          </Reveal>
+          <div className="mt-10 grid gap-10 md:grid-cols-2 md:gap-16">
+            <Flujo
+              eyebrow="Para estudiantes"
+              tone="electric"
+              pasos={[
+                "Crea tu perfil",
+                "Postula a un desafío",
+                "Entrega evidencia de tu trabajo",
+              ]}
+            />
+            <Flujo
+              eyebrow="Para organizaciones"
+              tone="sprout"
+              pasos={[
+                "Define una necesidad",
+                "Publica tu desafío",
+                "Revisa avances y valida el resultado",
+              ]}
+            />
+          </div>
+        </div>
+      </section>
     </main>
+  );
+}
+
+// Tonos por flujo (clases completas para que Tailwind las incluya).
+const NODO_TONE = {
+  electric: "group-hover:border-electric group-hover:bg-electric",
+  sprout: "group-hover:border-sprout group-hover:bg-sprout",
+} as const;
+const EYEBROW_TONE = {
+  electric: "text-electric",
+  sprout: "text-sprout",
+} as const;
+
+/** Flujo vertical de pasos numerados con línea conectora y reveal escalonado. */
+function Flujo({
+  eyebrow,
+  tone,
+  pasos,
+}: {
+  eyebrow: string;
+  tone: keyof typeof NODO_TONE;
+  pasos: string[];
+}) {
+  return (
+    <div>
+      <span
+        className={cn(
+          "text-xs font-semibold uppercase tracking-wide",
+          EYEBROW_TONE[tone],
+        )}
+      >
+        {eyebrow}
+      </span>
+      <ol className="relative mt-6 flex flex-col gap-6">
+        {/* Línea conectora detrás de los nodos. */}
+        <span
+          aria-hidden
+          className="absolute bottom-4 left-4 top-4 w-px bg-border"
+        />
+        {pasos.map((paso, i) => (
+          <Reveal key={paso} delayMs={i * 120}>
+            <li className="group relative flex items-center gap-4">
+              <span
+                className={cn(
+                  "z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-border bg-white text-sm font-semibold text-muted transition-colors group-hover:text-white",
+                  NODO_TONE[tone],
+                )}
+              >
+                {i + 1}
+              </span>
+              <p className="font-medium text-ink">{paso}</p>
+            </li>
+          </Reveal>
+        ))}
+      </ol>
+    </div>
   );
 }
