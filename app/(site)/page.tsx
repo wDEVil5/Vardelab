@@ -41,7 +41,7 @@ export default async function Home() {
                 Explorar proyectos
               </Link>
               <Link
-                href="/registro"
+                href="/registro?rol=patrocinador"
                 className="text-sm font-medium text-electric hover:underline"
               >
                 Soy una organización →
