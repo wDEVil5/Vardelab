@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { NavLink } from "@/components/nav-link";
+import { SiteHeaderBar } from "@/components/site-header-bar";
 import { MobileMenu, type MobileNavItem } from "@/components/mobile-menu";
 import { signOut } from "@/features/auth/actions";
 import { getCurrentUser } from "@/features/auth/queries";
@@ -28,11 +29,16 @@ export async function SiteHeader() {
       ? [{ href: "/mis-postulaciones", label: "Mis postulaciones" }]
       : []),
     ...(user ? [{ href: "/perfil", label: "Mi perfil" }] : []),
-    ...(!user ? [{ href: "/organizaciones", label: "Para organizaciones" }] : []),
+    ...(!user
+      ? [
+          { href: "/#como-funciona", label: "Cómo funciona" },
+          { href: "/organizaciones", label: "Para organizaciones" },
+        ]
+      : []),
   ];
 
   return (
-    <header className="relative border-b border-border bg-white">
+    <SiteHeaderBar>
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-6">
         <Link href="/" className="font-bold text-ink">
           CampusLab
@@ -54,9 +60,14 @@ export async function SiteHeader() {
             <NavLink href="/mis-postulaciones">Mis postulaciones</NavLink>
           )}
           {!user && (
-            <NavLink href="/organizaciones" className="hidden sm:inline">
-              Organizaciones
-            </NavLink>
+            <>
+              <NavLink href="/#como-funciona" className="hidden sm:inline">
+                Cómo funciona
+              </NavLink>
+              <NavLink href="/organizaciones" className="hidden sm:inline">
+                Organizaciones
+              </NavLink>
+            </>
           )}
 
           {user ? (
@@ -79,9 +90,9 @@ export async function SiteHeader() {
           ) : (
             <Link
               href="/ingresar"
-              className={buttonClasses({ variant: "primary", size: "sm" })}
+              className={buttonClasses({ variant: "outline", size: "sm" })}
             >
-              Acceder
+              Iniciar sesión
             </Link>
           )}
         </nav>
@@ -89,6 +100,6 @@ export async function SiteHeader() {
         {/* Navegación móvil. */}
         <MobileMenu items={mobileItems} userName={user?.nombre ?? null} />
       </div>
-    </header>
+    </SiteHeaderBar>
   );
 }

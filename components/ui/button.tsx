@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 const variantClasses = {
   primary: "bg-electric text-white hover:bg-electric/90",
   secondary: "bg-surface text-ink hover:bg-border",
+  outline: "border border-border bg-white text-ink hover:bg-surface",
   ghost: "text-electric hover:bg-electric/10",
   danger: "bg-coral text-white hover:bg-coral/90",
 } as const;

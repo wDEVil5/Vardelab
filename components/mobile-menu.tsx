@@ -94,9 +94,9 @@ export function MobileMenu({
                 ) : (
                   <Link
                     href="/ingresar"
-                    className={buttonClasses({ variant: "primary", size: "sm" })}
+                    className={buttonClasses({ variant: "outline", size: "sm" })}
                   >
-                    Acceder
+                    Iniciar sesión
                   </Link>
                 )}
               </div>
