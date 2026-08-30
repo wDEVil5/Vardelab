@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Oculta la barra de scroll (manteniendo el scroll) en todos los navegadores. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* CampusLab — Foundations (design tokens) · ver PRD §5.1 y página Figma "Foundations" */
 @theme {
   /* Color */
