@@ -2,7 +2,9 @@ import Link from "next/link";
 
 /**
  * Pie de la landing pública. Minimalista: marca de texto, navegación y una nota
- * de piloto. Sin logos ni datos ficticios.
+ * de piloto. Sin logos ni datos ficticios. Se muestra con efecto "cortina":
+ * queda fijo detrás del contenido (ver `RevealFooter`), que lo cubre y lo
+ * revela al llegar al fondo.
  */
 export function SiteFooter() {
   return (

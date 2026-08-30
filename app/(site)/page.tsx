@@ -5,6 +5,7 @@ import { Reveal } from "@/components/reveal";
 import { Faq } from "@/components/faq";
 import { PinnedPrinciples } from "@/components/pinned-principles";
 import { SiteFooter } from "@/components/site-footer";
+import { RevealFooter } from "@/components/reveal-footer";
 import { getPublishedProjects } from "@/features/projects/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
 
@@ -23,7 +24,7 @@ export default async function Home() {
 
   return (
     <>
-      <main className="flex-1 bg-white">
+      <main className="relative z-10 mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-white shadow-[0_8px_24px_-16px_rgba(13,37,59,0.12)]">
       {/* 1 · HERO */}
       <section className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-24">
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
@@ -264,7 +265,9 @@ export default async function Home() {
       </section>
       </main>
 
-      <SiteFooter />
+      <RevealFooter>
+        <SiteFooter />
+      </RevealFooter>
     </>
   );
 }
