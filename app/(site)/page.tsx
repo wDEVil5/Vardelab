@@ -23,7 +23,7 @@ export default async function Home() {
       {/* 1 · HERO */}
       <section className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-24">
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-          <div className="flex flex-col items-start gap-6">
+          <div className="flex animate-rise flex-col items-start gap-6">
             <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
               Desafíos reales. Talento que se demuestra.
             </h1>
@@ -56,7 +56,10 @@ export default async function Home() {
 
           {/* Composición con tarjetas reales de proyecto. */}
           {heroProyectos.length > 0 && (
-            <div className="flex flex-col gap-4">
+            <div
+              className="flex animate-rise flex-col gap-4"
+              style={{ animationDelay: "150ms" }}
+            >
               {heroProyectos.map((project) => (
                 <ProjectCard key={project.id} project={project} />
               ))}
@@ -69,12 +72,16 @@ export default async function Home() {
       {destacados.length > 0 && (
         <section className="bg-surface">
           <div className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
-            <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-              Proyectos con un objetivo claro.
-            </h2>
+            <Reveal>
+              <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                Proyectos con un objetivo claro.
+              </h2>
+            </Reveal>
             <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {destacados.map((project) => (
-                <ProjectCard key={project.id} project={project} />
+              {destacados.map((project, i) => (
+                <Reveal key={project.id} delayMs={i * 80} className="h-full">
+                  <ProjectCard project={project} />
+                </Reveal>
               ))}
             </div>
             <div className="mt-8">
@@ -97,7 +104,7 @@ export default async function Home() {
           </h2>
         </Reveal>
         <div className="mt-8 grid gap-4 md:grid-cols-2">
-          <Reveal delayMs={80}>
+          <Reveal delayMs={80} className="h-full">
             <div className="group flex h-full flex-col gap-4 rounded-2xl border border-border bg-white p-8 transition-all duration-200 hover:-translate-y-1 hover:border-electric/40 hover:shadow-lg">
               <span className="text-xs font-semibold uppercase tracking-wide text-electric">
                 Estudiantes
@@ -116,7 +123,7 @@ export default async function Home() {
               </Link>
             </div>
           </Reveal>
-          <Reveal delayMs={160}>
+          <Reveal delayMs={160} className="h-full">
             <div className="group flex h-full flex-col gap-4 rounded-2xl border border-border bg-white p-8 transition-all duration-200 hover:-translate-y-1 hover:border-sprout/50 hover:shadow-lg">
               <span className="text-xs font-semibold uppercase tracking-wide text-sprout">
                 Organizaciones
@@ -168,9 +175,62 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* 5 · PRINCIPIOS (espacio diferenciador, en oscuro) */}
+      <section className="relative overflow-hidden bg-ink text-white">
+        {/* Glows sutiles: dan profundidad sin coste de animación. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-20 -top-24 size-96 rounded-full bg-electric/15 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-24 left-1/4 size-72 rounded-full bg-sprout/10 blur-3xl"
+        />
+        <div className="relative mx-auto w-full max-w-5xl px-6 py-20 sm:py-28">
+          <Reveal>
+            <h2 className="max-w-xl text-2xl font-bold tracking-tight sm:text-3xl">
+              Experiencias claras para ambas partes.
+            </h2>
+          </Reveal>
+          <div className="mt-12 grid gap-8 md:grid-cols-3">
+            {PRINCIPIOS.map((p, i) => (
+              <Reveal key={p.titulo} delayMs={i * 100}>
+                <div className="group">
+                  <span className="text-sm font-semibold text-electric">
+                    0{i + 1}
+                  </span>
+                  <h3 className="mt-3 text-lg font-semibold">{p.titulo}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-white/60">
+                    {p.texto}
+                  </p>
+                  <div className="mt-5 h-px w-10 bg-white/20 transition-all duration-300 group-hover:w-20 group-hover:bg-electric" />
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
+
+// Principios de CampusLab (sección diferenciadora).
+const PRINCIPIOS = [
+  {
+    titulo: "Alcance definido",
+    texto: "Objetivos, duración y entregables visibles desde el inicio.",
+  },
+  {
+    titulo: "Seguimiento por hitos",
+    texto: "Cada proyecto tiene avances y expectativas claras.",
+  },
+  {
+    titulo: "Resultado demostrable",
+    texto:
+      "El trabajo genera evidencia útil para estudiantes y organizaciones.",
+  },
+];
 
 // Tonos por flujo (clases completas para que Tailwind las incluya).
 const NODO_TONE = {
