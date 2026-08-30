@@ -13,6 +13,19 @@ export type ProjectFilters = {
   modalidad?: string;
 };
 
+/**
+ * Normaliza texto para buscar sin distinguir mayúsculas ni acentos: pasa a
+ * minúsculas y descompone los diacríticos (NFD) para eliminar el rango de marcas
+ * combinantes (U+0300–U+036F). Así "Automatización", "automatizacion" y
+ * "AUTOMATIZACIÓN" comparan igual.
+ */
+function normalizar(texto: string): string {
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+}
+
 /** Habilidades distintas presentes en los proyectos, ordenadas, para los chips. */
 export function projectSkillFacets(projects: ProjectCard[]): string[] {
   const set = new Set<string>();
@@ -31,12 +44,12 @@ export function filterProjects(
   projects: ProjectCard[],
   { q, skill, modalidad }: ProjectFilters,
 ): ProjectCard[] {
-  const needle = q?.trim().toLowerCase();
+  const needle = q ? normalizar(q.trim()) : "";
 
   return projects.filter((p) => {
-    // Búsqueda por texto: título o resumen.
+    // Búsqueda por texto (sin acentos): título o resumen.
     if (needle) {
-      const heno = `${p.titulo} ${p.resumen ?? ""}`.toLowerCase();
+      const heno = normalizar(`${p.titulo} ${p.resumen ?? ""}`);
       if (!heno.includes(needle)) return false;
     }
 
