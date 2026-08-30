@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Reveal } from "@/components/reveal";
 import { getPublishedProjects } from "@/features/projects/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
 
@@ -87,6 +88,55 @@ export default async function Home() {
           </div>
         </section>
       )}
+
+      {/* 3 · DOS CAMINOS */}
+      <section className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
+        <Reveal>
+          <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+            Una plataforma, dos formas de participar.
+          </h2>
+        </Reveal>
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
+          <Reveal delayMs={80}>
+            <div className="group flex h-full flex-col gap-4 rounded-2xl border border-border bg-white p-8 transition-all duration-200 hover:-translate-y-1 hover:border-electric/40 hover:shadow-lg">
+              <span className="text-xs font-semibold uppercase tracking-wide text-electric">
+                Estudiantes
+              </span>
+              <p className="text-lg font-semibold text-ink">
+                Construye experiencia resolviendo desafíos reales.
+              </p>
+              <Link
+                href="/proyectos"
+                className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-electric"
+              >
+                Explorar proyectos
+                <span className="transition-transform group-hover:translate-x-0.5">
+                  →
+                </span>
+              </Link>
+            </div>
+          </Reveal>
+          <Reveal delayMs={160}>
+            <div className="group flex h-full flex-col gap-4 rounded-2xl border border-border bg-white p-8 transition-all duration-200 hover:-translate-y-1 hover:border-sprout/50 hover:shadow-lg">
+              <span className="text-xs font-semibold uppercase tracking-wide text-sprout">
+                Organizaciones
+              </span>
+              <p className="text-lg font-semibold text-ink">
+                Transforma una necesidad concreta en un proyecto acotado.
+              </p>
+              <Link
+                href="/registro?rol=patrocinador"
+                className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-electric"
+              >
+                Publicar un desafío
+                <span className="transition-transform group-hover:translate-x-0.5">
+                  →
+                </span>
+              </Link>
+            </div>
+          </Reveal>
+        </div>
+      </section>
     </main>
   );
 }
