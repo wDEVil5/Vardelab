@@ -70,14 +70,7 @@ export function SignupForm({
                   onChange={() => onRolChange(tipo.valor)}
                   className="sr-only"
                 />
-                <div className="flex items-start justify-between">
-                  <span className="text-2xl">{tipo.emoji}</span>
-                  {activo && (
-                    <span className="rounded-full bg-electric px-2 py-0.5 text-xs font-medium text-white">
-                      ✓ Seleccionado
-                    </span>
-                  )}
-                </div>
+                <span className="text-2xl">{tipo.emoji}</span>
                 <span
                   className={cn(
                     "mt-1 text-sm font-semibold",
