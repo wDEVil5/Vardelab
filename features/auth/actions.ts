@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isPasswordValid } from "@/features/auth/password";
 
 /**
  * Acciones de autenticación (Server Actions).
@@ -34,8 +35,11 @@ export async function signUp(
   if (!email || !password || !nombre) {
     return { error: "Completa nombre, correo y contraseña." };
   }
-  if (password.length < 6) {
-    return { error: "La contraseña debe tener al menos 6 caracteres." };
+  if (!isPasswordValid(password)) {
+    return {
+      error:
+        "La contraseña no cumple los requisitos: 8+ caracteres, mayúscula, minúscula y número.",
+    };
   }
   if (!ROLES_AUTOSERVICIO.includes(rol as (typeof ROLES_AUTOSERVICIO)[number])) {
     return { error: "Selecciona un tipo de cuenta válido." };
