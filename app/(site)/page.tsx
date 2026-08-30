@@ -194,6 +194,37 @@ export default async function Home() {
           </div>
         </Reveal>
       </section>
+
+      {/* 7 · CTA FINAL */}
+      <section className="mx-auto w-full max-w-5xl px-6 pb-20 sm:pb-28">
+        <Reveal>
+          <div className="rounded-3xl border border-border bg-surface px-6 py-16 text-center sm:px-12">
+            <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+              Convierte una necesidad o una habilidad en un proyecto con impacto.
+            </h2>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/proyectos"
+                className={cn(
+                  buttonClasses({ variant: "primary" }),
+                  "h-11 px-6 text-base",
+                )}
+              >
+                Explorar proyectos
+              </Link>
+              <Link
+                href="/registro?rol=patrocinador"
+                className={cn(
+                  buttonClasses({ variant: "secondary" }),
+                  "h-11 border border-border bg-white px-6 text-base",
+                )}
+              >
+                Publicar un desafío
+              </Link>
+            </div>
+          </div>
+        </Reveal>
+      </section>
     </main>
   );
 }
