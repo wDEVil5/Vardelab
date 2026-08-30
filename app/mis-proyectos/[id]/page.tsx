@@ -14,7 +14,8 @@ import { RoleSkillsEditor } from "@/features/projects/components/role-skills-edi
 import { PublishControls } from "@/features/projects/components/publish-controls";
 import { DeleteProjectButton } from "@/features/projects/components/delete-project-button";
 import { getActiveSkills, type Skill } from "@/features/skills/queries";
-import { getProjectTeam } from "@/features/teams/queries";
+import { getTeamForEvaluation } from "@/features/evaluations/queries";
+import { MemberEvaluationForm } from "@/features/evaluations/components/member-evaluation-form";
 import {
   getMilestonesWithSubmissions,
   type MilestoneWithSubmissions,
@@ -51,7 +52,7 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
   const roles = project.roles ?? [];
   const [catalog, team, milestones] = await Promise.all([
     getActiveSkills(),
-    getProjectTeam(project.id),
+    getTeamForEvaluation(project.id),
     getMilestonesWithSubmissions(project.id),
   ]);
   const estado = ESTADO[project.status] ?? {
@@ -122,28 +123,23 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
         <AddRoleForm projectId={project.id} />
       </div>
 
-      {/* Equipo */}
-      {team && team.members.length > 0 && (
+      {/* Equipo y evaluación de cada integrante */}
+      {team && team.length > 0 && (
         <section className="mt-10">
           <h2 className="text-lg font-semibold text-ink">
-            Equipo ({team.members.length})
+            Equipo ({team.length})
           </h2>
-          <ul className="mt-4 flex flex-col gap-2">
-            {team.members.map((m) => (
-              <li
+          <p className="mt-1 text-sm text-muted">
+            Evalúa a cada integrante (1–5 y un comentario). La evaluación es
+            privada: solo la ve el integrante.
+          </p>
+          <ul className="mt-4 flex flex-col gap-3">
+            {team.map((m) => (
+              <MemberEvaluationForm
                 key={m.userId}
-                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-white p-4"
-              >
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-sm font-medium text-ink">
-                    {m.nombre}
-                  </span>
-                  {m.carrera && (
-                    <span className="text-xs text-muted">{m.carrera}</span>
-                  )}
-                </div>
-                {m.rol && <Badge tone="brand">{m.rol}</Badge>}
-              </li>
+                member={m}
+                projectId={project.id}
+              />
             ))}
           </ul>
         </section>
