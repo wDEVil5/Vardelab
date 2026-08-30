@@ -58,13 +58,13 @@ const CONTENIDO: Record<
 };
 
 /** A-01 · Vista de registro: el rol elegido controla el carrusel del panel. */
-export function RegistroView() {
-  const [rol, setRol] = useState<Rol>("estudiante");
+export function RegistroView({ initialRol = "estudiante" }: { initialRol?: Rol }) {
+  const [rol, setRol] = useState<Rol>(initialRol);
   const c = CONTENIDO[rol];
 
   const slides = [
     <AuthSlide key="pasos" eyebrow="Así funciona" titulo={c.pasosTitulo}>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         {c.pasos.map((paso, i) => (
           <AuthShellStep
             key={paso.titulo}
