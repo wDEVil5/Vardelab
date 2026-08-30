@@ -3,54 +3,134 @@
 import { useActionState } from "react";
 import { signUp, type AuthState } from "@/features/auth/actions";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { PasswordField } from "./password-field";
 import { SubmitButton } from "./submit-button";
 
 const INITIAL: AuthState = {};
 
+export type Rol = "estudiante" | "patrocinador";
+
+// Íconos de rol (línea, toman el color del texto padre).
+function IconEstudiante() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-6"
+      aria-hidden
+    >
+      <path d="M12 4 2 9l10 5 10-5-10-5Z" />
+      <path d="M6 11.5V16c0 1.1 2.7 2.5 6 2.5s6-1.4 6-2.5v-4.5" />
+      <path d="M22 9v5" />
+    </svg>
+  );
+}
+
+function IconPatrocinador() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-6"
+      aria-hidden
+    >
+      <path d="M3 21h18" />
+      <path d="M5 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16" />
+      <path d="M15 21V9h3a1 1 0 0 1 1 1v11" />
+      <path d="M8 7h1M8 11h1M8 15h1M11 7h1M11 11h1M11 15h1" />
+    </svg>
+  );
+}
+
 // Opciones de tipo de cuenta (roles de autoservicio, coinciden con M11).
-const TIPOS_CUENTA = [
-  { valor: "estudiante", titulo: "Estudiante", detalle: "Postulo a proyectos" },
+export const ROLES: {
+  valor: Rol;
+  Icono: () => React.ReactElement;
+  titulo: string;
+  detalle: string;
+}[] = [
+  {
+    valor: "estudiante",
+    Icono: IconEstudiante,
+    titulo: "Estudiante",
+    detalle: "Explora microproyectos y crea evidencia para tu portafolio.",
+  },
   {
     valor: "patrocinador",
+    Icono: IconPatrocinador,
     titulo: "Patrocinador",
-    detalle: "Publico necesidades",
+    detalle: "Publica un desafío y suma un equipo de estudiantes.",
   },
-] as const;
+];
 
-export function SignupForm() {
+/**
+ * Formulario de registro. El rol es controlado desde afuera para que el panel de
+ * marca muestre información acorde (estudiante vs. patrocinador).
+ */
+export function SignupForm({
+  rol,
+  onRolChange,
+}: {
+  rol: Rol;
+  onRolChange: (rol: Rol) => void;
+}) {
   const [state, formAction] = useActionState(signUp, INITIAL);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      {/* Tipo de cuenta: radios estilados como tarjetas seleccionables */}
+      {/* Tipo de cuenta: tarjetas seleccionables. */}
       <fieldset className="flex flex-col gap-1.5">
-        <legend className="mb-1.5 text-sm font-medium text-ink">
-          Tipo de cuenta
-        </legend>
+        <legend className="mb-1.5 text-sm font-medium text-ink">Tu rol</legend>
         <div className="grid grid-cols-2 gap-3">
-          {TIPOS_CUENTA.map((tipo, i) => (
-            <label
-              key={tipo.valor}
-              className="flex cursor-pointer flex-col gap-0.5 rounded-md border border-border p-3 transition-colors has-[:checked]:border-electric has-[:checked]:bg-electric/5"
-            >
-              <input
-                type="radio"
-                name="rol"
-                value={tipo.valor}
-                defaultChecked={i === 0}
-                className="sr-only"
-              />
-              <span className="text-sm font-medium text-ink">
-                {tipo.titulo}
-              </span>
-              <span className="text-xs text-muted">{tipo.detalle}</span>
-            </label>
-          ))}
+          {ROLES.map((tipo) => {
+            const activo = rol === tipo.valor;
+            return (
+              <label
+                key={tipo.valor}
+                className={cn(
+                  "flex cursor-pointer flex-col gap-1 rounded-xl border p-4 transition-colors",
+                  activo
+                    ? "border-electric bg-electric/5"
+                    : "border-border hover:border-electric/50",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="rol"
+                  value={tipo.valor}
+                  checked={activo}
+                  onChange={() => onRolChange(tipo.valor)}
+                  className="sr-only"
+                />
+                <span className={activo ? "text-electric" : "text-ink"}>
+                  <tipo.Icono />
+                </span>
+                <span
+                  className={cn(
+                    "mt-1 text-sm font-semibold",
+                    activo ? "text-electric" : "text-ink",
+                  )}
+                >
+                  {tipo.titulo}
+                </span>
+                <span className="text-xs text-muted">{tipo.detalle}</span>
+              </label>
+            );
+          })}
         </div>
       </fieldset>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink">Nombre</span>
+        <span className="text-sm font-medium text-ink">Nombre completo</span>
         <Input
           type="text"
           name="nombre"
@@ -61,27 +141,17 @@ export function SignupForm() {
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink">Correo</span>
+        <span className="text-sm font-medium text-ink">Correo personal</span>
         <Input
           type="email"
           name="email"
           autoComplete="email"
           required
-          placeholder="tucorreo@ejemplo.cl"
+          placeholder="nombre@ejemplo.com"
         />
       </label>
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink">Contraseña</span>
-        <Input
-          type="password"
-          name="password"
-          autoComplete="new-password"
-          required
-          minLength={6}
-          placeholder="Mínimo 6 caracteres"
-        />
-      </label>
+      <PasswordField />
 
       {state.error && (
         <p role="alert" className="text-sm text-coral">
