@@ -67,47 +67,65 @@ export function PinnedPrinciples({ items }: { items: Principio[] }) {
           className="pointer-events-none absolute -bottom-24 left-1/4 size-72 rounded-full bg-sprout/10 blur-3xl"
         />
 
-        <div className="relative mx-auto w-full max-w-5xl px-6">
-          <h2 className="max-w-xl text-2xl font-bold tracking-tight sm:text-3xl">
-            Experiencias claras para ambas partes.
-          </h2>
+        <div className="relative mx-auto grid w-full max-w-5xl items-center gap-12 px-6 md:grid-cols-[1fr_1.3fr]">
+          {/* Izquierda: título fijo + índice de pasos. */}
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-electric">
+              Principios
+            </span>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+              Experiencias claras para ambas partes.
+            </h2>
 
-          <div className="mt-12 grid gap-8 md:grid-cols-3">
+            <div className="mt-8 flex flex-col gap-4">
+              {items.map((p, i) => (
+                <div key={p.titulo} className="flex items-center gap-3">
+                  <span
+                    className={cn(
+                      "h-px transition-all duration-500",
+                      i === activo ? "w-10 bg-electric" : "w-5 bg-white/20",
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "text-sm font-medium transition-colors duration-500",
+                      i === activo ? "text-white" : "text-white/35",
+                    )}
+                  >
+                    0{i + 1} · {p.titulo}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Derecha: el principio activo, grande, con número de fondo. */}
+          <div className="relative min-h-56">
             {items.map((p, i) => {
-              const visible = i <= activo;
+              const visible = i === activo;
               return (
                 <div
                   key={p.titulo}
+                  aria-hidden={!visible}
                   className={cn(
-                    "transition-all duration-500 ease-out",
+                    "absolute inset-0 flex flex-col justify-center transition-all duration-500 ease-out",
                     visible
                       ? "translate-y-0 opacity-100"
-                      : "translate-y-6 opacity-0",
+                      : "pointer-events-none translate-y-6 opacity-0",
                   )}
                 >
-                  <span className="text-sm font-semibold text-electric">
+                  <span className="text-7xl font-bold leading-none text-white/10">
                     0{i + 1}
                   </span>
-                  <h3 className="mt-3 text-lg font-semibold">{p.titulo}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-white/60">
+                  <h3 className="mt-4 text-2xl font-bold sm:text-3xl">
+                    {p.titulo}
+                  </h3>
+                  <p className="mt-3 max-w-md leading-relaxed text-white/70">
                     {p.texto}
                   </p>
                 </div>
               );
             })}
-          </div>
-
-          {/* Indicador de progreso (refleja cuántos se revelaron). */}
-          <div className="mt-12 flex gap-2">
-            {items.map((p, i) => (
-              <span
-                key={p.titulo}
-                className={cn(
-                  "h-1 rounded-full transition-all duration-500",
-                  i <= activo ? "w-10 bg-electric" : "w-4 bg-white/20",
-                )}
-              />
-            ))}
           </div>
         </div>
       </div>
