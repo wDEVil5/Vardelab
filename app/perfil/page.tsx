@@ -6,8 +6,11 @@ import { buttonClasses } from "@/components/ui/button";
 import { getMyProfile, getMyProfileSkills } from "@/features/profile/queries";
 import { setProfileVisibility } from "@/features/profile/actions";
 import { getActiveSkills } from "@/features/skills/queries";
+import { getMyPortfolioItems } from "@/features/portfolio/queries";
+import { getMyTeams } from "@/features/teams/queries";
 import { ProfileForm } from "@/features/profile/components/profile-form";
 import { ProfileSkillsEditor } from "@/features/profile/components/profile-skills-editor";
+import { PortfolioEditor } from "@/features/portfolio/components/portfolio-editor";
 
 export const metadata: Metadata = {
   title: "Mi perfil · CampusLab",
@@ -18,10 +21,17 @@ export default async function PerfilPage() {
   const profile = await getMyProfile();
   if (!profile) redirect("/ingresar?next=/perfil");
 
-  const [profileSkills, catalog] = await Promise.all([
+  const [profileSkills, catalog, portfolio, teams] = await Promise.all([
     getMyProfileSkills(),
     getActiveSkills(),
+    getMyPortfolioItems(),
+    getMyTeams(),
   ]);
+
+  // Proyectos que integró: opciones para ligar una evidencia (la hacen verificable).
+  const projectOptions = teams
+    .filter((t) => t.projectId)
+    .map((t) => ({ id: t.projectId!, titulo: t.projectTitulo }));
 
   return (
     <main className="mx-auto w-full max-w-xl flex-1 px-6 py-10">
@@ -45,6 +55,17 @@ export default async function PerfilPage() {
         </p>
         <div className="mt-4">
           <ProfileSkillsEditor skills={profileSkills} catalog={catalog} />
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold text-ink">Portafolio</h2>
+        <p className="mt-1 text-sm text-muted">
+          Reúne tus evidencias y decide cuáles mostrar. Ligar una evidencia a un
+          proyecto que integraste la vuelve verificable.
+        </p>
+        <div className="mt-4">
+          <PortfolioEditor items={portfolio} projects={projectOptions} />
         </div>
       </section>
 
