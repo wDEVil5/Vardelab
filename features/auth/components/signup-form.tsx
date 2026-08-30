@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { signUp, type AuthState } from "@/features/auth/actions";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { PasswordField } from "./password-field";
 import { SubmitButton } from "./submit-button";
 
 const INITIAL: AuthState = {};
@@ -108,17 +109,7 @@ export function SignupForm({
         />
       </label>
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink">Contraseña</span>
-        <Input
-          type="password"
-          name="password"
-          autoComplete="new-password"
-          required
-          minLength={6}
-          placeholder="Mínimo 6 caracteres"
-        />
-      </label>
+      <PasswordField />
 
       {state.error && (
         <p role="alert" className="text-sm text-coral">
