@@ -158,6 +158,7 @@ export async function addRole(
   const nombre = String(formData.get("nombre") ?? "").trim();
   const descripcion = String(formData.get("descripcion") ?? "").trim();
   const cuposRaw = String(formData.get("cupos") ?? "").trim();
+  const horasRaw = String(formData.get("horas_semanales") ?? "").trim();
 
   if (!projectId) return { error: "Falta el proyecto." };
   if (!nombre) return { error: "El rol necesita un nombre." };
@@ -168,12 +169,23 @@ export async function addRole(
     return { error: "Los cupos deben ser un número entero de 1 o más." };
   }
 
+  // Horas semanales: opcional; si viene, entero entre 1 y 60 (CHECK de M19).
+  let horasSemanales: number | null = null;
+  if (horasRaw) {
+    const horas = Number(horasRaw);
+    if (!Number.isInteger(horas) || horas < 1 || horas > 60) {
+      return { error: "Las horas por semana deben ser un entero entre 1 y 60." };
+    }
+    horasSemanales = horas;
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.from("project_roles").insert({
     project_id: projectId,
     nombre,
     descripcion: descripcion || null,
     cupos,
+    horas_semanales: horasSemanales,
   });
 
   if (error) {
