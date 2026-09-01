@@ -4,35 +4,35 @@ import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 
 export const metadata: Metadata = {
-  title: "Proponer un desafío · CampusLab",
+  title: "Hablar con CampusLab · Para organizaciones",
   description:
-    "¿Conoces una organización con una necesidad concreta? Ayúdanos a convertirla en un microproyecto.",
+    "Cuéntanos tu necesidad y vemos juntos si puede convertirse en un microproyecto acotado.",
 };
 
 /**
- * Proponer un desafío (Fase 1 · captación). Cualquiera puede sugerir una
- * organización con una necesidad que podría volverse un microproyecto. Registra
- * un lead de tipo `propuesta_desafio`.
+ * Contacto para organizaciones (Fase 1 · captación). Punto de entrada de
+ * "Hablar con CampusLab": en el piloto se conversa antes de que la organización
+ * publique nada. Registra un lead de tipo `contacto_organizacion`.
  */
-export default function ProponerPage() {
+export default function ContactoPage() {
   return (
     <>
       <main className="relative z-10 mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-white">
         <section className="mx-auto w-full max-w-2xl px-6 py-16 sm:py-24">
           <span className="text-xs font-semibold uppercase tracking-wide text-electric">
-            Suma un proyecto
+            Para organizaciones
           </span>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-            ¿Conoces una organización con un desafío?
+            Cuéntanos qué necesitas resolver
           </h1>
           <p className="mt-4 text-lg text-muted">
-            Cuéntanos de una organización con una necesidad concreta. Nos ayudas
-            a sumar proyectos reales para más estudiantes; nosotros nos
-            encargamos de contactarla y ver si calza con un microproyecto.
+            Escríbenos tu necesidad y vemos juntos si puede convertirse en un
+            microproyecto. En esta etapa piloto conversamos antes de que
+            publiques nada: sin compromiso y sin crear una cuenta todavía.
           </p>
 
           <div className="mt-10">
-            <LeadForm tipo="propuesta_desafio" />
+            <LeadForm tipo="contacto_organizacion" />
           </div>
         </section>
       </main>

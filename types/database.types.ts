@@ -196,6 +196,39 @@ export type Database = {
           },
         ]
       }
+      leads: {
+        Row: {
+          created_at: string
+          email: string
+          estado: Database["public"]["Enums"]["lead_estado"]
+          id: string
+          mensaje: string
+          nombre: string
+          organizacion: string | null
+          tipo: Database["public"]["Enums"]["lead_tipo"]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          estado?: Database["public"]["Enums"]["lead_estado"]
+          id?: string
+          mensaje: string
+          nombre: string
+          organizacion?: string | null
+          tipo: Database["public"]["Enums"]["lead_tipo"]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          estado?: Database["public"]["Enums"]["lead_estado"]
+          id?: string
+          mensaje?: string
+          nombre?: string
+          organizacion?: string | null
+          tipo?: Database["public"]["Enums"]["lead_tipo"]
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           contacto: string | null
@@ -745,6 +778,8 @@ export type Database = {
     Enums: {
       app_role: "estudiante" | "patrocinador" | "mentor" | "moderador" | "admin"
       application_status: "enviada" | "aceptada" | "rechazada" | "retirada"
+      lead_estado: "nuevo" | "contactado" | "descartado"
+      lead_tipo: "contacto_organizacion" | "propuesta_desafio"
       milestone_status: "pendiente" | "en_progreso" | "entregado" | "aprobado"
       org_type:
         | "academica"
