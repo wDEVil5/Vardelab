@@ -91,27 +91,28 @@ export function ProjectCard({ project }: { project: ProjectCardData }) {
         </div>
       )}
 
-      {/* Meta: duración y modalidad */}
-      {meta.length > 0 && (
-        <p className="text-xs text-muted">{meta.join(" · ")}</p>
-      )}
+      {/* Bloque inferior anclado abajo (mt-auto): meta, nivel de entrada y CTA
+          se alinean entre tarjetas; el espacio variable queda sobre las skills. */}
+      <div className="mt-auto flex flex-col gap-3">
+        {meta.length > 0 && (
+          <p className="text-xs text-muted">{meta.join(" · ")}</p>
+        )}
 
-      {/* Nivel de entrada: siempre en su propia línea, para un layout parejo. */}
-      {aptoSinExperiencia && (
-        <div>
-          <span className="inline-flex items-center rounded-full bg-sprout/15 px-2.5 py-0.5 text-xs font-medium text-sprout">
-            Apto sin experiencia
-          </span>
-        </div>
-      )}
+        {aptoSinExperiencia && (
+          <div>
+            <span className="inline-flex items-center rounded-full bg-sprout/15 px-2.5 py-0.5 text-xs font-medium text-sprout">
+              Apto sin experiencia
+            </span>
+          </div>
+        )}
 
-      {/* CTA: mt-auto empuja el botón al fondo para alinearlo entre tarjetas. */}
-      <Link
-        href={`/proyectos/${project.id}`}
-        className={cn(buttonClasses({ variant: "primary" }), "mt-auto w-full")}
-      >
-        Ver proyecto →
-      </Link>
+        <Link
+          href={`/proyectos/${project.id}`}
+          className={cn(buttonClasses({ variant: "primary" }), "w-full")}
+        >
+          Ver proyecto →
+        </Link>
+      </div>
     </article>
   );
 }
