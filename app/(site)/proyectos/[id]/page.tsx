@@ -108,6 +108,38 @@ export default async function ProyectoPage({ params }: PageProps) {
               <Section titulo="Expectativas" contenido={project.expectativas} />
             </div>
 
+            {/* Condiciones del proyecto: señales de confianza para ambas partes. */}
+            <div className="flex flex-col gap-4 rounded-2xl border border-border bg-white p-6 sm:p-8">
+              <h2 className="text-xl font-semibold text-ink">
+                Condiciones del proyecto
+              </h2>
+              <ul className="flex flex-col gap-3 text-sm">
+                {project.revisado_at && (
+                  <Condicion
+                    titulo="Revisado por CampusLab."
+                    texto="El alcance del proyecto se revisó antes de publicarse."
+                  />
+                )}
+                <Condicion
+                  titulo="Acompañamiento por hitos."
+                  texto="La organización sigue el avance y valida las entregas por etapas."
+                />
+                {project.duracion_semanas && (
+                  <Condicion
+                    titulo={`Plazo estimado: ${project.duracion_semanas} semanas.`}
+                    texto="Definido al publicar, para expectativas claras de tiempo."
+                  />
+                )}
+                <Condicion
+                  titulo="Portafolio y confidencialidad."
+                  texto="El resultado puede sumarse al portafolio del estudiante, salvo acuerdo distinto; la confidencialidad se coordina entre las partes antes de comenzar."
+                />
+              </ul>
+              <p className="text-xs text-muted">
+                Condiciones orientativas del piloto; no constituyen un contrato.
+              </p>
+            </div>
+
             {/* Roles */}
             {roles.length > 0 && (
               <section id="roles" className="scroll-mt-6">
@@ -171,6 +203,30 @@ export default async function ProyectoPage({ params }: PageProps) {
 }
 
 // ---------------------------------------------------------------------------
+
+/** Ítem de "Condiciones del proyecto": check + título en foco y detalle atenuado. */
+function Condicion({ titulo, texto }: { titulo: string; texto: string }) {
+  return (
+    <li className="flex gap-3">
+      <svg
+        viewBox="0 0 24 24"
+        className="mt-0.5 size-4 shrink-0 text-sprout"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <path d="M5 13l4 4L19 7" />
+      </svg>
+      <span>
+        <span className="font-medium text-ink">{titulo}</span>{" "}
+        <span className="text-muted">{texto}</span>
+      </span>
+    </li>
+  );
+}
 
 /** Bloque de la plantilla; no se muestra si el campo viene vacío. */
 function Section({
