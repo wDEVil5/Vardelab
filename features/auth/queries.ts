@@ -31,5 +31,7 @@ export async function getCurrentUser() {
     roles: rolesList,
     esPatrocinador: rolesList.includes("patrocinador"),
     esEstudiante: rolesList.includes("estudiante"),
+    esModerador: rolesList.includes("moderador"),
+    esAdmin: rolesList.includes("admin"),
   };
 }

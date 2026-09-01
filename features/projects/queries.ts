@@ -68,6 +68,49 @@ export type ProjectCard = Awaited<
   ReturnType<typeof getPublishedProjects>
 >[number];
 
+// Cola de moderación (M18): proyectos en `en_revision`, esperando aprobación.
+// Solo un moderador/admin los ve (RLS `projects_select_moderator`). Incluye el
+// alcance (problema/alcance/entregable) para poder revisar antes de aprobar.
+const PROJECT_REVIEW_SELECT = `
+  id,
+  titulo,
+  resumen,
+  problema,
+  alcance,
+  entregable,
+  modalidad,
+  duracion_semanas,
+  created_at,
+  organization:organizations ( id, nombre, tipo, verificacion ),
+  roles:project_roles ( id, nombre, cupos )
+` as const;
+
+/**
+ * Devuelve los proyectos en revisión, del más antiguo al más reciente (la cola
+ * se atiende por orden de llegada). La RLS limita el acceso a moderador/admin;
+ * una página que la consuma debe además guardar el acceso por rol.
+ */
+export async function getProjectsForReview() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("projects")
+    .select(PROJECT_REVIEW_SELECT)
+    .eq("status", "en_revision")
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("[getProjectsForReview]", error.message);
+    throw error;
+  }
+
+  return data;
+}
+
+export type ProjectForReview = Awaited<
+  ReturnType<typeof getProjectsForReview>
+>[number];
+
 // Campos de la ficha completa (P-03): la plantilla del proyecto en detalle
 // (problema, alcance, entregable, expectativas) más la organización con su
 // contacto y los roles con descripción y habilidades exigidas.
