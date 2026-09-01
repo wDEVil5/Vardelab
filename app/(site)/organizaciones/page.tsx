@@ -41,7 +41,7 @@ export default function OrganizacionesPage() {
               </p>
               <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-3">
                 <Link
-                  href="/registro?rol=patrocinador"
+                  href="/contacto"
                   className={cn(
                     buttonClasses({ variant: "primary" }),
                     "h-11 w-full whitespace-nowrap px-6 text-base sm:w-auto",
@@ -215,22 +215,16 @@ export default function OrganizacionesPage() {
                 necesidad calza con un microproyecto y a definir una primera
                 versión del desafío.
               </p>
-              <div className="mt-2 flex flex-col items-start gap-2">
-                <button
-                  type="button"
-                  disabled
-                  aria-disabled
-                  title="Habilitaremos este canal muy pronto."
+              <div className="mt-2">
+                <Link
+                  href="/contacto"
                   className={cn(
                     buttonClasses({ variant: "primary" }),
                     "h-11 px-6 text-base",
                   )}
                 >
                   Hablar con CampusLab
-                </button>
-                <span className="text-xs text-muted">
-                  Habilitaremos este canal muy pronto.
-                </span>
+                </Link>
               </div>
             </div>
           </Reveal>
@@ -263,7 +257,7 @@ export default function OrganizacionesPage() {
               </p>
               <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:flex-wrap sm:gap-6">
                 <Link
-                  href="/registro?rol=patrocinador"
+                  href="/contacto"
                   className={cn(
                     buttonClasses({ variant: "primary" }),
                     "h-11 w-full whitespace-nowrap px-6 text-base sm:w-auto",
