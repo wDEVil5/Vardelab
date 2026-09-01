@@ -9,6 +9,7 @@ import {
   getPublishedProjectById,
   type ProjectDetail,
 } from "@/features/projects/queries";
+import { esAptoSinExperiencia } from "@/features/projects/roles";
 import { getCurrentUser } from "@/features/auth/queries";
 import {
   getMyActiveApplicationInProject,
@@ -218,6 +219,21 @@ function RoleCard({
           {rol.descripcion && (
             <p className="text-sm text-muted">{rol.descripcion}</p>
           )}
+          {/* Claridad para el estudiante: dedicación y nivel de entrada. */}
+          {(rol.horas_semanales || esAptoSinExperiencia(skills)) && (
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+              {rol.horas_semanales && (
+                <span className="font-medium text-ink">
+                  ~{rol.horas_semanales} h/semana
+                </span>
+              )}
+              {esAptoSinExperiencia(skills) && (
+                <span className="inline-flex items-center rounded-full bg-sprout/15 px-2.5 py-0.5 text-xs font-medium text-sprout">
+                  Apto sin experiencia
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <Badge>
           {rol.cupos} {rol.cupos === 1 ? "cupo" : "cupos"}
@@ -225,17 +241,20 @@ function RoleCard({
       </div>
 
       {skills.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-1.5">
-          {skills.map((s) => (
-            <Badge key={s.skill?.id ?? s.nivel_minimo} tone="outline">
-              {s.skill?.nombre}
-              {s.nivel_minimo && (
-                <span className="text-muted/70">
-                  · {NIVEL_LABEL[s.nivel_minimo] ?? s.nivel_minimo}
-                </span>
-              )}
-            </Badge>
-          ))}
+        <div className="mt-4 flex flex-col gap-1.5">
+          <span className="text-xs font-medium text-muted">Practicarás</span>
+          <div className="flex flex-wrap gap-1.5">
+            {skills.map((s) => (
+              <Badge key={s.skill?.id ?? s.nivel_minimo} tone="outline">
+                {s.skill?.nombre}
+                {s.nivel_minimo && (
+                  <span className="text-muted/70">
+                    · {NIVEL_LABEL[s.nivel_minimo] ?? s.nivel_minimo}
+                  </span>
+                )}
+              </Badge>
+            ))}
+          </div>
         </div>
       )}
 

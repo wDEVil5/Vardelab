@@ -29,6 +29,7 @@ const PROJECT_CARD_SELECT = `
     id,
     nombre,
     cupos,
+    horas_semanales,
     skills:project_role_skills (
       nivel_minimo,
       skill:skills ( id, nombre )
@@ -82,7 +83,7 @@ const PROJECT_REVIEW_SELECT = `
   duracion_semanas,
   created_at,
   organization:organizations ( id, nombre, tipo, verificacion ),
-  roles:project_roles ( id, nombre, cupos )
+  roles:project_roles ( id, nombre, cupos, horas_semanales )
 ` as const;
 
 /**
@@ -138,6 +139,7 @@ const PROJECT_DETAIL_SELECT = `
     nombre,
     descripcion,
     cupos,
+    horas_semanales,
     skills:project_role_skills (
       nivel_minimo,
       skill:skills ( id, nombre )

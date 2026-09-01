@@ -4,6 +4,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { cn } from "@/lib/utils";
 import type { ProjectCard as ProjectCardData } from "@/features/projects/queries";
+import { esAptoSinExperiencia } from "@/features/projects/roles";
 
 /**
  * Tarjeta de un proyecto en el catálogo público (P-02) y en la landing (P-01).
@@ -25,6 +26,12 @@ export function ProjectCard({ project }: { project: ProjectCardData }) {
 
   // Cupos totales sumando los de cada rol.
   const cuposTotales = roles.reduce((total, rol) => total + rol.cupos, 0);
+
+  // Nivel de entrada: si algún rol es apto sin experiencia, se destaca en la
+  // tarjeta para bajar la barrera de postulación (se deriva de las skills).
+  const aptoSinExperiencia = roles.some((rol) =>
+    esAptoSinExperiencia(rol.skills ?? []),
+  );
 
   // Habilidades exigidas, sin repetir; el diseño muestra hasta 3.
   const habilidades = Array.from(
@@ -87,6 +94,15 @@ export function ProjectCard({ project }: { project: ProjectCardData }) {
       {/* Meta: duración y modalidad */}
       {meta.length > 0 && (
         <p className="text-xs text-muted">{meta.join(" · ")}</p>
+      )}
+
+      {/* Nivel de entrada: siempre en su propia línea, para un layout parejo. */}
+      {aptoSinExperiencia && (
+        <div>
+          <span className="inline-flex items-center rounded-full bg-sprout/15 px-2.5 py-0.5 text-xs font-medium text-sprout">
+            Apto sin experiencia
+          </span>
+        </div>
       )}
 
       {/* CTA: mt-auto empuja el botón al fondo para alinearlo entre tarjetas. */}

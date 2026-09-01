@@ -453,6 +453,7 @@ export type Database = {
           created_at: string
           cupos: number
           descripcion: string | null
+          horas_semanales: number | null
           id: string
           nombre: string
           project_id: string
@@ -462,6 +463,7 @@ export type Database = {
           created_at?: string
           cupos?: number
           descripcion?: string | null
+          horas_semanales?: number | null
           id?: string
           nombre: string
           project_id: string
@@ -471,6 +473,7 @@ export type Database = {
           created_at?: string
           cupos?: number
           descripcion?: string | null
+          horas_semanales?: number | null
           id?: string
           nombre?: string
           project_id?: string
