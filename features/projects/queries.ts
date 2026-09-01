@@ -126,6 +126,7 @@ const PROJECT_DETAIL_SELECT = `
   modalidad,
   duracion_semanas,
   created_at,
+  revisado_at,
   organization:organizations (
     id,
     nombre,
