@@ -15,7 +15,7 @@ Convierte necesidades reales en microproyectos acotados y acompañados, para que
 ![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
-![AWS SES](https://img.shields.io/badge/AWS_SES-FF9900?logo=amazonaws&logoColor=white)
+![Brevo](https://img.shields.io/badge/Brevo-0B996E?logo=brevo&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?logo=vercel&logoColor=white)
 ![Figma](https://img.shields.io/badge/Figma-F24E1E?logo=figma&logoColor=white)
 
@@ -77,7 +77,7 @@ Un patrocinador describe una necesidad mediante una **plantilla obligatoria**; u
 
 > **Fase actual: construcción del MVP — el loop principal ya funciona.**
 
-La **especificación de producto (PRD) está completa** y el proyecto avanza en código. Están el **scaffold** (Next.js + Supabase), el **modelo de datos completo** (14 migraciones · 17 tablas con Row Level Security), los **tipos TypeScript** generados desde el esquema y el **despliegue de migraciones por CI**. Sobre esa base ya está implementado el **circuito central del producto**:
+La **especificación de producto (PRD) está completa** y el proyecto avanza en código. Están el **scaffold** (Next.js + Supabase), el **modelo de datos completo** (17 migraciones · 17 tablas con Row Level Security), los **tipos TypeScript** generados desde el esquema y el **despliegue de migraciones por CI**. Sobre esa base ya está implementado el **circuito central del producto**:
 
 - **Público** — catálogo de proyectos y ficha de detalle (SSR).
 - **Autenticación** — registro con rol, ingreso y sesión.
@@ -102,7 +102,7 @@ Corre en local contra Supabase. Falta la **pasada de diseño** (alinear con Figm
 | Backend administrado | **Supabase** | Autenticación, PostgreSQL, almacenamiento y políticas de acceso |
 | Base de datos | **PostgreSQL** | Modelo relacional (proyectos, roles, postulaciones, equipos…) |
 | Seguridad | **Row Level Security** | Permisos por rol y por propiedad del registro, en la base |
-| Correo transaccional | **Brevo/AWS SES** | Confirmación de cuentas, recuperación de contraseña y notificaciones mediante correos personales |
+| Correo transaccional | **Brevo** | Confirmación de cuentas, recuperación de contraseña y notificaciones mediante correos personales |
 | Despliegue | **Vercel** | Entrega continua + dominio propio (HTTPS) |
 | CI/CD | **GitHub Actions** | Despliegue automático de migraciones al mergear a `main` |
 | Diseño | **Figma** | Prototipos y pruebas antes de programar |
