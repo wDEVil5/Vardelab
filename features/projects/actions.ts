@@ -380,7 +380,7 @@ export async function approveProject(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("projects")
-    .update({ status: "publicado" })
+    .update({ status: "publicado", revisado_at: new Date().toISOString() })
     .eq("id", projectId)
     .eq("status", "en_revision")
     .select("id");

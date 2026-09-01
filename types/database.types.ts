@@ -505,6 +505,7 @@ export type Database = {
           org_id: string
           problema: string | null
           resumen: string | null
+          revisado_at: string | null
           status: Database["public"]["Enums"]["project_status"]
           titulo: string
           updated_at: string
@@ -524,6 +525,7 @@ export type Database = {
           org_id: string
           problema?: string | null
           resumen?: string | null
+          revisado_at?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           titulo: string
           updated_at?: string
@@ -543,6 +545,7 @@ export type Database = {
           org_id?: string
           problema?: string | null
           resumen?: string | null
+          revisado_at?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           titulo?: string
           updated_at?: string
