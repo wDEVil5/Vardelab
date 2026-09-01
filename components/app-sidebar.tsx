@@ -94,6 +94,9 @@ export function AppSidebar({
         </div>
       </div>
 
+      {/* Primera línea separadora: bloque de identidad ↕ navegación. */}
+      <div className="h-px bg-white/10" />
+
       <nav className="flex flex-1 flex-col gap-1">
         {items.map((it) => {
           const active =
@@ -147,9 +150,11 @@ export function AppSidebar({
 
   return (
     <>
-      {/* Sidebar fijo (desktop). */}
-      <aside className="hidden w-64 shrink-0 bg-ink lg:block">
-        <div className="sticky top-0 h-screen overflow-y-auto">{contenido}</div>
+      {/* Sidebar fijo (desktop): pegado al borde, redondeado del lado interior. */}
+      <aside className="hidden w-64 shrink-0 lg:block">
+        <div className="sticky top-0 h-dvh overflow-y-auto rounded-r-3xl bg-ink">
+          {contenido}
+        </div>
       </aside>
 
       {/* Barra superior (móvil). */}

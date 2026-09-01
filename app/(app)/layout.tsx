@@ -45,7 +45,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         user={{ nombre: user.nombre, initials: iniciales(user.nombre), roleLabel }}
         items={items}
       />
-      <div className="min-w-0 flex-1">{children}</div>
+      <main className="min-w-0 flex-1">{children}</main>
     </div>
   );
 }
