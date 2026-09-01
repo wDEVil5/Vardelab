@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { getMyPortfolioItems } from "@/features/portfolio/queries";
 
 /**
  * Datos del inicio del estudiante (E-00). Todo se resuelve para el usuario en
- * sesión bajo su RLS. Reúne: completitud del perfil, resumen de postulaciones,
- * proyecto activo (equipo del que es miembro, con progreso por hitos) y acciones
- * pendientes (hitos por trabajar en ese proyecto).
+ * sesión bajo su RLS. Reúne KPIs (perfil, postulaciones, acciones, portafolio),
+ * el proyecto activo con su línea de hitos, y qué falta para completar el perfil.
  */
 export async function getStudentDashboard() {
   const supabase = await createClient();
@@ -13,15 +13,19 @@ export async function getStudentDashboard() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [perfil, postulaciones, activo] = await Promise.all([
+  const [perfil, postulaciones, activo, portafolioCount] = await Promise.all([
     perfilCompleto(supabase, user.id),
     resumenPostulaciones(supabase, user.id),
     proyectoActivo(supabase, user.id),
+    getMyPortfolioItems()
+      .then((items) => items.length)
+      .catch(() => 0),
   ]);
 
   return {
-    perfilCompleto: perfil,
+    perfil,
     postulaciones,
+    portafolioCount,
     proyectoActivo: activo?.proyecto ?? null,
     accionesPendientes: activo?.accionesPendientes ?? 0,
   };
@@ -29,11 +33,8 @@ export async function getStudentDashboard() {
 
 type SupabaseServer = Awaited<ReturnType<typeof createClient>>;
 
-// % de campos clave del perfil cargados (incluye tener ≥1 habilidad).
-async function perfilCompleto(
-  supabase: SupabaseServer,
-  userId: string,
-): Promise<number> {
+// Completitud del perfil: % y qué campos clave faltan (para una acción concreta).
+async function perfilCompleto(supabase: SupabaseServer, userId: string) {
   const [{ data: profile }, { count: skills }] = await Promise.all([
     supabase
       .from("profiles")
@@ -46,19 +47,23 @@ async function perfilCompleto(
       .eq("profile_id", userId),
   ]);
 
-  const senales = [
-    profile?.nombre,
-    profile?.carrera,
-    profile?.semestre != null ? "x" : null,
-    profile?.bio,
-    profile?.avatar_url,
-    (skills ?? 0) > 0 ? "x" : null,
+  // Cada señal: [presente?, etiqueta si falta].
+  const campos: [boolean, string][] = [
+    [Boolean(profile?.nombre), "Nombre"],
+    [Boolean(profile?.carrera), "Carrera"],
+    [profile?.semestre != null, "Semestre"],
+    [Boolean(profile?.bio), "Presentación"],
+    [Boolean(profile?.avatar_url), "Foto de perfil"],
+    [(skills ?? 0) > 0, "Habilidades"],
   ];
-  const llenos = senales.filter(Boolean).length;
-  return Math.round((llenos / senales.length) * 100);
+  const llenos = campos.filter(([ok]) => ok).length;
+  return {
+    pct: Math.round((llenos / campos.length) * 100),
+    faltan: campos.filter(([ok]) => !ok).map(([, label]) => label),
+  };
 }
 
-// Total de postulaciones y desglose por estado (aceptadas / en revisión).
+// Total de postulaciones y desglose por estado.
 async function resumenPostulaciones(supabase: SupabaseServer, userId: string) {
   const { data } = await supabase
     .from("applications")
@@ -70,19 +75,26 @@ async function resumenPostulaciones(supabase: SupabaseServer, userId: string) {
     total: lista.length,
     aceptadas: lista.filter((a) => a.status === "aceptada").length,
     enRevision: lista.filter((a) => a.status === "enviada").length,
+    rechazadas: lista.filter((a) => a.status === "rechazada").length,
   };
 }
 
 const CERRADOS = ["completado", "cancelado", "suspendido"];
 
-// Proyecto en curso del estudiante (miembro de equipo), con progreso por hitos.
+export type HitoResumen = {
+  id: string;
+  titulo: string;
+  estado: string | null;
+  fechaLimite: string | null;
+};
+
+// Proyecto en curso del estudiante (miembro de equipo), con su línea de hitos.
 async function proyectoActivo(supabase: SupabaseServer, userId: string) {
   const { data: memberships } = await supabase
     .from("team_members")
     .select("team:teams!inner ( id, project:projects!inner ( id, titulo, status ) )")
     .eq("user_id", userId);
 
-  // Primer equipo cuyo proyecto sigue en curso.
   const activa = (memberships ?? []).find((m) => {
     const estado = m.team?.project?.status ?? "";
     return m.team?.project && !CERRADOS.includes(estado);
@@ -92,10 +104,10 @@ async function proyectoActivo(supabase: SupabaseServer, userId: string) {
   const teamId = activa.team.id;
   const proj = activa.team.project;
 
-  const [{ data: hitos }, { count: equipo }] = await Promise.all([
+  const [{ data: hitosRaw }, { count: equipo }] = await Promise.all([
     supabase
       .from("milestones")
-      .select("estado, titulo, orden")
+      .select("id, titulo, estado, fecha_limite, orden")
       .eq("project_id", proj.id)
       .order("orden", { ascending: true }),
     supabase
@@ -104,11 +116,16 @@ async function proyectoActivo(supabase: SupabaseServer, userId: string) {
       .eq("team_id", teamId),
   ]);
 
-  const lista = hitos ?? [];
-  const total = lista.length;
-  const aprobados = lista.filter((h) => h.estado === "aprobado").length;
-  const proximo = lista.find((h) => h.estado !== "aprobado")?.titulo ?? null;
-  const accionesPendientes = lista.filter(
+  const hitos: HitoResumen[] = (hitosRaw ?? []).map((h) => ({
+    id: h.id,
+    titulo: h.titulo,
+    estado: h.estado,
+    fechaLimite: h.fecha_limite,
+  }));
+  const total = hitos.length;
+  const aprobados = hitos.filter((h) => h.estado === "aprobado").length;
+  const siguiente = hitos.find((h) => h.estado !== "aprobado") ?? null;
+  const accionesPendientes = hitos.filter(
     (h) => h.estado === "pendiente" || h.estado === "en_progreso",
   ).length;
 
@@ -120,7 +137,9 @@ async function proyectoActivo(supabase: SupabaseServer, userId: string) {
       progreso: total > 0 ? Math.round((aprobados / total) * 100) : 0,
       hitosAprobados: aprobados,
       hitosTotal: total,
-      proximoHito: proximo,
+      proximoHito: siguiente?.titulo ?? null,
+      proximaFecha: siguiente?.fechaLimite ?? null,
+      hitos,
     },
     accionesPendientes,
   };
