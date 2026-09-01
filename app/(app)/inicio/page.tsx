@@ -6,14 +6,19 @@ import {
   type HitoResumen,
 } from "@/features/dashboard/queries";
 import { getPublishedProjects } from "@/features/projects/queries";
+import { getMyTeams } from "@/features/teams/queries";
+import { getMyEvaluationsByProject } from "@/features/evaluations/queries";
+import { getMyProfileSkills } from "@/features/profile/queries";
+import { getMyPortfolioItems } from "@/features/portfolio/queries";
+import { getMyProfile } from "@/features/profile/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Inicio · CampusLab",
 };
 
-// Estado de un hito → punto de color y etiqueta.
 const ESTADO_HITO: Record<string, { dot: string; label: string }> = {
   pendiente: { dot: "bg-muted", label: "Pendiente" },
   en_progreso: { dot: "bg-coral", label: "En progreso" },
@@ -21,7 +26,13 @@ const ESTADO_HITO: Record<string, { dot: string; label: string }> = {
   aprobado: { dot: "bg-sprout", label: "Aprobado" },
 };
 
-function fecha(f: string | null): string | null {
+const NIVEL_LABEL: Record<string, string> = {
+  basico: "Básico",
+  intermedio: "Intermedio",
+  avanzado: "Avanzado",
+};
+
+function fechaCorta(f: string | null): string | null {
   if (!f) return null;
   return new Date(`${f}T00:00:00`).toLocaleDateString("es-CL", {
     day: "numeric",
@@ -29,19 +40,41 @@ function fecha(f: string | null): string | null {
   });
 }
 
+function diasRestantes(f: string | null): number | null {
+  if (!f) return null;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const d = new Date(`${f}T00:00:00`);
+  return Math.round((d.getTime() - hoy.getTime()) / 86_400_000);
+}
+
+function vencimiento(n: number | null): string | null {
+  if (n === null) return null;
+  if (n < 0) return `vencido`;
+  if (n === 0) return "vence hoy";
+  if (n === 1) return "vence mañana";
+  return `en ${n} días`;
+}
+
 /**
- * E-00 · Inicio del estudiante. Panel de actividad a ancho completo: KPIs, el
- * proyecto activo con su línea de hitos, el estado de las postulaciones, qué
- * falta para completar el perfil y recomendaciones del catálogo.
+ * E-00 · Inicio del estudiante. Panel completo a ancho total: KPIs, proyecto
+ * activo con hitos y equipo, acciones pendientes con vencimiento, evaluaciones
+ * recibidas, portafolio, habilidades y recomendados. Datos reales bajo RLS.
  */
 export default async function InicioPage() {
   const user = await getCurrentUser();
   const nombre = (user?.nombre ?? "").split(/\s+/)[0] || "";
 
-  const [dashboard, recomendados] = await Promise.all([
-    getStudentDashboard(),
-    getPublishedProjects().then((p) => p.slice(0, 3)),
-  ]);
+  const [dashboard, recomendados, teams, evalsMap, skills, portfolio, profile] =
+    await Promise.all([
+      getStudentDashboard(),
+      getPublishedProjects().then((p) => p.slice(0, 3)),
+      getMyTeams(),
+      getMyEvaluationsByProject(),
+      getMyProfileSkills(),
+      getMyPortfolioItems(),
+      getMyProfile(),
+    ]);
 
   const activo = dashboard?.proyectoActivo ?? null;
   const post = dashboard?.postulaciones ?? {
@@ -51,6 +84,29 @@ export default async function InicioPage() {
     rechazadas: 0,
   };
   const perfil = dashboard?.perfil ?? { pct: 0, faltan: [] as string[] };
+
+  // Equipo del proyecto activo.
+  const equipoActivo = activo
+    ? teams.find((t) => t.projectId === activo.id)?.members ?? []
+    : [];
+
+  // Título de proyecto por id (para las evaluaciones).
+  const tituloPorProyecto = new Map(
+    teams.filter((t) => t.projectId).map((t) => [t.projectId!, t.projectTitulo]),
+  );
+  const evaluaciones = Array.from(evalsMap.entries())
+    .filter(([, e]) => e.puntaje != null)
+    .map(([projectId, e]) => ({
+      projectId,
+      titulo: tituloPorProyecto.get(projectId) ?? "Proyecto",
+      puntaje: e.puntaje,
+      comentario: e.comentario,
+    }));
+
+  // Acciones pendientes: hitos por trabajar del proyecto activo.
+  const acciones = (activo?.hitos ?? [])
+    .filter((h) => h.estado === "pendiente" || h.estado === "en_progreso")
+    .map((h) => ({ ...h, dias: diasRestantes(h.fechaLimite) }));
 
   return (
     <div className="w-full px-6 py-8 lg:px-10 lg:py-10">
@@ -62,7 +118,7 @@ export default async function InicioPage() {
       </header>
 
       {/* KPIs */}
-      <div className="mt-8 grid gap-4 grid-cols-2 xl:grid-cols-4">
+      <div className="mt-8 grid grid-cols-2 gap-4 xl:grid-cols-4">
         <StatCard label="Perfil completado" value={`${perfil.pct}%`} tone="electric" />
         <StatCard label="Postulaciones" value={String(post.total)} tone="sprout" />
         <StatCard
@@ -77,8 +133,8 @@ export default async function InicioPage() {
         />
       </div>
 
+      {/* Proyecto activo + acciones pendientes */}
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        {/* Proyecto activo (columna ancha) */}
         <div className="lg:col-span-2">
           {activo ? (
             <div className="flex h-full flex-col gap-5 rounded-2xl bg-ink p-6 text-white sm:p-8">
@@ -114,7 +170,6 @@ export default async function InicioPage() {
                 </div>
               </div>
 
-              {/* Línea de hitos */}
               {activo.hitos.length > 0 && (
                 <ul className="flex flex-col gap-1">
                   {activo.hitos.map((h: HitoResumen) => {
@@ -122,7 +177,7 @@ export default async function InicioPage() {
                       dot: "bg-white/40",
                       label: h.estado ?? "",
                     };
-                    const f = fecha(h.fechaLimite);
+                    const f = fechaCorta(h.fechaLimite);
                     return (
                       <li
                         key={h.id}
@@ -136,6 +191,26 @@ export default async function InicioPage() {
                     );
                   })}
                 </ul>
+              )}
+
+              {/* Equipo */}
+              {equipoActivo.length > 0 && (
+                <div className="mt-1 border-t border-white/10 pt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-white/50">
+                    Equipo
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {equipoActivo.map((m) => (
+                      <span
+                        key={m.userId}
+                        className="rounded-full bg-white/10 px-3 py-1 text-xs text-white"
+                      >
+                        {m.nombre}
+                        {m.rol && <span className="text-white/50"> · {m.rol}</span>}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           ) : (
@@ -158,68 +233,187 @@ export default async function InicioPage() {
           )}
         </div>
 
-        {/* Columna lateral: completar perfil + postulaciones */}
-        <div className="flex flex-col gap-4">
-          <div className="rounded-2xl border border-border bg-white p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-ink">Completa tu perfil</h2>
-              <span className="text-sm font-semibold text-electric">{perfil.pct}%</span>
-            </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface">
-              <div
-                className="h-full rounded-full bg-electric"
-                style={{ width: `${perfil.pct}%` }}
-              />
-            </div>
-            {perfil.faltan.length > 0 ? (
-              <>
-                <ul className="mt-4 flex flex-col gap-2">
-                  {perfil.faltan.map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-muted">
-                      <span className="size-1.5 rounded-full bg-coral" />
-                      Falta: {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/perfil"
-                  className="mt-4 inline-block text-sm font-medium text-electric hover:underline"
-                >
-                  Completar perfil →
-                </Link>
-              </>
-            ) : (
-              <p className="mt-4 text-sm text-sprout">Tu perfil está completo. ✓</p>
-            )}
-          </div>
+        {/* Acciones pendientes */}
+        <Card title="Acciones pendientes">
+          {acciones.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {acciones.map((h) => {
+                const venc = vencimiento(h.dias);
+                const urgente = h.dias !== null && h.dias <= 2;
+                return (
+                  <li key={h.id}>
+                    <Link
+                      href={`/proyectos/${activo!.id}`}
+                      className="flex items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:border-electric/40"
+                    >
+                      <span className="flex-1 truncate text-sm text-ink">
+                        Entregar: {h.titulo}
+                      </span>
+                      {venc && (
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
+                            urgente ? "bg-coral/15 text-coral" : "bg-surface text-muted",
+                          )}
+                        >
+                          {venc}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted">Sin acciones pendientes. 🎉</p>
+          )}
+        </Card>
+      </div>
 
-          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-6">
-            <h2 className="font-semibold text-ink">Postulaciones</h2>
-            {post.total > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {post.aceptadas > 0 && (
-                  <Pill tone="sprout">{post.aceptadas} aceptada{post.aceptadas === 1 ? "" : "s"}</Pill>
-                )}
-                {post.enRevision > 0 && (
-                  <Pill tone="electric">{post.enRevision} en revisión</Pill>
-                )}
-                {post.rechazadas > 0 && (
-                  <Pill tone="muted">{post.rechazadas} rechazada{post.rechazadas === 1 ? "" : "s"}</Pill>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-muted">
-                Aún no te postulaste. Explora y encuentra un rol.
-              </p>
-            )}
-            <Link
-              href="/mis-postulaciones"
-              className="mt-auto text-sm font-medium text-electric hover:underline"
-            >
-              Ver todas →
-            </Link>
+      {/* Perfil + postulaciones + evaluaciones */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <Card title="Completa tu perfil" right={`${perfil.pct}%`}>
+          <div className="h-2 overflow-hidden rounded-full bg-surface">
+            <div
+              className="h-full rounded-full bg-electric"
+              style={{ width: `${perfil.pct}%` }}
+            />
           </div>
-        </div>
+          {perfil.faltan.length > 0 ? (
+            <>
+              <ul className="mt-4 flex flex-col gap-2">
+                {perfil.faltan.map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-muted">
+                    <span className="size-1.5 rounded-full bg-coral" />
+                    Falta: {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/perfil"
+                className="mt-4 inline-block text-sm font-medium text-electric hover:underline"
+              >
+                Completar perfil →
+              </Link>
+            </>
+          ) : (
+            <p className="mt-4 text-sm text-sprout">Tu perfil está completo. ✓</p>
+          )}
+        </Card>
+
+        <Card title="Postulaciones">
+          {post.total > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {post.aceptadas > 0 && (
+                <Pill tone="sprout">{post.aceptadas} aceptada{post.aceptadas === 1 ? "" : "s"}</Pill>
+              )}
+              {post.enRevision > 0 && (
+                <Pill tone="electric">{post.enRevision} en revisión</Pill>
+              )}
+              {post.rechazadas > 0 && (
+                <Pill tone="muted">{post.rechazadas} rechazada{post.rechazadas === 1 ? "" : "s"}</Pill>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted">
+              Aún no te postulaste. Explora y encuentra un rol.
+            </p>
+          )}
+          <Link
+            href="/mis-postulaciones"
+            className="mt-auto text-sm font-medium text-electric hover:underline"
+          >
+            Ver todas →
+          </Link>
+        </Card>
+
+        <Card title="Evaluaciones recibidas">
+          {evaluaciones.length > 0 ? (
+            <ul className="flex flex-col gap-3">
+              {evaluaciones.map((e) => (
+                <li key={e.projectId} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-medium text-ink">
+                      {e.titulo}
+                    </span>
+                    <Badge tone="brand">{e.puntaje} / 5</Badge>
+                  </div>
+                  {e.comentario && (
+                    <p className="text-sm text-muted">{e.comentario}</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted">
+              Cuando termines un proyecto, verás aquí la evaluación del gestor.
+            </p>
+          )}
+        </Card>
+      </div>
+
+      {/* Portafolio + habilidades */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <Card title="Portafolio" right={`${portfolio.length} evidencia${portfolio.length === 1 ? "" : "s"}`}>
+          {portfolio.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {portfolio.slice(0, 3).map((it) => (
+                <li key={it.id} className="flex items-center gap-2 text-sm">
+                  <span className="size-1.5 rounded-full bg-electric" />
+                  <span className="truncate text-ink">{it.titulo}</span>
+                  {it.project?.titulo && (
+                    <Badge tone="outline">Verificable</Badge>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted">
+              Aún no cargaste evidencias. Suma tu trabajo para mostrarlo.
+            </p>
+          )}
+          <div className="mt-auto flex items-center gap-3 pt-1">
+            <Link href="/perfil" className="text-sm font-medium text-electric hover:underline">
+              Gestionar →
+            </Link>
+            {profile?.visibility === "publico" && profile?.id && (
+              <Link
+                href={`/u/${profile.id}`}
+                className="text-sm font-medium text-muted hover:text-electric"
+              >
+                Ver página pública
+              </Link>
+            )}
+          </div>
+        </Card>
+
+        <Card title="Tus habilidades">
+          {skills.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {skills.map((s) => (
+                <Badge key={s.skill_id} tone="neutral">
+                  {s.skill?.nombre}
+                  {s.nivel && (
+                    <span className="text-muted/70">
+                      {" "}
+                      · {NIVEL_LABEL[s.nivel] ?? s.nivel}
+                    </span>
+                  )}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted">
+              Declara lo que sabes hacer para que te encuentren.
+            </p>
+          )}
+          <Link
+            href="/perfil"
+            className="mt-auto text-sm font-medium text-electric hover:underline"
+          >
+            {skills.length > 0 ? "Editar habilidades →" : "Agregar habilidades →"}
+          </Link>
+        </Card>
       </div>
 
       {/* Recomendados */}
@@ -245,7 +439,27 @@ export default async function InicioPage() {
   );
 }
 
-// Tarjeta de KPI.
+// Contenedor de widget con título y valor opcional a la derecha.
+function Card({
+  title,
+  right,
+  children,
+}: {
+  title: string;
+  right?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-6">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-ink">{title}</h2>
+        {right && <span className="text-sm font-semibold text-electric">{right}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
 function StatCard({
   label,
   value,
@@ -269,7 +483,6 @@ function StatCard({
   );
 }
 
-// Pastilla de conteo por estado.
 function Pill({
   tone,
   children,
