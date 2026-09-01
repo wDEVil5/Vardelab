@@ -21,7 +21,7 @@ export type AuthState = { error?: string };
 const ROLES_AUTOSERVICIO = ["estudiante", "patrocinador"] as const;
 
 // Destino tras autenticarse. Provisional hasta que exista el panel del rol.
-const POST_AUTH_REDIRECT = "/proyectos";
+const POST_AUTH_REDIRECT = "/inicio";
 
 export async function signUp(
   _prevState: AuthState,
