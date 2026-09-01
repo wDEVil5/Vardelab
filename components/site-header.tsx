@@ -28,6 +28,9 @@ export async function SiteHeader() {
     ...(user?.esEstudiante
       ? [{ href: "/mis-postulaciones", label: "Mis postulaciones" }]
       : []),
+    ...(user?.esModerador || user?.esAdmin
+      ? [{ href: "/moderacion", label: "Moderación" }]
+      : []),
     ...(user ? [{ href: "/perfil", label: "Mi perfil" }] : []),
     ...(!user
       ? [
@@ -58,6 +61,9 @@ export async function SiteHeader() {
           )}
           {user?.esEstudiante && (
             <NavLink href="/mis-postulaciones">Mis postulaciones</NavLink>
+          )}
+          {(user?.esModerador || user?.esAdmin) && (
+            <NavLink href="/moderacion">Moderación</NavLink>
           )}
           {!user && (
             <>

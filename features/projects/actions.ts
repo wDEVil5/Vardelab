@@ -273,12 +273,12 @@ export async function deleteRoleSkill(formData: FormData): Promise<void> {
 export type PublishState = { error?: string };
 
 /**
- * Publica un proyecto (`borrador → publicado`). Simplificación temporal: publica
- * directo, sin el paso `en_revisión` — este se insertará cuando exista la
- * vertical del moderador. Requiere al menos un rol. La RLS
- * `projects_update_manager` (M3) exige gestionar el proyecto.
+ * Envía un proyecto a revisión (`borrador → en_revision`). Antes publicaba
+ * directo; desde M18 el paso a `publicado` lo decide el moderador. Requiere al
+ * menos un rol. La RLS `projects_update_manager` (M3) exige gestionar el
+ * proyecto y el trigger `projects_status_guard` (M18) valida la transición.
  */
-export async function publishProject(
+export async function submitProjectForReview(
   _prevState: PublishState,
   formData: FormData,
 ): Promise<PublishState> {
@@ -287,29 +287,48 @@ export async function publishProject(
 
   const supabase = await createClient();
 
-  // Regla de negocio: no se publica un proyecto sin roles.
+  // Regla de negocio: no se envía a revisión un proyecto sin roles.
   const { count } = await supabase
     .from("project_roles")
     .select("id", { count: "exact", head: true })
     .eq("project_id", projectId);
 
   if (!count || count < 1) {
-    return { error: "Agrega al menos un rol antes de publicar." };
+    return { error: "Agrega al menos un rol antes de enviarlo a revisión." };
   }
 
   const { error } = await supabase
     .from("projects")
-    .update({ status: "publicado" })
+    .update({ status: "en_revision" })
     .eq("id", projectId);
 
   if (error) {
-    console.error("[publishProject]", error.message);
-    return { error: "No se pudo publicar el proyecto." };
+    console.error("[submitProjectForReview]", error.message);
+    return { error: "No se pudo enviar el proyecto a revisión." };
   }
 
   revalidatePath(`/mis-proyectos/${projectId}`);
-  revalidatePath("/proyectos");
+  revalidatePath("/moderacion");
   return {};
+}
+
+/** Retira un proyecto de la cola de revisión (`en_revision → borrador`). */
+export async function withdrawFromReview(formData: FormData): Promise<void> {
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!projectId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("projects")
+    .update({ status: "borrador" })
+    .eq("id", projectId);
+
+  if (error) {
+    console.error("[withdrawFromReview]", error.message);
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}`);
+  revalidatePath("/moderacion");
 }
 
 /** Regresa un proyecto publicado a borrador (para editarlo o retirarlo). */
@@ -329,6 +348,73 @@ export async function unpublishProject(formData: FormData): Promise<void> {
 
   revalidatePath(`/mis-proyectos/${projectId}`);
   revalidatePath("/proyectos");
+}
+
+export type ModerationState = { error?: string };
+
+/**
+ * Aprueba un proyecto en revisión (`en_revision → publicado`). Solo moderador/
+ * admin: lo garantizan la RLS `projects_update_moderator` y el trigger
+ * `projects_status_guard` (M18); si el usuario no tiene el rol, la actualización
+ * no afecta filas y se informa el error.
+ */
+export async function approveProject(
+  _prevState: ModerationState,
+  formData: FormData,
+): Promise<ModerationState> {
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!projectId) return { error: "Falta el proyecto." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("projects")
+    .update({ status: "publicado" })
+    .eq("id", projectId)
+    .eq("status", "en_revision")
+    .select("id");
+
+  if (error) {
+    console.error("[approveProject]", error.message);
+    return { error: "No se pudo aprobar el proyecto." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "No se pudo aprobar (¿ya no está en revisión?)." };
+  }
+
+  revalidatePath("/moderacion");
+  revalidatePath("/proyectos");
+  return {};
+}
+
+/**
+ * Rechaza un proyecto en revisión y lo devuelve a borrador (`en_revision →
+ * borrador`) para que el gestor lo ajuste. Mismas garantías de rol que aprobar.
+ */
+export async function rejectProject(
+  _prevState: ModerationState,
+  formData: FormData,
+): Promise<ModerationState> {
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!projectId) return { error: "Falta el proyecto." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("projects")
+    .update({ status: "borrador" })
+    .eq("id", projectId)
+    .eq("status", "en_revision")
+    .select("id");
+
+  if (error) {
+    console.error("[rejectProject]", error.message);
+    return { error: "No se pudo rechazar el proyecto." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "No se pudo rechazar (¿ya no está en revisión?)." };
+  }
+
+  revalidatePath("/moderacion");
+  return {};
 }
 
 export type DeleteProjectState = { error?: string };
