@@ -45,6 +45,15 @@ export function AddRoleForm({ projectId }: { projectId: string }) {
           aria-label="Cupos"
           placeholder="Cupos"
         />
+        <Input
+          type="number"
+          name="horas_semanales"
+          min={1}
+          max={60}
+          className="sm:max-w-36"
+          aria-label="Horas por semana"
+          placeholder="Horas/semana"
+        />
       </div>
 
       <Textarea
