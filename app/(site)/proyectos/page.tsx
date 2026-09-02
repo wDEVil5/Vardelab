@@ -64,7 +64,7 @@ export default async function ProyectosPage({ searchParams }: PageProps) {
 
   return (
     <>
-      <main className="relative z-10 mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-surface shadow-[0_8px_24px_-16px_rgba(13,37,59,0.12)]">
+      <main className="relative z-10 md:mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-surface md:shadow-[0_8px_24px_-16px_rgba(13,37,59,0.12)]">
         <div className="mx-auto w-full max-w-5xl px-6 py-10">
           {/* Encabezado */}
           <header className="flex flex-col gap-2">

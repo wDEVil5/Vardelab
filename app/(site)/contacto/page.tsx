@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function ContactoPage() {
   return (
     <>
-      <main className="relative z-10 mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-white">
+      <main className="relative z-10 md:mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-white">
         <section className="mx-auto w-full max-w-2xl px-6 py-16 sm:py-24">
           <span className="text-xs font-semibold uppercase tracking-wide text-electric">
             Para organizaciones
