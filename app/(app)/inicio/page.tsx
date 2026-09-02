@@ -8,9 +8,8 @@ import {
 import { getPublishedProjects } from "@/features/projects/queries";
 import { getMyTeams } from "@/features/teams/queries";
 import { getMyEvaluationsByProject } from "@/features/evaluations/queries";
-import { getMyProfileSkills } from "@/features/profile/queries";
+import { getMyProfileSkills, getMyProfile } from "@/features/profile/queries";
 import { getMyPortfolioItems } from "@/features/portfolio/queries";
-import { getMyProfile } from "@/features/profile/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -20,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 const ESTADO_HITO: Record<string, { dot: string; label: string }> = {
-  pendiente: { dot: "bg-muted", label: "Pendiente" },
+  pendiente: { dot: "bg-white/40", label: "Pendiente" },
   en_progreso: { dot: "bg-coral", label: "En progreso" },
   entregado: { dot: "bg-electric", label: "Entregado" },
   aprobado: { dot: "bg-sprout", label: "Aprobado" },
@@ -50,16 +49,17 @@ function diasRestantes(f: string | null): number | null {
 
 function vencimiento(n: number | null): string | null {
   if (n === null) return null;
-  if (n < 0) return `vencido`;
+  if (n < 0) return "vencido";
   if (n === 0) return "vence hoy";
   if (n === 1) return "vence mañana";
   return `en ${n} días`;
 }
 
 /**
- * E-00 · Inicio del estudiante. Panel completo a ancho total: KPIs, proyecto
- * activo con hitos y equipo, acciones pendientes con vencimiento, evaluaciones
- * recibidas, portafolio, habilidades y recomendados. Datos reales bajo RLS.
+ * E-00 · Inicio del estudiante. Panel de actividad a ancho completo: KPIs, el
+ * proyecto activo (hitos + equipo), acciones pendientes con vencimiento, y una
+ * fila de widgets compactos (postulaciones, evaluaciones, portafolio,
+ * habilidades) más recomendados. Datos reales bajo RLS.
  */
 export default async function InicioPage() {
   const user = await getCurrentUser();
@@ -85,12 +85,10 @@ export default async function InicioPage() {
   };
   const perfil = dashboard?.perfil ?? { pct: 0, faltan: [] as string[] };
 
-  // Equipo del proyecto activo.
   const equipoActivo = activo
     ? teams.find((t) => t.projectId === activo.id)?.members ?? []
     : [];
 
-  // Título de proyecto por id (para las evaluaciones).
   const tituloPorProyecto = new Map(
     teams.filter((t) => t.projectId).map((t) => [t.projectId!, t.projectTitulo]),
   );
@@ -103,7 +101,6 @@ export default async function InicioPage() {
       comentario: e.comentario,
     }));
 
-  // Acciones pendientes: hitos por trabajar del proyecto activo.
   const acciones = (activo?.hitos ?? [])
     .filter((h) => h.estado === "pendiente" || h.estado === "en_progreso")
     .map((h) => ({ ...h, dias: diasRestantes(h.fechaLimite) }));
@@ -133,7 +130,7 @@ export default async function InicioPage() {
         />
       </div>
 
-      {/* Proyecto activo + acciones pendientes */}
+      {/* Proyecto activo + columna de acciones y perfil */}
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           {activo ? (
@@ -193,9 +190,8 @@ export default async function InicioPage() {
                 </ul>
               )}
 
-              {/* Equipo */}
               {equipoActivo.length > 0 && (
-                <div className="mt-1 border-t border-white/10 pt-4">
+                <div className="mt-auto border-t border-white/10 pt-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-white/50">
                     Equipo
                   </p>
@@ -233,74 +229,78 @@ export default async function InicioPage() {
           )}
         </div>
 
-        {/* Acciones pendientes */}
-        <Card title="Acciones pendientes">
-          {acciones.length > 0 ? (
-            <ul className="flex flex-col gap-2">
-              {acciones.map((h) => {
-                const venc = vencimiento(h.dias);
-                const urgente = h.dias !== null && h.dias <= 2;
-                return (
-                  <li key={h.id}>
-                    <Link
-                      href={`/proyectos/${activo!.id}`}
-                      className="flex items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:border-electric/40"
-                    >
-                      <span className="flex-1 truncate text-sm text-ink">
-                        Entregar: {h.titulo}
-                      </span>
-                      {venc && (
-                        <span
-                          className={cn(
-                            "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
-                            urgente ? "bg-coral/15 text-coral" : "bg-surface text-muted",
-                          )}
-                        >
-                          {venc}
+        {/* Columna derecha: acciones + completar perfil (apiladas) */}
+        <div className="flex flex-col gap-4">
+          <Card title="Acciones pendientes">
+            {acciones.length > 0 ? (
+              <ul className="flex flex-col gap-2">
+                {acciones.map((h) => {
+                  const venc = vencimiento(h.dias);
+                  const urgente = h.dias !== null && h.dias <= 2;
+                  return (
+                    <li key={h.id}>
+                      <Link
+                        href={`/proyectos/${activo!.id}`}
+                        className="flex items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:border-electric/40"
+                      >
+                        <span className="flex-1 truncate text-sm text-ink">
+                          Entregar: {h.titulo}
                         </span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted">Sin acciones pendientes. 🎉</p>
-          )}
-        </Card>
+                        {venc && (
+                          <span
+                            className={cn(
+                              "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
+                              urgente
+                                ? "bg-coral/15 text-coral"
+                                : "bg-surface text-muted",
+                            )}
+                          >
+                            {venc}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted">Sin acciones pendientes. 🎉</p>
+            )}
+          </Card>
+
+          <Card title="Completa tu perfil" right={`${perfil.pct}%`}>
+            <div className="h-2 overflow-hidden rounded-full bg-surface">
+              <div
+                className="h-full rounded-full bg-electric"
+                style={{ width: `${perfil.pct}%` }}
+              />
+            </div>
+            {perfil.faltan.length > 0 ? (
+              <>
+                <ul className="flex flex-col gap-2">
+                  {perfil.faltan.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-muted">
+                      <span className="size-1.5 rounded-full bg-coral" />
+                      Falta: {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/perfil"
+                  className="text-sm font-medium text-electric hover:underline"
+                >
+                  Completar perfil →
+                </Link>
+              </>
+            ) : (
+              <p className="text-sm text-sprout">Tu perfil está completo. ✓</p>
+            )}
+          </Card>
+        </div>
       </div>
 
-      {/* Perfil + postulaciones + evaluaciones */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
-        <Card title="Completa tu perfil" right={`${perfil.pct}%`}>
-          <div className="h-2 overflow-hidden rounded-full bg-surface">
-            <div
-              className="h-full rounded-full bg-electric"
-              style={{ width: `${perfil.pct}%` }}
-            />
-          </div>
-          {perfil.faltan.length > 0 ? (
-            <>
-              <ul className="mt-4 flex flex-col gap-2">
-                {perfil.faltan.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm text-muted">
-                    <span className="size-1.5 rounded-full bg-coral" />
-                    Falta: {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/perfil"
-                className="mt-4 inline-block text-sm font-medium text-electric hover:underline"
-              >
-                Completar perfil →
-              </Link>
-            </>
-          ) : (
-            <p className="mt-4 text-sm text-sprout">Tu perfil está completo. ✓</p>
-          )}
-        </Card>
-
+      {/* Widgets compactos */}
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-start">
         <Card title="Postulaciones">
           {post.total > 0 ? (
             <div className="flex flex-wrap gap-2">
@@ -315,19 +315,17 @@ export default async function InicioPage() {
               )}
             </div>
           ) : (
-            <p className="text-sm text-muted">
-              Aún no te postulaste. Explora y encuentra un rol.
-            </p>
+            <p className="text-sm text-muted">Aún no te postulaste.</p>
           )}
           <Link
             href="/mis-postulaciones"
-            className="mt-auto text-sm font-medium text-electric hover:underline"
+            className="text-sm font-medium text-electric hover:underline"
           >
             Ver todas →
           </Link>
         </Card>
 
-        <Card title="Evaluaciones recibidas">
+        <Card title="Evaluaciones">
           {evaluaciones.length > 0 ? (
             <ul className="flex flex-col gap-3">
               {evaluaciones.map((e) => (
@@ -346,33 +344,28 @@ export default async function InicioPage() {
             </ul>
           ) : (
             <p className="text-sm text-muted">
-              Cuando termines un proyecto, verás aquí la evaluación del gestor.
+              Al terminar un proyecto verás aquí la evaluación del gestor.
             </p>
           )}
         </Card>
-      </div>
 
-      {/* Portafolio + habilidades */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Card title="Portafolio" right={`${portfolio.length} evidencia${portfolio.length === 1 ? "" : "s"}`}>
+        <Card
+          title="Portafolio"
+          right={`${portfolio.length} evidencia${portfolio.length === 1 ? "" : "s"}`}
+        >
           {portfolio.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {portfolio.slice(0, 3).map((it) => (
                 <li key={it.id} className="flex items-center gap-2 text-sm">
-                  <span className="size-1.5 rounded-full bg-electric" />
+                  <span className="size-1.5 shrink-0 rounded-full bg-electric" />
                   <span className="truncate text-ink">{it.titulo}</span>
-                  {it.project?.titulo && (
-                    <Badge tone="outline">Verificable</Badge>
-                  )}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted">
-              Aún no cargaste evidencias. Suma tu trabajo para mostrarlo.
-            </p>
+            <p className="text-sm text-muted">Aún no cargaste evidencias.</p>
           )}
-          <div className="mt-auto flex items-center gap-3 pt-1">
+          <div className="flex items-center gap-3">
             <Link href="/perfil" className="text-sm font-medium text-electric hover:underline">
               Gestionar →
             </Link>
@@ -381,7 +374,7 @@ export default async function InicioPage() {
                 href={`/u/${profile.id}`}
                 className="text-sm font-medium text-muted hover:text-electric"
               >
-                Ver página pública
+                Ver pública
               </Link>
             )}
           </div>
@@ -394,24 +387,19 @@ export default async function InicioPage() {
                 <Badge key={s.skill_id} tone="neutral">
                   {s.skill?.nombre}
                   {s.nivel && (
-                    <span className="text-muted/70">
-                      {" "}
-                      · {NIVEL_LABEL[s.nivel] ?? s.nivel}
-                    </span>
+                    <span className="text-muted/70"> · {NIVEL_LABEL[s.nivel] ?? s.nivel}</span>
                   )}
                 </Badge>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted">
-              Declara lo que sabes hacer para que te encuentren.
-            </p>
+            <p className="text-sm text-muted">Declara lo que sabes hacer.</p>
           )}
           <Link
             href="/perfil"
-            className="mt-auto text-sm font-medium text-electric hover:underline"
+            className="text-sm font-medium text-electric hover:underline"
           >
-            {skills.length > 0 ? "Editar habilidades →" : "Agregar habilidades →"}
+            {skills.length > 0 ? "Editar →" : "Agregar →"}
           </Link>
         </Card>
       </div>
