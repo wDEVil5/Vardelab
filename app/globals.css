@@ -59,6 +59,17 @@ body {
   animation: fade-in 400ms ease-out both;
 }
 
+/* Parallax del footer "cortina": el pie sube al revelarse. Solo escritorio y con
+   movimiento permitido; sin JS, `--footer-rev` cae a 1 → sin desplazamiento. */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .footer-parallax {
+    transform: translateY(
+      calc((1 - var(--footer-rev, 1)) * var(--footer-parallax, 48px))
+    );
+    will-change: transform;
+  }
+}
+
 /* Entrada en carga (sobre el pliegue): respeta reduced-motion. */
 @media (prefers-reduced-motion: no-preference) {
   .animate-rise {

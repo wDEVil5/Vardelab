@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 export default function OrganizacionesPage() {
   return (
     <>
-      <main className="relative z-10 mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-white shadow-[0_8px_24px_-16px_rgba(13,37,59,0.12)]">
+      <main className="relative z-10 md:mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-white md:shadow-[0_8px_24px_-16px_rgba(13,37,59,0.12)]">
         {/* 1 · HERO */}
         <section className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-24">
           <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
