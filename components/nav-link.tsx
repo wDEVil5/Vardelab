@@ -26,6 +26,7 @@ export function NavLink({
   return (
     <Link
       href={href}
+      aria-current={activo ? "page" : undefined}
       className={cn(
         "text-sm transition-colors",
         activo
