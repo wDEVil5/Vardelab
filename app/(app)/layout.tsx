@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/queries";
 import { AppSidebar, type AppNavItem } from "@/components/app-sidebar";
+import { SkipLink } from "@/components/skip-link";
 
 /**
  * Layout del área autenticada (dashboard por rol). Route group `(app)`: shell con
@@ -41,11 +42,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-surface lg:flex">
+      <SkipLink />
       <AppSidebar
         user={{ nombre: user.nombre, initials: iniciales(user.nombre), roleLabel }}
         items={items}
       />
-      <main className="min-w-0 flex-1">{children}</main>
+      <main id="contenido-principal" tabIndex={-1} className="min-w-0 flex-1">
+        {children}
+      </main>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { buttonClasses } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { signOut } from "@/features/auth/actions";
 
 export type MobileNavItem = { href: string; label: string };
@@ -71,15 +72,28 @@ export function MobileMenu({
           />
           <div className="absolute inset-x-0 top-full z-50 border-b border-border bg-white shadow-sm">
             <nav className="mx-auto flex w-full max-w-5xl flex-col gap-1 px-6 py-4">
-              {items.map((it) => (
-                <Link
-                  key={it.href}
-                  href={it.href}
-                  className="rounded-md px-2 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-surface"
-                >
-                  {it.label}
-                </Link>
-              ))}
+              {items.map((it) => {
+                const activo =
+                  pathname === it.href ||
+                  (it.href !== "/" &&
+                    !it.href.includes("#") &&
+                    pathname.startsWith(it.href));
+                return (
+                  <Link
+                    key={it.href}
+                    href={it.href}
+                    aria-current={activo ? "page" : undefined}
+                    className={cn(
+                      "rounded-md px-2 py-2.5 text-sm font-medium transition-colors",
+                      activo
+                        ? "bg-surface text-electric"
+                        : "text-ink hover:bg-surface",
+                    )}
+                  >
+                    {it.label}
+                  </Link>
+                );
+              })}
 
               <div className="mt-2 border-t border-border pt-3">
                 {userName ? (
