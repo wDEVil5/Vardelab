@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { SiteHeader } from "@/components/site-header";
+import { SkipLink } from "@/components/skip-link";
 
 /**
  * Layout de la app con header global (catálogo, paneles, perfil, etc.). Las
@@ -9,8 +10,13 @@ import { SiteHeader } from "@/components/site-header";
 export default function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <>
+      <SkipLink />
       <SiteHeader />
-      {children}
+      {/* Landmark de destino del skip-link. `contents`-like: mantiene el flex
+          del cuerpo (footer cortina) al ser flex-col flex-1 igual que el main. */}
+      <div id="contenido-principal" tabIndex={-1} className="flex flex-1 flex-col">
+        {children}
+      </div>
     </>
   );
 }
