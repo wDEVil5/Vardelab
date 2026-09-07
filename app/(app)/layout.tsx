@@ -31,13 +31,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       : []),
     ...(user.esPatrocinador
       ? ([
+          { href: "/mis-organizaciones", label: "Organizaciones", icon: "organizacion" },
           { href: "/mis-proyectos", label: "Mis proyectos", icon: "proyecto" },
         ] as AppNavItem[])
       : []),
     ...(user.esModerador || user.esAdmin
       ? ([{ href: "/moderacion", label: "Moderación", icon: "moderacion" }] as AppNavItem[])
       : []),
-    { href: "/perfil", label: "Perfil", icon: "perfil" },
   ];
 
   return (
