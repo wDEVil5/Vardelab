@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/reveal";
@@ -7,6 +8,7 @@ import { PinnedPrinciples } from "@/components/pinned-principles";
 import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 import { getPublishedProjects } from "@/features/projects/queries";
+import { getCurrentUser } from "@/features/auth/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
 
 /**
@@ -16,6 +18,10 @@ import { ProjectCard } from "@/features/projects/components/project-card";
  * métricas, testimonios ni logos ficticios.
  */
 export default async function Home() {
+  // Con sesión, la landing de marketing no aporta: se va directo a su panel.
+  // Puede seguir explorando el catálogo (/proyectos), que sí es compartido.
+  if (await getCurrentUser()) redirect("/inicio");
+
   const publicados = await getPublishedProjects();
   // Composición del hero: tarjetas reales del catálogo (sin ilustraciones).
   const heroProyectos = publicados.slice(0, 2);
