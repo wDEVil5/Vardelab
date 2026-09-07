@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/reveal";
@@ -8,7 +7,6 @@ import { Faq } from "@/components/faq";
 import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 import { DesafiosExplorer } from "@/components/desafios-explorer";
-import { getCurrentUser } from "@/features/auth/queries";
 
 export const metadata: Metadata = {
   title: "Para organizaciones · CampusLab",
@@ -22,10 +20,7 @@ export const metadata: Metadata = {
  * estático), sobre los tokens de Foundations. Piloto independiente: sin métricas,
  * logos, testimonios ni casos ficticios. No es un panel autenticado.
  */
-export default async function OrganizacionesPage() {
-  // Con sesión, el pitch para organizaciones no aporta: se va directo al panel.
-  if (await getCurrentUser()) redirect("/inicio");
-
+export default function OrganizacionesPage() {
   return (
     <>
       <main className="relative z-10 md:mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-white md:shadow-[0_8px_24px_-16px_rgba(13,37,59,0.12)]">

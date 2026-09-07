@@ -12,6 +12,7 @@ type IconName =
   | "inicio"
   | "explorar"
   | "proyecto"
+  | "organizacion"
   | "postulaciones"
   | "moderacion"
   | "perfil";
@@ -21,6 +22,12 @@ const ICONS: Record<IconName, ReactNode> = {
   inicio: <path d="M3 10.5L12 3l9 7.5M5 9.5V21h14V9.5" />,
   explorar: <><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></>,
   proyecto: <path d="M12 3l9 9-9 9-9-9 9-9z" />,
+  organizacion: (
+    <>
+      <path d="M3 21h18M5 21V7l7-4 7 4v14" />
+      <path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01M10 21v-4h4v4" />
+    </>
+  ),
   postulaciones: <><path d="M4 6h16M4 12h16M4 18h10" /></>,
   moderacion: <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z" />,
   perfil: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></>,
@@ -76,23 +83,35 @@ export function AppSidebar({
   const contenido = (
     <div className="flex h-full flex-col gap-6 p-4">
       <div className="px-2 pt-2">
-        <Link href="/inicio" className="text-xl font-bold text-white">
+        {/* La marca del panel lleva a la portada pública (salir al sitio). */}
+        <Link href="/" className="text-xl font-bold text-white">
           CampusLab
         </Link>
         <p className="mt-0.5 text-xs text-white/50">{user.roleLabel}</p>
       </div>
 
-      <div className="flex items-center gap-3 rounded-xl bg-white/5 p-3">
+      {/* Tarjeta de usuario = acceso al perfil (reemplaza el ítem "Perfil"). */}
+      <Link
+        href="/perfil"
+        aria-current={pathname === "/perfil" ? "page" : undefined}
+        className={cn(
+          "flex items-center gap-3 rounded-xl p-3 transition-colors",
+          pathname === "/perfil" ? "bg-white/10" : "bg-white/5 hover:bg-white/10",
+        )}
+      >
         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-electric text-sm font-semibold text-white">
           {user.initials}
         </span>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-white">
             {user.nombre}
           </p>
-          <p className="text-xs text-white/50">{user.roleLabel}</p>
+          <p className="text-xs text-white/50">Ver mi perfil</p>
         </div>
-      </div>
+        <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-white/40" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M9 6l6 6-6 6" />
+        </svg>
+      </Link>
 
       {/* Primera línea separadora: bloque de identidad ↕ navegación. */}
       <div className="h-px bg-white/10" />
@@ -160,7 +179,7 @@ export function AppSidebar({
 
       {/* Barra superior (móvil). */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-white px-4 py-3 lg:hidden">
-        <Link href="/inicio" className="font-bold text-ink">
+        <Link href="/" className="font-bold text-ink">
           CampusLab
         </Link>
         <button
