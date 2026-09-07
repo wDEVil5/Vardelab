@@ -43,7 +43,8 @@ export async function SiteHeader() {
   return (
     <SiteHeaderBar>
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-6">
-        <Link href="/" className="font-bold text-ink">
+        {/* Con sesión, la marca lleva al panel (su "casa"); sin sesión, a la landing. */}
+        <Link href={user ? "/inicio" : "/"} className="font-bold text-ink">
           CampusLab
         </Link>
 
