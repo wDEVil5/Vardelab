@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
-import { buttonClasses } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { getCurrentUser } from "@/features/auth/queries";
 import {
   getProjectApplications,
@@ -141,29 +141,25 @@ function RoleApplications({
                       <form action={acceptApplication}>
                         <input type="hidden" name="applicationId" value={app.id} />
                         <input type="hidden" name="projectId" value={projectId} />
-                        <button
-                          type="submit"
-                          className={buttonClasses({
-                            variant: "primary",
-                            size: "sm",
-                          })}
+                        <SubmitButton
+                          variant="primary"
+                          size="sm"
+                          pendingText="Aceptando…"
                         >
                           Aceptar
-                        </button>
+                        </SubmitButton>
                       </form>
                     )}
                     <form action={rejectApplication}>
                       <input type="hidden" name="applicationId" value={app.id} />
                       <input type="hidden" name="projectId" value={projectId} />
-                      <button
-                        type="submit"
-                        className={buttonClasses({
-                          variant: "ghost",
-                          size: "sm",
-                        })}
+                      <SubmitButton
+                        variant="ghost"
+                        size="sm"
+                        pendingText="Rechazando…"
                       >
                         Rechazar
-                      </button>
+                      </SubmitButton>
                     </form>
                   </div>
                 )}

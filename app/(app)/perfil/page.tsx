@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { getMyProfile, getMyProfileSkills } from "@/features/profile/queries";
 import { setProfileVisibility } from "@/features/profile/actions";
 import { getActiveSkills } from "@/features/skills/queries";
@@ -90,17 +91,15 @@ export default async function PerfilPage() {
               name="visibility"
               value={profile.visibility === "publico" ? "privado" : "publico"}
             />
-            <button
-              type="submit"
-              className={buttonClasses({
-                variant: profile.visibility === "publico" ? "secondary" : "primary",
-                size: "sm",
-              })}
+            <SubmitButton
+              variant={profile.visibility === "publico" ? "secondary" : "primary"}
+              size="sm"
+              pendingText="Guardando…"
             >
               {profile.visibility === "publico"
                 ? "Hacer privado"
                 : "Hacer público"}
-            </button>
+            </SubmitButton>
           </form>
 
           {profile.visibility === "publico" && (
