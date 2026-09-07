@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/features/auth/queries";
 import { getMyApplications } from "@/features/applications/queries";
@@ -179,15 +180,13 @@ export default async function MisPostulacionesPage() {
                   {p.status === "enviada" && (
                     <form action={withdrawApplication}>
                       <input type="hidden" name="applicationId" value={p.id} />
-                      <button
-                        type="submit"
-                        className={buttonClasses({
-                          variant: "ghost",
-                          size: "sm",
-                        })}
+                      <SubmitButton
+                        variant="ghost"
+                        size="sm"
+                        pendingText="Retirando…"
                       >
                         Retirar
-                      </button>
+                      </SubmitButton>
                     </form>
                   )}
                 </div>
