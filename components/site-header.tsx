@@ -3,7 +3,6 @@ import { buttonClasses } from "@/components/ui/button";
 import { NavLink } from "@/components/nav-link";
 import { SiteHeaderBar } from "@/components/site-header-bar";
 import { MobileMenu, type MobileNavItem } from "@/components/mobile-menu";
-import { signOut } from "@/features/auth/actions";
 import { getCurrentUser } from "@/features/auth/queries";
 
 /**
@@ -18,82 +17,52 @@ export async function SiteHeader() {
   // Enlaces del menú móvil según la sesión (la acción de sesión la resuelve el
   // propio menú a partir de `userName`).
   const mobileItems: MobileNavItem[] = [
+    ...(user ? [{ href: "/inicio", label: "Ir a mi panel" }] : []),
     { href: "/proyectos", label: "Explorar" },
-    ...(user?.esPatrocinador
-      ? [
-          { href: "/mis-organizaciones", label: "Organizaciones" },
-          { href: "/mis-proyectos", label: "Mis proyectos" },
-        ]
-      : []),
-    ...(user?.esEstudiante
-      ? [{ href: "/mis-postulaciones", label: "Mis postulaciones" }]
-      : []),
-    ...(user?.esModerador || user?.esAdmin
-      ? [{ href: "/moderacion", label: "Moderación" }]
-      : []),
-    ...(user ? [{ href: "/perfil", label: "Mi perfil" }] : []),
-    ...(!user
-      ? [
-          { href: "/#como-funciona", label: "Cómo funciona" },
-          { href: "/organizaciones", label: "Para organizaciones" },
-        ]
-      : []),
+    { href: "/#como-funciona", label: "Cómo funciona" },
+    { href: "/organizaciones", label: "Para organizaciones" },
   ];
 
   return (
     <SiteHeaderBar>
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-6">
-        {/* Con sesión, la marca lleva al panel (su "casa"); sin sesión, a la landing. */}
-        <Link href={user ? "/inicio" : "/"} className="font-bold text-ink">
+        {/* En el sitio público la marca lleva siempre a la portada pública. La
+            entrada al panel privado es el botón "Ir a mi panel" (ver derecha). */}
+        <Link href="/" className="font-bold text-ink">
           CampusLab
         </Link>
 
-        {/* Navegación desktop. */}
+        {/* Navegación desktop. Solo enlaces PÚBLICOS (igual con o sin sesión):
+            lo privado (mis proyectos, postulaciones, moderación, organizaciones)
+            vive en la sidebar del panel, accesible con "Ir a mi panel". */}
         <nav className="hidden items-center gap-5 md:flex">
           <NavLink href="/proyectos">Explorar</NavLink>
-
-          {user?.esPatrocinador && (
-            <>
-              <NavLink href="/mis-organizaciones" className="hidden sm:inline">
-                Organizaciones
-              </NavLink>
-              <NavLink href="/mis-proyectos">Mis proyectos</NavLink>
-            </>
-          )}
-          {user?.esEstudiante && (
-            <NavLink href="/mis-postulaciones">Mis postulaciones</NavLink>
-          )}
-          {(user?.esModerador || user?.esAdmin) && (
-            <NavLink href="/moderacion">Moderación</NavLink>
-          )}
-          {!user && (
-            <>
-              <NavLink href="/#como-funciona" className="hidden sm:inline">
-                Cómo funciona
-              </NavLink>
-              <NavLink href="/organizaciones" className="hidden sm:inline">
-                Organizaciones
-              </NavLink>
-            </>
-          )}
+          <NavLink href="/#como-funciona" className="hidden sm:inline">
+            Cómo funciona
+          </NavLink>
+          <NavLink href="/organizaciones" className="hidden sm:inline">
+            Para organizaciones
+          </NavLink>
 
           {user ? (
-            <>
+            <div className="flex items-center gap-3">
+              {/* Entrada al panel privado (como "Mi Escritorio"). El cierre de
+                  sesión vive dentro del panel (sidebar) y en el menú móvil. */}
+              <Link
+                href="/inicio"
+                className={buttonClasses({ variant: "primary", size: "sm" })}
+              >
+                Ir a mi panel
+              </Link>
               <Link
                 href="/perfil"
-                className="text-sm font-medium text-muted transition-colors hover:text-electric"
+                aria-label={`Mi perfil (${user.nombre})`}
+                title={user.nombre}
+                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white transition-opacity hover:opacity-90"
               >
-                {user.nombre}
+                {iniciales(user.nombre)}
               </Link>
-              <form action={signOut}>
-                <button
-                  type="submit"
-                  className={buttonClasses({ variant: "ghost", size: "sm" })}
-                >
-                  Cerrar sesión
-                </button>
-              </form>
-            </>
+            </div>
           ) : (
             <Link
               href="/ingresar"
@@ -109,4 +78,11 @@ export async function SiteHeader() {
       </div>
     </SiteHeaderBar>
   );
+}
+
+// Iniciales para el avatar: primeras letras de hasta dos palabras del nombre.
+function iniciales(nombre: string): string {
+  const partes = nombre.trim().split(/\s+/).slice(0, 2);
+  const ini = partes.map((p) => p[0]?.toUpperCase() ?? "").join("");
+  return ini || "?";
 }
