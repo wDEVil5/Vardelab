@@ -78,7 +78,9 @@ export async function getMyTeams() {
   // Equipos con su proyecto.
   const { data: teams } = await supabase
     .from("teams")
-    .select("id, estado, project:projects ( id, titulo )")
+    .select(
+      "id, estado, project:projects ( id, titulo, organization:organizations ( nombre ) )",
+    )
     .in("id", teamIds);
 
   // Todos los integrantes de esos equipos (M15 permite verlos).
@@ -103,6 +105,7 @@ export async function getMyTeams() {
     estado: t.estado,
     projectId: t.project?.id ?? null,
     projectTitulo: t.project?.titulo ?? "Proyecto",
+    projectOrg: t.project?.organization?.nombre ?? null,
     members: (members ?? [])
       .filter((m) => m.team_id === t.id)
       .map((m) => ({

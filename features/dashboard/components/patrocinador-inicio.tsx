@@ -63,7 +63,7 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
       {sinOrganizacion && (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-border bg-white p-6">
           <div>
-            <p className="font-medium text-ink">Primero creá una organización</p>
+            <p className="font-medium text-ink">Primero crea una organización</p>
             <p className="mt-1 text-sm text-muted">
               Un proyecto se publica siempre bajo una organización propia.
             </p>
@@ -167,7 +167,7 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
             </ul>
           ) : (
             <p className="text-sm text-muted">
-              Aún no tenés organizaciones.
+              Aún no tienes organizaciones.
             </p>
           )}
         </Card>
