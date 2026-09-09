@@ -115,4 +115,22 @@ body {
   .animate-breathe {
     animation: breathe 7s ease-in-out infinite;
   }
+
+  /* Entrada con vida para el texto del principio en foco: sube y se desenfoca
+     de menos a más. Se reinicia al remontar (key) en cada cambio. */
+  @keyframes principio-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+      filter: blur(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+  }
+  .animate-principio {
+    animation: principio-reveal 620ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
 }
