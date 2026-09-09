@@ -13,9 +13,21 @@ export function SiteHeaderBar({ children }: { children: ReactNode }) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    // Estado inicial en rAF para no fijar estado sincrónico en el effect.
-    const raf = requestAnimationFrame(onScroll);
+    let ultimo = false;
+    const aplicar = () => {
+      const s = window.scrollY > 8;
+      if (s !== ultimo) {
+        ultimo = s;
+        setScrolled(s);
+      }
+    };
+    // Throttle con rAF: coalesce los eventos de scroll a uno por frame.
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(aplicar);
+    };
+    onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       cancelAnimationFrame(raf);

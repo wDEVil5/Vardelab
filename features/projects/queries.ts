@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 /**
  * Capa de datos del catálogo público de proyectos.
@@ -37,20 +39,14 @@ const PROJECT_CARD_SELECT = `
   )
 ` as const;
 
-/**
- * Devuelve los proyectos publicados para el catálogo público, del más reciente
- * al más antiguo, con su organización y los roles/habilidades anidados.
- */
-export async function getPublishedProjects() {
-  const supabase = await createClient();
+async function fetchPublishedProjects() {
+  const supabase = createPublicClient();
 
-  const query = supabase
+  const { data, error } = await supabase
     .from("projects")
     .select(PROJECT_CARD_SELECT)
     .eq("status", "publicado")
     .order("created_at", { ascending: false });
-
-  const { data, error } = await query;
 
   if (error) {
     // La página que consume esto decide cómo mostrar el fallo; acá solo se
@@ -59,8 +55,22 @@ export async function getPublishedProjects() {
     throw error;
   }
 
-  return data;
+  return data ?? [];
 }
+
+/**
+ * Devuelve los proyectos publicados para el catálogo público, del más reciente
+ * al más antiguo, con su organización y los roles/habilidades anidados.
+ *
+ * Cacheado (revalida cada 60 s): son datos públicos e iguales para todos, así se
+ * evita una consulta a la base en cada request. Los cambios en la vitrina
+ * (aprobar/editar/despublicar) aparecen dentro de esa ventana.
+ */
+export const getPublishedProjects = unstable_cache(
+  fetchPublishedProjects,
+  ["published-projects"],
+  { revalidate: 60 },
+);
 
 // Tipo de una tarjeta del catálogo, derivado del retorno de la consulta: se
 // mantiene sincronizado con el `select` de arriba sin escribirlo a mano.
@@ -148,13 +158,8 @@ const PROJECT_DETAIL_SELECT = `
   )
 ` as const;
 
-/**
- * Devuelve la ficha de un proyecto publicado por id, o `null` si no existe o no
- * está publicado. `maybeSingle()` no lanza cuando no hay fila: devuelve null y
- * la página decide mostrar 404.
- */
-export async function getPublishedProjectById(id: string) {
-  const supabase = await createClient();
+async function fetchPublishedProjectById(id: string) {
+  const supabase = createPublicClient();
 
   const { data, error } = await supabase
     .from("projects")
@@ -170,6 +175,20 @@ export async function getPublishedProjectById(id: string) {
 
   return data;
 }
+
+/**
+ * Devuelve la ficha de un proyecto publicado por id, o `null` si no existe o no
+ * está publicado. `maybeSingle()` no lanza cuando no hay fila: devuelve null y
+ * la página decide mostrar 404.
+ *
+ * Cacheado por id (revalida cada 5 min): datos públicos, se evita golpear la
+ * base en cada visita a la ficha.
+ */
+export const getPublishedProjectById = unstable_cache(
+  fetchPublishedProjectById,
+  ["published-project-by-id"],
+  { revalidate: 300 },
+);
 
 // Tipo de la ficha, derivado del retorno (excluye el `null` del caso 404).
 export type ProjectDetail = NonNullable<

@@ -27,14 +27,19 @@ export function RevealFooter({ children }: { children: ReactNode }) {
     const medir = () => root.style.setProperty("--footer-h", `${el.offsetHeight}px`);
 
     // Progreso de revelado: 0 tapado → 1 revelado del todo.
+    let ultimoRev = -1;
     const actualizarRev = () => {
       const h = el.offsetHeight || 1;
       const restante =
         document.documentElement.scrollHeight -
         window.scrollY -
         window.innerHeight;
-      const revelado = Math.min(Math.max(h - restante, 0), h);
-      root.style.setProperty("--footer-rev", String(revelado / h));
+      const rev = Math.min(Math.max(h - restante, 0), h) / h;
+      // Evita reescribir la variable CSS (invalida estilo) si no cambió: al
+      // scrollear lejos del pie, `rev` queda en 0 y no se escribe cada frame.
+      if (Math.abs(rev - ultimoRev) < 0.002) return;
+      ultimoRev = rev;
+      root.style.setProperty("--footer-rev", String(rev));
     };
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
