@@ -49,7 +49,7 @@ async function fetchPublishedProjects() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    // La página que consume esto decide cómo mostrar el fallo; acá solo se
+    // La página que consume esto decide cómo mostrar el fallo; aquí solo se
     // registra y se propaga para no devolver datos a medias.
     console.error("[getPublishedProjects]", error.message);
     throw error;
