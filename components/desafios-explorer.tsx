@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export type DesafioEjemplo = {
@@ -22,12 +22,29 @@ const AVANCE_MS = 4000;
 export function DesafiosExplorer({ items }: { items: DesafioEjemplo[] }) {
   const [activo, setActivo] = useState(0);
   const [pausado, setPausado] = useState(false);
+  const [enVista, setEnVista] = useState(true);
+  const [pestanaActiva, setPestanaActiva] = useState(true);
+  const contRef = useRef<HTMLDivElement>(null);
   const actual = items[activo];
+
+  // No gastar el timer si la sección no se ve o la pestaña está oculta.
+  useEffect(() => {
+    const el = contRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setEnVista(e.isIntersecting));
+    io.observe(el);
+    const onVis = () => setPestanaActiva(!document.hidden);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, []);
 
   // Avance automático con pausa. Depende de `activo` para reiniciar el conteo
   // tras cada cambio (automático o manual), manteniendo un ritmo parejo.
   useEffect(() => {
-    if (pausado) return;
+    if (pausado || !enVista || !pestanaActiva) return;
     if (
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -38,10 +55,11 @@ export function DesafiosExplorer({ items }: { items: DesafioEjemplo[] }) {
       setActivo((a) => (a + 1) % items.length);
     }, AVANCE_MS);
     return () => window.clearInterval(id);
-  }, [pausado, activo, items.length]);
+  }, [pausado, enVista, pestanaActiva, activo, items.length]);
 
   return (
     <div
+      ref={contRef}
       className="grid gap-4 lg:grid-cols-5 lg:gap-6"
       onMouseEnter={() => setPausado(true)}
       onMouseLeave={() => setPausado(false)}
