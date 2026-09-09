@@ -25,56 +25,57 @@ export async function SiteHeader() {
 
   return (
     <SiteHeaderBar>
-      <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-6">
+      <div className="relative mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-6">
         {/* En el sitio público la marca lleva siempre a la portada pública. La
             entrada al panel privado es el botón "Ir a mi panel" (ver derecha). */}
         <Link href="/" className="font-bold text-ink">
           CampusLab
         </Link>
 
-        {/* Navegación desktop. Solo enlaces PÚBLICOS (igual con o sin sesión):
-            lo privado (mis proyectos, postulaciones, moderación, organizaciones)
-            vive en la sidebar del panel, accesible con "Ir a mi panel". */}
-        <nav className="hidden items-center gap-5 md:flex">
+        {/* Navegación desktop CENTRADA (absoluta). Solo enlaces PÚBLICOS (igual
+            con o sin sesión); lo privado vive en la sidebar del panel, accesible
+            con "Ir a mi panel". */}
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-5 md:flex">
           <NavLink href="/proyectos">Explorar</NavLink>
-          <NavLink href="/#como-funciona" className="hidden sm:inline">
-            Cómo funciona
-          </NavLink>
-          <NavLink href="/organizaciones" className="hidden sm:inline">
-            Para organizaciones
-          </NavLink>
-
-          {user ? (
-            <div className="flex items-center gap-3">
-              {/* Entrada al panel privado (como "Mi Escritorio"). El cierre de
-                  sesión vive dentro del panel (sidebar) y en el menú móvil. */}
-              <Link
-                href="/inicio"
-                className={buttonClasses({ variant: "primary", size: "sm" })}
-              >
-                Ir a mi panel
-              </Link>
-              <Link
-                href="/perfil"
-                aria-label={`Mi perfil (${user.nombre})`}
-                title={user.nombre}
-                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white transition-opacity hover:opacity-90"
-              >
-                {iniciales(user.nombre)}
-              </Link>
-            </div>
-          ) : (
-            <Link
-              href="/ingresar"
-              className={buttonClasses({ variant: "outline", size: "sm" })}
-            >
-              Iniciar sesión
-            </Link>
-          )}
+          <NavLink href="/#como-funciona">Cómo funciona</NavLink>
+          <NavLink href="/organizaciones">Para organizaciones</NavLink>
         </nav>
 
-        {/* Navegación móvil. */}
-        <MobileMenu items={mobileItems} userName={user?.nombre ?? null} />
+        {/* Derecha: sesión (desktop) + menú móvil. */}
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex md:items-center md:gap-3">
+            {user ? (
+              <>
+                {/* Entrada al panel privado (como "Mi Escritorio"). El cierre de
+                    sesión vive dentro del panel (sidebar) y en el menú móvil. */}
+                <Link
+                  href="/inicio"
+                  className={buttonClasses({ variant: "primary", size: "sm" })}
+                >
+                  Ir a mi panel
+                </Link>
+                <Link
+                  href="/perfil"
+                  aria-label={`Mi perfil (${user.nombre})`}
+                  title={user.nombre}
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                >
+                  {iniciales(user.nombre)}
+                </Link>
+              </>
+            ) : (
+              <Link
+                href="/ingresar"
+                className={buttonClasses({ variant: "outline", size: "sm" })}
+              >
+                Iniciar sesión
+              </Link>
+            )}
+          </div>
+
+          {/* Navegación móvil. */}
+          <MobileMenu items={mobileItems} userName={user?.nombre ?? null} />
+        </div>
       </div>
     </SiteHeaderBar>
   );
