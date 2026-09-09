@@ -11,6 +11,7 @@ import { getMyEvaluationsByProject } from "@/features/evaluations/queries";
 import { getMyProfileSkills, getMyProfile } from "@/features/profile/queries";
 import { getMyPortfolioItems } from "@/features/portfolio/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
+import { PatrocinadorInicio } from "@/features/dashboard/components/patrocinador-inicio";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -64,6 +65,12 @@ function vencimiento(n: number | null): string | null {
 export default async function InicioPage() {
   const user = await getCurrentUser();
   const nombre = (user?.nombre ?? "").split(/\s+/)[0] || "";
+
+  // Panel por rol. El patrocinador puro ve su propio resumen; el estudiante (y
+  // por ahora moderador/admin, pendientes) sigue con el dashboard E-00.
+  if (user?.esPatrocinador && !user?.esEstudiante) {
+    return <PatrocinadorInicio nombre={nombre} />;
+  }
 
   const [dashboard, recomendados, teams, evalsMap, skills, portfolio, profile] =
     await Promise.all([
