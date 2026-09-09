@@ -6,16 +6,12 @@ import { getPublishedProjects } from "@/features/projects/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { PatrocinadorInicio } from "@/features/dashboard/components/patrocinador-inicio";
 import { buttonClasses } from "@/components/ui/button";
+import { ProgressGauge } from "@/components/progress-gauge";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Inicio · CampusLab",
 };
-
-// Tokens de marca en hex, para los trazos SVG del medidor (donde no hay clase).
-const ELECTRIC = "#3867FF";
-const SPROUT = "#62D5A2";
-const TRACK = "#E3E8EE";
 
 function diasRestantes(f: string | null): number | null {
   if (!f) return null;
@@ -112,7 +108,7 @@ export default async function InicioPage() {
           }
         />
         <KpiCard
-          href={activo ? `/proyectos/${activo.id}` : "/proyectos"}
+          href={activo ? `/proyecto/${activo.id}` : "/proyectos"}
           icon="pendiente"
           valor={pendientes}
           label="Pendientes"
@@ -124,7 +120,7 @@ export default async function InicioPage() {
           icon="evidencia"
           valor={evidencias}
           label="Evidencias"
-          sub={evidencias > 0 ? "en tu portafolio" : "sumá tu primera"}
+          sub={evidencias > 0 ? "en tu portafolio" : "suma tu primera"}
         />
       </section>
 
@@ -139,14 +135,14 @@ export default async function InicioPage() {
               </span>
             </div>
             <Link
-              href={`/proyectos/${activo.id}`}
+              href={`/proyecto/${activo.id}`}
               className="mt-1 block truncate font-semibold text-ink transition-colors hover:text-electric"
             >
               {activo.titulo}
             </Link>
 
             <div className="mt-4 flex flex-col items-center">
-              <Gauge pct={activo.progreso} />
+              <ProgressGauge pct={activo.progreso} />
               <p className="mt-3 text-sm text-muted">
                 <span className="font-medium text-ink">
                   {activo.hitosAprobados} de {activo.hitosTotal}
@@ -173,7 +169,7 @@ export default async function InicioPage() {
                   return (
                     <li key={h.id}>
                       <Link
-                        href={`/proyectos/${activo.id}`}
+                        href={`/proyecto/${activo.id}`}
                         className="flex items-center gap-3 border-b border-border py-2.5 text-sm transition-colors last:border-0 hover:text-electric"
                       >
                         <span
@@ -208,7 +204,7 @@ export default async function InicioPage() {
             )}
 
             <Link
-              href={`/proyectos/${activo.id}`}
+              href={`/proyecto/${activo.id}`}
               className="mt-4 inline-flex text-sm font-medium text-electric hover:underline"
             >
               Ir al proyecto →
@@ -219,8 +215,8 @@ export default async function InicioPage() {
         <section className="mt-4 rounded-2xl border border-dashed border-border bg-white p-8">
           <p className="font-medium text-ink">Todavía no estás en un proyecto.</p>
           <p className="mt-1 text-sm text-muted">
-            Explorá los desafíos abiertos y postulá a un rol que calce con lo que
-            sabés hacer.
+            Explora los desafíos abiertos y postula a un rol que encaje con lo que
+            sabes hacer.
           </p>
           <Link
             href="/proyectos"
@@ -238,7 +234,7 @@ export default async function InicioPage() {
       {!activo && recomendados.length > 0 && (
         <section className="mt-8">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Para vos
+            Para ti
           </h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {recomendados.map((project) => (
@@ -320,48 +316,3 @@ function KpiCard({
   );
 }
 
-/**
- * Medidor semicircular de progreso (0–100 %). SVG puro, sin JavaScript: el
- * avance se dibuja con stroke-dasharray sobre un arco. Verde al llegar a 100 %.
- */
-function Gauge({ pct }: { pct: number }) {
-  const p = Math.max(0, Math.min(100, pct));
-  const LARGO = Math.PI * 90; // longitud del arco (radio 90)
-  const avance = (p / 100) * LARGO;
-  const color = p >= 100 ? SPROUT : ELECTRIC;
-
-  return (
-    <svg
-      viewBox="0 0 200 120"
-      className="w-full max-w-xs"
-      role="img"
-      aria-label={`Progreso del proyecto: ${p}%`}
-    >
-      {/* Riel */}
-      <path
-        d="M 10 105 A 90 90 0 0 1 190 105"
-        fill="none"
-        stroke={TRACK}
-        strokeWidth={14}
-        strokeLinecap="round"
-      />
-      {/* Avance */}
-      <path
-        d="M 10 105 A 90 90 0 0 1 190 105"
-        fill="none"
-        stroke={color}
-        strokeWidth={14}
-        strokeLinecap="round"
-        strokeDasharray={`${avance} ${LARGO}`}
-      />
-      <text
-        x="100"
-        y="96"
-        textAnchor="middle"
-        className="fill-ink text-3xl font-semibold"
-      >
-        {p}%
-      </text>
-    </svg>
-  );
-}

@@ -28,6 +28,29 @@ export type Milestone = Awaited<
 >[number];
 
 /**
+ * Un hito por id para la pantalla de entrega (E-06). Se toma `project_id` de la
+ * propia fila del hito (no un join a `projects`): la RLS de milestones (M5) ya
+ * deja verlo al integrante, mientras que leer `projects` puede estar restringido
+ * al gestor. `null` si el usuario no ve el hito → la página hace 404.
+ */
+export async function getMilestoneById(id: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("milestones")
+    .select("id, titulo, descripcion, estado, project_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getMilestoneById]", error.message);
+    return null;
+  }
+
+  return data;
+}
+
+/**
  * Hitos de un proyecto con sus entregas anidadas, para la vista del equipo. La
  * RLS de milestones y submissions (M5) los limita a integrantes y gestor.
  */

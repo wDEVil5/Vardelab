@@ -21,6 +21,8 @@ export async function addSubmission(
   const projectId = String(formData.get("projectId") ?? "");
   const url = String(formData.get("url") ?? "").trim();
   const nota = String(formData.get("nota") ?? "").trim();
+  // Si viene, se navega a esta ruta tras guardar (E-06 vuelve al proyecto).
+  const redirectTo = String(formData.get("redirectTo") ?? "").trim();
 
   if (!milestoneId) return { error: "Falta el hito." };
   if (!url && !nota) {
@@ -45,9 +47,12 @@ export async function addSubmission(
     return { error: "No se pudo registrar la entrega. Inténtalo de nuevo." };
   }
 
-  // La entrega se ve desde la página del equipo del estudiante y la del gestor.
+  // La entrega se ve desde el espacio del proyecto del estudiante y la del gestor.
   revalidatePath(`/mis-proyectos/${projectId}`);
-  revalidatePath("/mis-postulaciones");
+  revalidatePath("/proyecto");
+
+  // Si el formulario pidió volver a una ruta (E-06), se navega ahí.
+  if (redirectTo) redirect(redirectTo);
   return {};
 }
 

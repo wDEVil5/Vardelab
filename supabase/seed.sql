@@ -184,3 +184,37 @@ values
    'b0000000-0000-0000-0000-000000000001',
    'Dashboard v1', 'Primera versión navegable con filtros básicos.', 2, '2026-09-30')
 on conflict (id) do nothing;
+
+-- Segundo equipo de la estudiante: proyecto 2 (Rediseño del sitio vecinal),
+-- rol UX/UI. Sirve para ver la grilla de "Mis proyectos" (varios a la vez).
+insert into public.applications (id, project_role_id, applicant_id, status, mensaje)
+values ('f0000000-0000-0000-0000-000000000002',
+        'c0000000-0000-0000-0000-000000000003',
+        '33333333-3333-3333-3333-333333333333',
+        'aceptada', 'Me gusta el trabajo de UX y quiero aportar al rediseño.')
+on conflict (id) do nothing;
+
+insert into public.teams (id, project_id, estado)
+values ('d0000000-0000-0000-0000-000000000002',
+        'b0000000-0000-0000-0000-000000000002', 'formando')
+on conflict (id) do nothing;
+
+insert into public.team_members (team_id, user_id, project_role_id)
+values ('d0000000-0000-0000-0000-000000000002',
+        '33333333-3333-3333-3333-333333333333',
+        'c0000000-0000-0000-0000-000000000003')
+on conflict (id) do nothing;
+
+-- Hitos del proyecto 2, con estados variados (progreso ~25 %).
+insert into public.milestones
+  (id, project_id, titulo, descripcion, orden, fecha_limite, estado)
+values
+  ('e0000000-0000-0000-0000-000000000003', 'b0000000-0000-0000-0000-000000000002',
+   'Investigación y referentes', 'Revisar el sitio actual y juntar referencias.', 1, '2026-09-20', 'aprobado'),
+  ('e0000000-0000-0000-0000-000000000004', 'b0000000-0000-0000-0000-000000000002',
+   'Wireframes', 'Estructura de las 4 páginas principales.', 2, '2026-10-05', 'entregado'),
+  ('e0000000-0000-0000-0000-000000000005', 'b0000000-0000-0000-0000-000000000002',
+   'Prototipo navegable', 'Prototipo en alta fidelidad.', 3, '2026-10-20', 'pendiente'),
+  ('e0000000-0000-0000-0000-000000000006', 'b0000000-0000-0000-0000-000000000002',
+   'Guía de contenidos', 'Documento con lineamientos de contenido.', 4, '2026-11-01', 'pendiente')
+on conflict (id) do nothing;
