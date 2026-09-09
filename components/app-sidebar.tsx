@@ -50,10 +50,14 @@ function Icon({ name }: { name: IconName }) {
   );
 }
 
+const CLAVE_COLAPSADO = "campuslab:sidebar-colapsado";
+
 /**
- * Sidebar del área autenticada (route group `(app)`). Fijo en desktop; en móvil
- * se reemplaza por una barra superior con un panel lateral (drawer). Los enlaces
- * resaltan la sección activa. El cierre de sesión usa la Server Action `signOut`.
+ * Sidebar del área autenticada (route group `(app)`). En desktop es fijo y
+ * colapsable: un riel de íconos que se despliega a etiquetas con el botón
+ * superior; la preferencia se recuerda en localStorage. En móvil se reemplaza por
+ * una barra superior con un panel lateral (drawer). Los enlaces resaltan la
+ * sección activa. El cierre de sesión usa la Server Action `signOut`.
  */
 export function AppSidebar({
   user,
@@ -62,8 +66,34 @@ export function AppSidebar({
   user: { nombre: string; initials: string; roleLabel: string };
   items: AppNavItem[];
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false); // drawer móvil
+  const [colapsado, setColapsado] = useState(false); // riel desktop
   const pathname = usePathname();
+
+  // Restaura la preferencia de plegado (tras el primer render, para no romper
+  // la hidratación: el servidor siempre pinta el riel desplegado).
+  useEffect(() => {
+    try {
+      // Lectura única de la preferencia tras hidratar (el servidor no ve
+      // localStorage): sincroniza el estado inicial, no es un bucle de render.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setColapsado(localStorage.getItem(CLAVE_COLAPSADO) === "1");
+    } catch {
+      /* almacenamiento no disponible: se queda desplegado */
+    }
+  }, []);
+
+  function alternarColapso() {
+    setColapsado((v) => {
+      const nuevo = !v;
+      try {
+        localStorage.setItem(CLAVE_COLAPSADO, nuevo ? "1" : "0");
+      } catch {
+        /* sin persistencia: vale solo para esta sesión */
+      }
+      return nuevo;
+    });
+  }
 
   // Cierra el drawer al navegar (patrón render-phase, sin setState en effect).
   const [prevPath, setPrevPath] = useState(pathname);
@@ -79,41 +109,70 @@ export function AppSidebar({
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  // Contenido compartido por el sidebar de desktop y el drawer móvil.
-  const contenido = (
-    <div className="flex h-full flex-col gap-6 p-4">
-      <div className="px-2 pt-2">
-        {/* La marca del panel lleva a la portada pública (salir al sitio). */}
-        <Link href="/" className="text-xl font-bold text-white">
-          CampusLab
-        </Link>
-        <p className="mt-0.5 text-xs text-white/50">{user.roleLabel}</p>
+  // Contenido del sidebar. `compact` = riel plegado (solo íconos); el drawer
+  // móvil siempre va desplegado.
+  const contenido = (compact: boolean) => (
+    <div className="flex h-full flex-col gap-4 p-3">
+      {/* Cabecera: marca + botón de plegado (solo desktop). */}
+      <div
+        className={cn(
+          "flex items-center gap-2 px-1 pt-1",
+          compact ? "justify-center" : "justify-between",
+        )}
+      >
+        {!compact && (
+          <Link href="/" className="min-w-0 truncate px-1 text-lg font-bold text-white">
+            CampusLab
+          </Link>
+        )}
+        <button
+          type="button"
+          onClick={alternarColapso}
+          aria-label={compact ? "Desplegar menú" : "Plegar menú"}
+          aria-expanded={!compact}
+          className="hidden size-9 shrink-0 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white lg:flex"
+        >
+          <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
       </div>
+
+      {!compact && (
+        <p className="px-2 text-xs text-white/50">{user.roleLabel}</p>
+      )}
 
       {/* Tarjeta de usuario = acceso al perfil (reemplaza el ítem "Perfil"). */}
       <Link
         href="/perfil"
         aria-current={pathname === "/perfil" ? "page" : undefined}
+        aria-label={compact ? `${user.nombre} · ver mi perfil` : undefined}
+        title={compact ? "Ver mi perfil" : undefined}
         className={cn(
-          "flex items-center gap-3 rounded-xl p-3 transition-colors",
+          "flex items-center gap-3 rounded-xl transition-colors",
+          compact ? "justify-center p-2" : "p-3",
           pathname === "/perfil" ? "bg-white/10" : "bg-white/5 hover:bg-white/10",
         )}
       >
         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-electric text-sm font-semibold text-white">
           {user.initials}
         </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-white">
-            {user.nombre}
-          </p>
-          <p className="text-xs text-white/50">Ver mi perfil</p>
-        </div>
-        <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-white/40" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M9 6l6 6-6 6" />
-        </svg>
+        {!compact && (
+          <>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-white">
+                {user.nombre}
+              </p>
+              <p className="text-xs text-white/50">Ver mi perfil</p>
+            </div>
+            <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-white/40" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </>
+        )}
       </Link>
 
-      {/* Primera línea separadora: bloque de identidad ↕ navegación. */}
+      {/* Separadora: identidad ↕ navegación. */}
       <div className="h-px bg-white/10" />
 
       <nav className="flex flex-1 flex-col gap-1">
@@ -126,8 +185,11 @@ export function AppSidebar({
               key={it.href}
               href={it.href}
               aria-current={active ? "page" : undefined}
+              aria-label={compact ? it.label : undefined}
+              title={compact ? it.label : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors",
+                compact ? "justify-center px-0 py-2.5" : "px-3 py-2.5",
                 active
                   ? "bg-white/10 text-white"
                   : "text-white/60 hover:bg-white/5 hover:text-white",
@@ -136,7 +198,7 @@ export function AppSidebar({
               <span className={active ? "text-electric" : ""}>
                 <Icon name={it.icon} />
               </span>
-              {it.label}
+              {!compact && it.label}
             </Link>
           );
         })}
@@ -144,24 +206,32 @@ export function AppSidebar({
 
       <div className="flex flex-col gap-1 border-t border-white/10 pt-3">
         <span
-          className="flex cursor-default items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/40"
+          className={cn(
+            "flex cursor-default items-center gap-3 rounded-lg py-2.5 text-sm font-medium text-white/40",
+            compact ? "justify-center px-0" : "px-3",
+          )}
           title="Disponible pronto"
         >
           <svg viewBox="0 0 24 24" className="size-5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <circle cx="12" cy="12" r="9" />
             <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 .8-1 1.7M12 17h.01" />
           </svg>
-          Soporte
+          {!compact && "Soporte"}
         </span>
         <form action={signOut}>
           <button
             type="submit"
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+            aria-label={compact ? "Cerrar sesión" : undefined}
+            title={compact ? "Cerrar sesión" : undefined}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-lg py-2.5 text-sm font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-white",
+              compact ? "justify-center px-0" : "px-3",
+            )}
           >
             <svg viewBox="0 0 24 24" className="size-5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M15 17l5-5-5-5M20 12H9M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4" />
             </svg>
-            Cerrar sesión
+            {!compact && "Cerrar sesión"}
           </button>
         </form>
       </div>
@@ -170,10 +240,15 @@ export function AppSidebar({
 
   return (
     <>
-      {/* Sidebar fijo (desktop): pegado al borde, redondeado del lado interior. */}
-      <aside className="hidden w-64 shrink-0 lg:block">
-        <div className="sticky top-0 h-dvh overflow-y-auto rounded-r-3xl bg-ink">
-          {contenido}
+      {/* Sidebar fijo (desktop): ancho animado según el estado de plegado. */}
+      <aside
+        className={cn(
+          "hidden shrink-0 transition-[width] duration-200 ease-out lg:block",
+          colapsado ? "w-20" : "w-64",
+        )}
+      >
+        <div className="sticky top-0 h-dvh overflow-y-auto overflow-x-hidden rounded-r-3xl bg-ink">
+          {contenido(colapsado)}
         </div>
       </aside>
 
@@ -204,7 +279,7 @@ export function AppSidebar({
             className="fixed inset-0 z-40 cursor-default bg-ink/40 lg:hidden"
           />
           <div className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85%] overflow-y-auto bg-ink lg:hidden">
-            {contenido}
+            {contenido(false)}
           </div>
         </>
       )}
