@@ -52,6 +52,7 @@ export function ScrollPrinciples({ items }: { items: Principio[] }) {
   const glowRef = useRef<HTMLDivElement>(null);
   const totalLen = useRef(0);
   const activoRef = useRef(0);
+  const visibleRef = useRef(true);
   const [activo, setActivo] = useState(0);
   const [ys, setYs] = useState<number[]>([]);
 
@@ -86,8 +87,9 @@ export function ScrollPrinciples({ items }: { items: Principio[] }) {
     };
 
     const actualizar = () => {
-      // Sección oculta (móvil / reduced-motion): no gastar trabajo por frame.
-      if (wrap.offsetParent === null) return;
+      // Sección oculta (móvil / reduced-motion) o fuera de pantalla: no gastar
+      // trabajo por frame (evita `getPointAtLength` en cada scroll de la página).
+      if (wrap.offsetParent === null || !visibleRef.current) return;
       const comet = cometRef.current;
       const glow = glowRef.current;
       if (reduce) {
@@ -138,11 +140,18 @@ export function ScrollPrinciples({ items }: { items: Principio[] }) {
       actualizar();
     });
     ro.observe(left);
+    // Solo trabaja cuando la sección está en pantalla; al entrar, refresca.
+    const io = new IntersectionObserver(([e]) => {
+      visibleRef.current = e.isIntersecting;
+      if (e.isIntersecting) onScroll();
+    });
+    io.observe(wrap);
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       ro.disconnect();
+      io.disconnect();
     };
   }, [steps, items]);
 
@@ -402,7 +411,7 @@ function StackedPrincipios({ items }: { items: Principio[] }) {
                   </span>
 
                   {/* Tarjeta de contenido. */}
-                  <div className="flex-1 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+                  <div className="flex-1 rounded-2xl border border-white/10 bg-white/4 p-5">
                     <h3 className="text-xl font-bold tracking-tight">
                       {p.titulo}
                     </h3>
