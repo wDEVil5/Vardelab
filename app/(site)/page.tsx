@@ -3,11 +3,12 @@ import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/reveal";
 import { Faq } from "@/components/faq";
-import { PinnedPrinciples } from "@/components/pinned-principles";
+import { ScrollPrinciples, type Principio } from "@/components/scroll-principles";
 import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 import { getPublishedProjects } from "@/features/projects/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
+import { HeroShapes } from "@/components/hero-shapes";
 
 /**
  * P-01 · Landing pública. Server Component: presenta CampusLab a estudiantes y
@@ -17,8 +18,6 @@ import { ProjectCard } from "@/features/projects/components/project-card";
  */
 export default async function Home() {
   const publicados = await getPublishedProjects();
-  // Composición del hero: tarjetas reales del catálogo (sin ilustraciones).
-  const heroProyectos = publicados.slice(0, 2);
   // Destacados: hasta 3 tarjetas, consistentes con el catálogo (P-02).
   const destacados = publicados.slice(0, 3);
 
@@ -28,49 +27,49 @@ export default async function Home() {
       {/* 1 · HERO */}
       <section className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-24">
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-          <div className="flex animate-rise flex-col items-start gap-6">
-            <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-              Desafíos reales. Talento que se demuestra.
-            </h1>
-            <p className="max-w-md text-lg text-muted">
-              CampusLab conecta estudiantes con organizaciones para resolver
-              microproyectos claros, con objetivos, acompañamiento y evidencia de
-              resultado.
-            </p>
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-              <Link
-                href="/proyectos"
-                className={cn(
-                  buttonClasses({ variant: "primary" }),
-                  "h-11 px-6 text-base",
-                )}
-              >
-                Explorar proyectos
-              </Link>
-              <Link
-                href="/organizaciones"
-                className="group inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors hover:text-electric"
-              >
-                Para organizaciones
-                <span className="transition-transform group-hover:translate-x-0.5">
-                  →
-                </span>
-              </Link>
+            <div className="flex animate-rise flex-col items-start gap-6">
+              <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+                Desafíos reales. Talento que se demuestra.
+              </h1>
+              <p className="max-w-md text-lg text-muted">
+                CampusLab conecta estudiantes con organizaciones para resolver
+                microproyectos claros, con objetivos, acompañamiento y evidencia
+                de resultado.
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href="/proyectos"
+                  className={cn(
+                    buttonClasses({ variant: "primary" }),
+                    "h-11 px-6 text-base",
+                  )}
+                >
+                  Explorar proyectos
+                </Link>
+                <Link
+                  href="/organizaciones"
+                  className={cn(
+                    buttonClasses({ variant: "outline" }),
+                    "group h-11 px-6 text-base",
+                  )}
+                >
+                  Para organizaciones
+                  <span className="transition-transform group-hover:translate-x-0.5">
+                    →
+                  </span>
+                </Link>
+              </div>
             </div>
-          </div>
 
-          {/* Composición con tarjetas reales de proyecto. */}
-          {heroProyectos.length > 0 && (
+            {/* Visual con propósito: Estudiantes + Organizaciones + Proyectos,
+                que se encuentran (superposición), interactivo con el cursor. */}
             <div
-              className="flex animate-rise flex-col gap-4"
+              className="animate-rise"
               style={{ animationDelay: "150ms" }}
             >
-              {heroProyectos.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
+              <HeroShapes />
             </div>
-          )}
-        </div>
+          </div>
       </section>
 
       {/* 2 · PROYECTOS DESTACADOS */}
@@ -217,7 +216,7 @@ export default async function Home() {
       </section>
 
       {/* 5 · PRINCIPIOS (espacio diferenciador, anclado con scroll storytelling) */}
-      <PinnedPrinciples items={PRINCIPIOS} />
+      <ScrollPrinciples items={PRINCIPIOS} />
 
       {/* 6 · PREGUNTAS FRECUENTES */}
       <section className="mx-auto w-full max-w-3xl px-6 py-16 sm:py-20">
@@ -296,20 +295,39 @@ const FAQ = [
   },
 ];
 
-// Principios de CampusLab (sección diferenciadora).
-const PRINCIPIOS = [
+// Principios de CampusLab (sección diferenciadora). Cada uno con un ejemplo
+// concreto y verdadero ("en la práctica"), atado a una funcionalidad real.
+const PRINCIPIOS: Principio[] = [
   {
+    icon: "alcance",
     titulo: "Alcance definido",
-    texto: "Objetivos, duración y entregables visibles desde el inicio.",
+    texto:
+      "Cada desafío nace con objetivos, plazo y entregable claros. Nada de tareas difusas ni expectativas que se descubren a mitad de camino.",
+    practica:
+      "El proyecto publica su duración y su entregable antes de abrir los roles.",
   },
   {
-    titulo: "Seguimiento por hitos",
-    texto: "Cada proyecto tiene avances y expectativas claras.",
+    icon: "hitos",
+    titulo: "Acompañamiento por hitos",
+    texto:
+      "El avance se valida por etapas, no recién al final. La organización sigue el trabajo y da retroalimentación en el camino.",
+    practica:
+      "Entregas parciales que el gestor aprueba o pide ajustar, hito por hito.",
   },
   {
+    icon: "resultado",
     titulo: "Resultado demostrable",
     texto:
-      "El trabajo genera evidencia útil para estudiantes y organizaciones.",
+      "El trabajo termina en evidencia real, útil para el portafolio del estudiante y para la organización.",
+    practica:
+      "Evidencia verificable ligada al proyecto en tu perfil público.",
+  },
+  {
+    icon: "barrera",
+    titulo: "Barrera baja",
+    texto:
+      "Hay roles pensados para empezar, sin experiencia previa. Lo que importa es querer aprender haciendo.",
+    practica: "Proyectos marcados “apto sin experiencia” en el catálogo.",
   },
 ];
 
