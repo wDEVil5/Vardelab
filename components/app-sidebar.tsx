@@ -15,6 +15,8 @@ type IconName =
   | "organizacion"
   | "postulaciones"
   | "moderacion"
+  | "leads"
+  | "reportes"
   | "perfil";
 
 // Iconos lineales del sidebar (se resuelven por nombre para pasar props serializables).
@@ -30,6 +32,18 @@ const ICONS: Record<IconName, ReactNode> = {
   ),
   postulaciones: <><path d="M4 6h16M4 12h16M4 18h10" /></>,
   moderacion: <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z" />,
+  leads: (
+    <>
+      <path d="M4 6h16v12H4z" />
+      <path d="M4 7l8 6 8-6" />
+    </>
+  ),
+  reportes: (
+    <>
+      <path d="M12 9v4M12 16.5h.01" />
+      <path d="M10.3 3.9L2.9 17a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+    </>
+  ),
   perfil: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></>,
 };
 
@@ -62,9 +76,17 @@ const CLAVE_COLAPSADO = "campuslab:sidebar-colapsado";
 export function AppSidebar({
   user,
   items,
+  exploreItem,
 }: {
   user: { nombre: string; initials: string; roleLabel: string };
   items: AppNavItem[];
+  /**
+   * Enlace al catálogo público (`/proyectos`): sale del shell hacia el sitio
+   * público, así que se separa del resto de la navegación (su propia sección,
+   * con un ícono de salida) y se abre en una pestaña nueva — el salto de
+   * "mundo" queda explícito en vez de sentirse como perder el panel.
+   */
+  exploreItem?: AppNavItem;
 }) {
   const [open, setOpen] = useState(false); // drawer móvil
   const [colapsado, setColapsado] = useState(false); // riel desktop
@@ -108,6 +130,16 @@ export function AppSidebar({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
+
+  // Ítem activo: el de href más específico que matchea la ruta actual (para
+  // que, p. ej., "/moderacion/reportes" no encienda también a "Moderación" por
+  // ser un prefijo suyo).
+  const coincidencias = items.filter(
+    (it) => pathname === it.href || pathname.startsWith(`${it.href}/`),
+  );
+  const hrefActivo = coincidencias.sort(
+    (a, b) => b.href.length - a.href.length,
+  )[0]?.href;
 
   // Contenido del sidebar. `compact` = riel plegado (solo íconos); el drawer
   // móvil siempre va desplegado.
@@ -177,9 +209,7 @@ export function AppSidebar({
 
       <nav className="flex flex-1 flex-col gap-1">
         {items.map((it) => {
-          const active =
-            pathname === it.href ||
-            (it.href !== "/" && pathname.startsWith(it.href));
+          const active = it.href === hrefActivo;
           return (
             <Link
               key={it.href}
@@ -203,6 +233,38 @@ export function AppSidebar({
           );
         })}
       </nav>
+
+      {/* Explorar el catálogo público: aparte del resto (sale del shell). */}
+      {exploreItem && (
+        <div className="border-t border-white/10 pt-3">
+          {!compact && (
+            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-white/30">
+              Sitio público
+            </p>
+          )}
+          <a
+            href={exploreItem.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={compact ? `${exploreItem.label} (se abre en otra pestaña)` : undefined}
+            title={compact ? exploreItem.label : undefined}
+            className={cn(
+              "flex items-center gap-3 rounded-lg border border-white/10 text-sm font-medium text-white/70 transition-colors hover:border-white/20 hover:bg-white/5 hover:text-white",
+              compact ? "justify-center px-0 py-2.5" : "px-3 py-2.5",
+            )}
+          >
+            <Icon name={exploreItem.icon} />
+            {!compact && (
+              <>
+                <span className="flex-1">{exploreItem.label}</span>
+                <svg viewBox="0 0 24 24" className="size-3.5 shrink-0 text-white/40" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M7 17L17 7M9 7h8v8" />
+                </svg>
+              </>
+            )}
+          </a>
+        </div>
+      )}
 
       <div className="flex flex-col gap-1 border-t border-white/10 pt-3">
         <span

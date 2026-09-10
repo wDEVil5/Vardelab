@@ -122,6 +122,51 @@ export type ProjectForReview = Awaited<
   ReturnType<typeof getProjectsForReview>
 >[number];
 
+// Detalle completo para revisar un proyecto puntual (M-02): suma `expectativas`
+// y `descripcion` de cada rol, que la vista de cola no necesita.
+const PROJECT_REVIEW_DETAIL_SELECT = `
+  id,
+  titulo,
+  resumen,
+  problema,
+  alcance,
+  entregable,
+  expectativas,
+  modalidad,
+  duracion_semanas,
+  created_at,
+  organization:organizations ( id, nombre, tipo, verificacion ),
+  roles:project_roles ( id, nombre, descripcion, cupos, horas_semanales )
+` as const;
+
+/**
+ * Un proyecto en revisión por id, con su detalle completo, para la pantalla de
+ * revisión (M-02). `null` si no existe o ya no está en revisión (aprobado,
+ * rechazado por otro moderador mientras tanto, etc.) → la página vuelve a la
+ * cola. La RLS `projects_select_moderator` limita a moderador/admin.
+ */
+export async function getProjectForModeration(id: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("projects")
+    .select(PROJECT_REVIEW_DETAIL_SELECT)
+    .eq("id", id)
+    .eq("status", "en_revision")
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getProjectForModeration]", error.message);
+    return null;
+  }
+
+  return data;
+}
+
+export type ProjectForModerationDetail = NonNullable<
+  Awaited<ReturnType<typeof getProjectForModeration>>
+>;
+
 // Campos de la ficha completa (P-03): la plantilla del proyecto en detalle
 // (problema, alcance, entregable, expectativas) más la organización con su
 // contacto y los roles con descripción y habilidades exigidas.
@@ -302,6 +347,7 @@ export async function getManagedProject(id: string) {
       status,
       modalidad,
       duracion_semanas,
+      comentario_moderacion,
       roles:project_roles (
         id,
         nombre,

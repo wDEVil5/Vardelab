@@ -20,10 +20,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         ? "Patrocinador"
         : "Estudiante";
 
-  // Navegación según el rol. "Inicio", "Explorar" y "Perfil" son transversales.
+  // Navegación según el rol. "Inicio" y "Perfil" son transversales. "Explorar"
+  // se arma aparte (ver `exploreItem` más abajo): apunta al catálogo público
+  // (`/proyectos`, sin el shell), así que el sidebar lo separa visualmente del
+  // resto en vez de mezclarlo como si fuera una sección interna más.
   const items: AppNavItem[] = [
     { href: "/inicio", label: "Inicio", icon: "inicio" },
-    { href: "/proyectos", label: "Explorar", icon: "explorar" },
     ...(user.esEstudiante
       ? ([
           { href: "/proyecto", label: "Proyecto", icon: "proyecto" },
@@ -37,7 +39,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         ] as AppNavItem[])
       : []),
     ...(user.esModerador || user.esAdmin
-      ? ([{ href: "/moderacion", label: "Moderación", icon: "moderacion" }] as AppNavItem[])
+      ? ([
+          { href: "/moderacion", label: "Moderación", icon: "moderacion" },
+          { href: "/moderacion/reportes", label: "Reportes", icon: "reportes" },
+          { href: "/leads", label: "Leads", icon: "leads" },
+        ] as AppNavItem[])
       : []),
   ];
 
@@ -47,6 +53,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <AppSidebar
         user={{ nombre: user.nombre, initials: iniciales(user.nombre), roleLabel }}
         items={items}
+        exploreItem={{ href: "/proyectos", label: "Explorar catálogo", icon: "explorar" }}
       />
       <main id="contenido-principal" tabIndex={-1} className="min-w-0 flex-1">
         {children}

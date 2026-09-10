@@ -12,6 +12,8 @@ const variantClasses = {
   outline: "border border-border bg-white text-ink hover:bg-surface",
   ghost: "text-electric hover:bg-electric/10",
   danger: "bg-coral text-white hover:bg-coral/90",
+  "outline-primary": "border border-electric bg-white text-electric hover:bg-electric/5",
+  "outline-danger": "border border-coral bg-white text-coral hover:bg-coral/5",
 } as const;
 
 const sizeClasses = {

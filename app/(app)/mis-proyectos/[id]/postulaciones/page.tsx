@@ -39,7 +39,7 @@ export default async function PostulacionesProyectoPage({ params }: PageProps) {
   const roles = project.roles ?? [];
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
+    <div className="mx-auto w-full max-w-2xl px-6 py-8 lg:py-10">
       <Link
         href={`/mis-proyectos/${id}`}
         className="text-sm text-muted transition-colors hover:text-electric"
@@ -57,7 +57,7 @@ export default async function PostulacionesProyectoPage({ params }: PageProps) {
           <RoleApplications key={rol.id} rol={rol} projectId={id} />
         ))}
       </div>
-    </main>
+    </div>
   );
 }
 
