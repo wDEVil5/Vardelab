@@ -5,6 +5,7 @@ import { getStudentDashboard } from "@/features/dashboard/queries";
 import { getPublishedProjects } from "@/features/projects/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { PatrocinadorInicio } from "@/features/dashboard/components/patrocinador-inicio";
+import { ModeradorInicio } from "@/features/dashboard/components/moderador-inicio";
 import { buttonClasses } from "@/components/ui/button";
 import { ProgressGauge } from "@/components/progress-gauge";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,10 @@ function vencimiento(n: number | null): string | null {
 export default async function InicioPage() {
   const user = await getCurrentUser();
   const nombre = (user?.nombre ?? "").split(/\s+/)[0] || "";
+
+  if (user?.esModerador || user?.esAdmin) {
+    return <ModeradorInicio nombre={nombre} />;
+  }
 
   if (user?.esPatrocinador && !user?.esEstudiante) {
     return <PatrocinadorInicio nombre={nombre} />;
