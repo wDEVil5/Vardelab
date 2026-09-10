@@ -168,11 +168,13 @@ values ('d0000000-0000-0000-0000-000000000001',
         'b0000000-0000-0000-0000-000000000001', 'formando')
 on conflict (id) do nothing;
 
+-- Conflicto real en (team_id, user_id) — no en `id` (se autogenera, nunca
+-- coincide entre corridas).
 insert into public.team_members (team_id, user_id, project_role_id)
 values ('d0000000-0000-0000-0000-000000000001',
         '33333333-3333-3333-3333-333333333333',
         'c0000000-0000-0000-0000-000000000001')
-on conflict (id) do nothing;
+on conflict (team_id, user_id) do nothing;
 
 -- Hitos del proyecto 1.
 insert into public.milestones (id, project_id, titulo, descripcion, orden, fecha_limite)
@@ -203,7 +205,7 @@ insert into public.team_members (team_id, user_id, project_role_id)
 values ('d0000000-0000-0000-0000-000000000002',
         '33333333-3333-3333-3333-333333333333',
         'c0000000-0000-0000-0000-000000000003')
-on conflict (id) do nothing;
+on conflict (team_id, user_id) do nothing;
 
 -- Hitos del proyecto 2, con estados variados (progreso ~25 %).
 insert into public.milestones
@@ -218,3 +220,34 @@ values
   ('e0000000-0000-0000-0000-000000000006', 'b0000000-0000-0000-0000-000000000002',
    'Guía de contenidos', 'Documento con lineamientos de contenido.', 4, '2026-11-01', 'pendiente')
 on conflict (id) do nothing;
+
+-- 7) MODERADOR DEMO -----------------------------------------------------------
+-- Cuenta de moderador PURA (sin otro rol), para probar ese lado sin mezclarlo
+-- con patrocinador. El trigger handle_new_user solo otorga roles de autoservicio
+-- (estudiante/patrocinador, M11); 'moderador' se asigna aparte a propósito —
+-- ese es justo el punto de la lista blanca: un registro nunca se auto-otorga
+-- un rol elevado.
+insert into auth.users
+  (instance_id, id, aud, role, email, encrypted_password,
+   email_confirmed_at, created_at, updated_at,
+   raw_app_meta_data, raw_user_meta_data,
+   confirmation_token, recovery_token, email_change,
+   email_change_token_new, email_change_token_current,
+   phone_change, phone_change_token, reauthentication_token)
+values
+  ('00000000-0000-0000-0000-000000000000',
+   '44444444-4444-4444-4444-444444444444',
+   'authenticated', 'authenticated', 'moderacion@demo.cl',
+   crypt('demo1234', gen_salt('bf')), now(), now(), now(),
+   '{"provider":"email","providers":["email"]}',
+   '{"nombre":"Marcos Iturra"}',
+   '', '', '', '', '', '', '', '')
+on conflict (id) do nothing;
+
+-- El trigger le asignó 'estudiante' (default de la lista blanca): se reemplaza
+-- por 'moderador'.
+delete from public.user_roles
+  where user_id = '44444444-4444-4444-4444-444444444444' and role = 'estudiante';
+insert into public.user_roles (user_id, role)
+values ('44444444-4444-4444-4444-444444444444', 'moderador')
+on conflict (user_id, role) do nothing;
