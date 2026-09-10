@@ -11,6 +11,7 @@ import {
 } from "@/features/projects/queries";
 import { esAptoSinExperiencia } from "@/features/projects/roles";
 import { getCurrentUser } from "@/features/auth/queries";
+import { ReportButton } from "@/features/reports/components/report-button";
 import {
   getMyActiveApplicationInProject,
   type MyProjectApplication,
@@ -198,6 +199,10 @@ export default async function ProyectoPage({ params }: PageProps) {
               )}
             </div>
           </aside>
+        </div>
+
+        <div className="mt-8">
+          <ReportButton targetType="proyecto" targetId={project.id} />
         </div>
       </div>
     </main>

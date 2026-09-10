@@ -16,7 +16,7 @@ export default async function NuevaOrganizacionPage() {
   if (!user.esPatrocinador) redirect("/proyectos");
 
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 px-6 py-10">
+    <div className="mx-auto w-full max-w-xl px-6 py-8 lg:py-10">
       <Link
         href="/mis-organizaciones"
         className="text-sm text-muted transition-colors hover:text-electric"
@@ -39,6 +39,6 @@ export default async function NuevaOrganizacionPage() {
           pendingText="Creando…"
         />
       </div>
-    </main>
+    </div>
   );
 }
