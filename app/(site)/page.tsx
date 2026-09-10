@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -9,6 +10,15 @@ import { RevealFooter } from "@/components/reveal-footer";
 import { getPublishedProjects } from "@/features/projects/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { HeroShapes } from "@/components/hero-shapes";
+
+export const metadata: Metadata = {
+  title: "CampusLab — Desafíos reales. Talento que se demuestra.",
+  description:
+    "Estudiantes que resuelven desafíos reales de organizaciones, con alcance definido y acompañamiento por hitos. Portafolio verificable, sin relleno.",
+  openGraph: {
+    title: "CampusLab — Desafíos reales. Talento que se demuestra.",
+  },
+};
 
 /**
  * P-01 · Landing pública. Server Component: presenta CampusLab a estudiantes y
