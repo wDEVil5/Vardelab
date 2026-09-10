@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -7,10 +8,31 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+// Título y descripción por defecto: cada página puede pisarlos, pero el resto
+// de los campos sociales (Open Graph, Twitter Card) los hereda de aquí salvo
+// que la página los redefina. `metadataBase` resuelve `sitemap.ts`/`robots.ts`
+// y las imágenes sociales a URLs absolutas usando la misma `SITE_URL`.
+const TITULO = "CampusLab";
+const DESCRIPCION =
+  "Microproyectos reales que conectan a estudiantes con necesidades concretas de organizaciones.";
+
 export const metadata: Metadata = {
-  title: "CampusLab",
-  description:
-    "Plataforma de microproyectos reales que conecta estudiantes con necesidades de organizaciones.",
+  metadataBase: new URL(SITE_URL),
+  title: TITULO,
+  description: DESCRIPCION,
+  openGraph: {
+    title: TITULO,
+    description: DESCRIPCION,
+    siteName: TITULO,
+    url: "/",
+    locale: "es_CL",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITULO,
+    description: DESCRIPCION,
+  },
 };
 
 /**

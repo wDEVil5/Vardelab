@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: "Proyectos · CampusLab",
   description:
     "Catálogo de microproyectos reales publicados por organizaciones. Encuentra un rol y postula.",
+  openGraph: {
+    title: "Proyectos · CampusLab",
+    description:
+      "Catálogo de microproyectos reales publicados por organizaciones. Encuentra un rol y postula.",
+  },
 };
 
 // Modalidades disponibles como chips (enum project_modality).
