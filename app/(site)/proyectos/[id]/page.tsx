@@ -37,9 +37,11 @@ export async function generateMetadata({
   const { id } = await params;
   const project = await getPublishedProjectById(id);
   if (!project) return { title: "Proyecto no encontrado · CampusLab" };
+  const titulo = `${project.titulo} · CampusLab`;
   return {
-    title: `${project.titulo} · CampusLab`,
+    title: titulo,
     description: project.resumen ?? undefined,
+    openGraph: { title: titulo, description: project.resumen ?? undefined },
   };
 }
 
