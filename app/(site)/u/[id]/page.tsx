@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { getPublicProfile } from "@/features/portfolio/queries";
 import type { ProfileLinks } from "@/features/profile/queries";
+import { ReportButton } from "@/features/reports/components/report-button";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -112,6 +113,10 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
           </ul>
         )}
       </section>
+
+      <div className="mt-8">
+        <ReportButton targetType="perfil" targetId={profile.id} />
+      </div>
     </main>
   );
 }
