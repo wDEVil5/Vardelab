@@ -12,9 +12,11 @@ export async function generateMetadata({
   const { id } = await params;
   const data = await getPublicProfile(id);
   if (!data) return { title: "Perfil no encontrado · CampusLab" };
+  const titulo = `${data.profile.nombre ?? "Perfil"} · CampusLab`;
   return {
-    title: `${data.profile.nombre ?? "Perfil"} · CampusLab`,
+    title: titulo,
     description: data.profile.bio ?? undefined,
+    openGraph: { title: titulo, description: data.profile.bio ?? undefined },
   };
 }
 

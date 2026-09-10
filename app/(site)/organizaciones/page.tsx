@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   title: "Para organizaciones · CampusLab",
   description:
     "Convierte una necesidad concreta en un microproyecto con alcance definido, estudiantes interesados y seguimiento visible de principio a fin.",
+  openGraph: {
+    title: "Para organizaciones · CampusLab",
+    description:
+      "Convierte una necesidad concreta en un microproyecto con alcance definido, estudiantes interesados y seguimiento visible de principio a fin.",
+  },
 };
 
 /**
