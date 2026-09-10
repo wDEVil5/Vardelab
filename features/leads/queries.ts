@@ -28,3 +28,25 @@ export async function getPendingLeads() {
 }
 
 export type PendingLead = Awaited<ReturnType<typeof getPendingLeads>>[number];
+
+/**
+ * Todos los leads (cualquier estado), del más reciente al más antiguo. Es la
+ * bandeja completa del panel de gestión (`/leads`).
+ */
+export async function getAllLeads() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("leads")
+    .select("id, tipo, nombre, email, organizacion, mensaje, estado, created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[getAllLeads]", error.message);
+    return [];
+  }
+
+  return data;
+}
+
+export type Lead = Awaited<ReturnType<typeof getAllLeads>>[number];

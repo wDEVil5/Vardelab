@@ -61,7 +61,7 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
   };
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
+    <div className="mx-auto w-full max-w-2xl px-6 py-8 lg:py-10">
       <Link
         href="/mis-proyectos"
         className="text-sm text-muted transition-colors hover:text-electric"
@@ -92,6 +92,18 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
         </div>
         <Badge tone={estado.tone}>{estado.label}</Badge>
       </header>
+
+      {/* Motivo de rechazo del moderador (si lo hay). */}
+      {project.comentario_moderacion && (
+        <div className="mt-6 rounded-2xl border border-coral/30 bg-coral/5 p-5">
+          <p className="text-sm font-medium text-ink">
+            El moderador rechazó este proyecto
+          </p>
+          <p className="mt-1 text-sm text-muted">
+            {project.comentario_moderacion}
+          </p>
+        </div>
+      )}
 
       {/* Roles */}
       <section className="mt-10">
@@ -178,7 +190,7 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
       <section className="mt-10">
         <DeleteProjectButton projectId={project.id} />
       </section>
-    </main>
+    </div>
   );
 }
 

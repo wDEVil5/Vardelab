@@ -24,7 +24,7 @@ export default async function EditarProyectoPage({ params }: PageProps) {
   if (!project) notFound();
 
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 px-6 py-10">
+    <div className="mx-auto w-full max-w-xl px-6 py-8 lg:py-10">
       <Link
         href={`/mis-proyectos/${id}`}
         className="text-sm text-muted transition-colors hover:text-electric"
@@ -47,6 +47,6 @@ export default async function EditarProyectoPage({ params }: PageProps) {
           project={project}
         />
       </div>
-    </main>
+    </div>
   );
 }

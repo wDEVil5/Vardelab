@@ -1,5 +1,7 @@
 "use server";
 
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database.types";
 
@@ -57,4 +59,38 @@ export async function submitLead(
   }
 
   return { ok: true };
+}
+
+type LeadEstado = Database["public"]["Enums"]["lead_estado"];
+const ESTADOS: readonly LeadEstado[] = ["nuevo", "contactado", "descartado"];
+
+/**
+ * Gestión de un lead (lado del staff): marcarlo contactado, descartado, o
+ * devolverlo a nuevo. La RLS `leads_update_staff` (M17) exige moderador/admin;
+ * si el usuario no tiene ese rol, Supabase rechaza la actualización.
+ */
+export async function updateLeadStatus(formData: FormData): Promise<void> {
+  const leadId = String(formData.get("leadId") ?? "");
+  const estado = String(formData.get("estado") ?? "");
+  if (!leadId || !ESTADOS.includes(estado as LeadEstado)) return;
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/ingresar");
+
+  const { error } = await supabase
+    .from("leads")
+    .update({ estado: estado as LeadEstado })
+    .eq("id", leadId);
+
+  if (error) {
+    console.error("[updateLeadStatus]", error.message);
+    return;
+  }
+
+  revalidatePath("/leads");
+  revalidatePath("/inicio");
 }

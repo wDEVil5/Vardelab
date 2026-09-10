@@ -311,7 +311,8 @@ export async function submitProjectForReview(
 
   const { error } = await supabase
     .from("projects")
-    .update({ status: "en_revision" })
+    // Limpia un motivo de rechazo anterior: esta es una revisión nueva.
+    .update({ status: "en_revision", comentario_moderacion: null })
     .eq("id", projectId);
 
   if (error) {
@@ -380,7 +381,13 @@ export async function approveProject(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("projects")
-    .update({ status: "publicado", revisado_at: new Date().toISOString() })
+    .update({
+      status: "publicado",
+      revisado_at: new Date().toISOString(),
+      // Limpia un motivo de rechazo previo: ya se resolvió, no debe seguir
+      // apareciendo en la página del proyecto.
+      comentario_moderacion: null,
+    })
     .eq("id", projectId)
     .eq("status", "en_revision")
     .select("id");
@@ -400,19 +407,28 @@ export async function approveProject(
 
 /**
  * Rechaza un proyecto en revisión y lo devuelve a borrador (`en_revision →
- * borrador`) para que el gestor lo ajuste. Mismas garantías de rol que aprobar.
+ * borrador`) para que el gestor lo ajuste. El motivo es obligatorio: es lo que
+ * el gestor va a ver en su proyecto para saber qué corregir (M21). Mismas
+ * garantías de rol que aprobar.
  */
 export async function rejectProject(
   _prevState: ModerationState,
   formData: FormData,
 ): Promise<ModerationState> {
   const projectId = String(formData.get("projectId") ?? "");
+  const comentario = String(formData.get("comentario") ?? "").trim();
   if (!projectId) return { error: "Falta el proyecto." };
+  if (!comentario) {
+    return { error: "Deja un motivo: es lo que verá la organización." };
+  }
+  if (comentario.length > 1000) {
+    return { error: "El motivo es demasiado largo (máximo 1000 caracteres)." };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("projects")
-    .update({ status: "borrador" })
+    .update({ status: "borrador", comentario_moderacion: comentario })
     .eq("id", projectId)
     .eq("status", "en_revision")
     .select("id");
@@ -426,6 +442,7 @@ export async function rejectProject(
   }
 
   revalidatePath("/moderacion");
+  revalidatePath(`/mis-proyectos/${projectId}`);
   return {};
 }
 

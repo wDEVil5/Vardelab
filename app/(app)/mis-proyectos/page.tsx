@@ -33,7 +33,7 @@ export default async function MisProyectosPage() {
   const proyectos = await getMyProjects();
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
+    <div className="mx-auto w-full max-w-2xl px-6 py-8 lg:py-10">
       <header className="flex items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-ink">Mis proyectos</h1>
@@ -97,6 +97,6 @@ export default async function MisProyectosPage() {
           })}
         </ul>
       )}
-    </main>
+    </div>
   );
 }
