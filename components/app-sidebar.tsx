@@ -17,6 +17,7 @@ type IconName =
   | "moderacion"
   | "leads"
   | "reportes"
+  | "admin"
   | "perfil";
 
 // Iconos lineales del sidebar (se resuelven por nombre para pasar props serializables).
@@ -42,6 +43,14 @@ const ICONS: Record<IconName, ReactNode> = {
     <>
       <path d="M12 9v4M12 16.5h.01" />
       <path d="M10.3 3.9L2.9 17a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+    </>
+  ),
+  admin: (
+    <>
+      <path d="M4 6h16M4 12h16M4 18h16" />
+      <circle cx="17" cy="6" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="12" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="14" cy="18" r="1.6" fill="currentColor" stroke="none" />
     </>
   ),
   perfil: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></>,
