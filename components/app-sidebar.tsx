@@ -18,6 +18,7 @@ type IconName =
   | "leads"
   | "reportes"
   | "admin"
+  | "catalogos"
   | "usuarios"
   | "auditoria"
   | "perfil";
@@ -53,6 +54,12 @@ const ICONS: Record<IconName, ReactNode> = {
       <circle cx="17" cy="6" r="1.6" fill="currentColor" stroke="none" />
       <circle cx="9" cy="12" r="1.6" fill="currentColor" stroke="none" />
       <circle cx="14" cy="18" r="1.6" fill="currentColor" stroke="none" />
+    </>
+  ),
+  catalogos: (
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <path d="M10 4v16" />
     </>
   ),
   usuarios: (

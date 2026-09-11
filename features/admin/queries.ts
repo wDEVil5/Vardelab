@@ -203,6 +203,13 @@ export async function getAuditLog() {
     ),
   ] as string[];
 
+  // `entidad_id` no siempre es una persona: las acciones de catálogo
+  // (`catalogo_editado`) apuntan a una fila de `skills`. Se resuelven aparte
+  // (los ids no se pisan entre tablas) y se suman al mismo mapa de nombres.
+  const skillIds = [
+    ...new Set((eventos ?? []).filter((e) => e.entidad === "skills").map((e) => e.entidad_id)),
+  ].filter(Boolean) as string[];
+
   const nombrePorId = new Map<string, string>();
   const rolPorId = new Map<string, string>();
   if (personaIds.length > 0) {
@@ -224,6 +231,12 @@ export async function getAuditLog() {
       if (principal) rolPorId.set(userId, ROL_LABEL_CORTO[principal]);
     }
   }
+  if (skillIds.length > 0) {
+    const { data: skills } = await supabase.from("skills").select("id, nombre").in("id", skillIds);
+    for (const s of skills ?? []) {
+      nombrePorId.set(s.id, `Habilidad: ${s.nombre}`);
+    }
+  }
 
   return (eventos ?? []).map((e) => ({
     ...e,
@@ -234,3 +247,71 @@ export async function getAuditLog() {
 }
 
 export type AuditLogEntry = Awaited<ReturnType<typeof getAuditLog>>[number];
+
+/**
+ * Catálogo de habilidades (D-02, deseable). Usa `service_role`:
+ * `profile_skills` no tiene una regla de RLS que deje a un admin ver filas
+ * ajenas (solo el propio perfil o uno público), así que con el cliente normal
+ * el conteo de "perfiles" saldría subcontado. `activo=false` no borra la
+ * habilidad — `profile_skills` la referencia con `on delete restrict` — así
+ * que las relaciones históricas quedan intactas. "Perfiles" cuenta solo
+ * `profile_skills` (cuántos estudiantes la cargaron); no incluye
+ * `project_role_skills` (habilidades exigidas por un rol de proyecto), que es
+ * un uso distinto y no lo que el mockup mostraba.
+ */
+export async function getSkillsCatalog() {
+  const supabase = createAdminClient();
+
+  const [{ data: skills }, { data: enPerfiles }] = await Promise.all([
+    supabase.from("skills").select("id, nombre, categoria, activo").order("nombre"),
+    supabase.from("profile_skills").select("skill_id"),
+  ]);
+
+  const perfilesPorSkill = new Map<string, number>();
+  for (const fila of enPerfiles ?? []) {
+    perfilesPorSkill.set(fila.skill_id, (perfilesPorSkill.get(fila.skill_id) ?? 0) + 1);
+  }
+
+  return (skills ?? []).map((s) => ({
+    ...s,
+    perfiles: perfilesPorSkill.get(s.id) ?? 0,
+  }));
+}
+
+export type SkillCatalogRow = Awaited<ReturnType<typeof getSkillsCatalog>>[number];
+
+const MODALIDAD_LABEL: Record<string, string> = {
+  presencial: "Presencial",
+  remoto: "Remoto",
+  hibrido: "Híbrido",
+};
+
+/**
+ * Uso de las modalidades de proyecto (D-02, pestaña "Modalidades"). A
+ * diferencia de habilidades, `modalidad` es un `enum` de Postgres, no una
+ * tabla: son valores fijos del esquema, no se pueden agregar/desactivar desde
+ * la UI sin una migración. Esta vista es informativa, no editable.
+ */
+export async function getModalidadUsage() {
+  const supabase = await createClient();
+
+  const { data: proyectos, error } = await supabase.from("projects").select("modalidad");
+  if (error) {
+    console.error("[getModalidadUsage]", error.message);
+    return [];
+  }
+
+  const conteo = new Map<string, number>();
+  for (const p of proyectos ?? []) {
+    const clave = p.modalidad ?? "sin_definir";
+    conteo.set(clave, (conteo.get(clave) ?? 0) + 1);
+  }
+
+  return [...conteo.entries()].map(([valor, total]) => ({
+    valor,
+    etiqueta: MODALIDAD_LABEL[valor] ?? "Sin definir",
+    total,
+  }));
+}
+
+export type ModalidadUsage = Awaited<ReturnType<typeof getModalidadUsage>>[number];
