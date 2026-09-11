@@ -80,6 +80,7 @@ export function ModerationQueueTable({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Buscar proyecto u organización"
+        aria-label="Buscar proyecto u organización"
         className="h-11 rounded-xl border border-border bg-white px-4 text-sm text-ink placeholder:text-muted focus:border-electric focus:outline-none"
       />
 
