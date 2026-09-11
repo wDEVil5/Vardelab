@@ -45,6 +45,7 @@ export function CatalogSearch({ placeholder }: { placeholder?: string }) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
+        aria-label={placeholder ?? "Buscar proyectos"}
         className="w-full rounded-lg border border-border bg-white px-4 py-3 pr-10 text-sm text-ink placeholder:text-muted focus:border-electric focus:outline-none"
       />
       {value && (

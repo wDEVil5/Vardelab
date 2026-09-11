@@ -117,16 +117,22 @@ export function PortfolioEditor({
         action={formAction}
         className="flex flex-col gap-2 rounded-lg border border-dashed border-border p-4"
       >
-        <Input name="titulo" placeholder="Título de la evidencia" />
+        <Input
+          name="titulo"
+          placeholder="Título de la evidencia"
+          aria-label="Título de la evidencia"
+        />
         <Textarea
           name="descripcion"
           placeholder="Qué hiciste, qué demuestra (opcional)"
+          aria-label="Descripción de la evidencia (opcional)"
           className="min-h-14"
         />
         <Input
           type="url"
           name="url"
           placeholder="https://… enlace al trabajo (repo, deploy, Figma, video)"
+          aria-label="Enlace al trabajo"
         />
 
         {/* Ligar a un proyecto que integró (opcional, lo hace verificable). */}
@@ -134,6 +140,7 @@ export function PortfolioEditor({
           <select
             name="projectId"
             defaultValue=""
+            aria-label="Proyecto asociado (opcional)"
             className="rounded-md border border-border bg-white px-3 py-2 text-sm text-ink"
           >
             <option value="">Sin proyecto asociado</option>
