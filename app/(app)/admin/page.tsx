@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/queries";
 import { getPilotMetrics } from "@/features/admin/queries";
+import { ExportMetricsButton } from "@/features/admin/components/export-metrics-button";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
  * propio resumen en `/inicio`. Adaptado a datos reales: sin "satisfacción" ni
  * "patrocinadores que repetirían" (no existe encuesta en el modelo); en su
  * lugar, los indicadores computables del PRD §3.5 (matching, calidad,
- * portafolio, seguridad).
+ * portafolio, seguridad), en la misma barra inferior del mockup.
  */
 export default async function AdminMetricasPage() {
   const user = await getCurrentUser();
@@ -26,36 +27,36 @@ export default async function AdminMetricasPage() {
   const pctHitosAprobados = porcentaje(m.hitos.aprobados, m.hitos.total);
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-6 py-8 lg:py-10">
+    <div className="mx-auto w-full max-w-5xl px-6 py-10 lg:py-12">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
           Métricas del piloto
         </h1>
-        <p className="mt-1 text-muted">
+        <p className="mt-1.5 text-muted">
           Evidencia agregada de participación, calidad e impacto.
         </p>
       </header>
 
       {/* KPIs principales */}
-      <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mt-9 grid grid-cols-2 gap-5 lg:grid-cols-4">
         <Kpi value={m.publicados} label="Publicados" />
         <Kpi value={m.completados} label="Completados" tone="success" />
         <Kpi value={m.equiposFormados} label="Equipos formados" />
         <Kpi value={m.evidenciasPortafolio} label="Evidencias de portafolio" />
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <div className="mt-7 grid gap-5 lg:grid-cols-2">
         {/* Proyectos por estado */}
-        <div className="rounded-2xl border border-border bg-white p-6">
+        <div className="rounded-2xl border border-border bg-white p-7">
           <h2 className="font-semibold text-ink">Proyectos por estado</h2>
           {m.porEstado.length === 0 ? (
             <p className="mt-3 text-sm text-muted">Todavía no hay proyectos.</p>
           ) : (
-            <ul className="mt-4 flex flex-col gap-3">
+            <ul className="mt-5 flex flex-col gap-4">
               {m.porEstado.map((e) => (
                 <li key={e.estado} className="flex items-center gap-3">
                   <span className="w-28 shrink-0 text-sm text-muted">{e.etiqueta}</span>
-                  <span className="h-2 flex-1 overflow-hidden rounded-full bg-surface">
+                  <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface">
                     <span
                       className="block h-full rounded-full bg-electric"
                       style={{
@@ -73,15 +74,15 @@ export default async function AdminMetricasPage() {
         </div>
 
         {/* North Star Metric */}
-        <div className="rounded-2xl border border-border bg-white p-6">
+        <div className="rounded-2xl border border-border bg-white p-7">
           <h2 className="font-semibold text-ink">North Star Metric</h2>
           <p className="mt-3 text-4xl font-bold text-sprout">{m.northStar.completados}</p>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1.5 text-sm text-muted">
             microproyectos completados con entregable validado y evidencia.
           </p>
           <span
             className={cn(
-              "mt-4 inline-block rounded-full px-3 py-1 text-xs font-medium",
+              "mt-5 inline-block rounded-full px-3 py-1 text-xs font-medium",
               m.northStar.enObjetivo
                 ? "bg-sprout/15 text-sprout"
                 : "bg-surface text-muted",
@@ -89,28 +90,34 @@ export default async function AdminMetricasPage() {
           >
             {m.northStar.enObjetivo
               ? "En objetivo"
-              : `Meta orientativa: ${m.northStar.meta}+ (PRD §15)`}
+              : `Meta orientativa: ${m.northStar.meta}+`}
           </span>
         </div>
       </div>
 
-      {/* Indicadores secundarios (PRD §3.5) */}
-      <div className="mt-6 grid grid-cols-1 gap-4 rounded-2xl border border-border bg-white p-6 sm:grid-cols-3">
-        <Indicador
-          label="Postulaciones aceptadas"
-          valor={m.postulaciones.total > 0 ? `${pctAceptadas}%` : "—"}
-          nota={`${m.postulaciones.aceptadas} de ${m.postulaciones.total}`}
-        />
-        <Indicador
-          label="Hitos aprobados"
-          valor={m.hitos.total > 0 ? `${pctHitosAprobados}%` : "—"}
-          nota={`${m.hitos.aprobados} de ${m.hitos.total}`}
-        />
-        <Indicador
-          label="Reportes"
-          valor={`${m.reportes.abiertos} abiertos`}
-          nota={`${m.reportes.resueltos} resueltos`}
-        />
+      {/* Indicadores secundarios (PRD §3.5) + exportar */}
+      <div className="mt-7 flex flex-col gap-6 rounded-2xl border border-border bg-white p-7 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 flex-wrap gap-x-10 gap-y-5">
+          <Indicador
+            label="Postulaciones aceptadas"
+            valor={m.postulaciones.total > 0 ? `${pctAceptadas}%` : "—"}
+            nota={`${m.postulaciones.aceptadas} de ${m.postulaciones.total}`}
+            tone="brand"
+          />
+          <Indicador
+            label="Hitos aprobados"
+            valor={m.hitos.total > 0 ? `${pctHitosAprobados}%` : "—"}
+            nota={`${m.hitos.aprobados} de ${m.hitos.total}`}
+            tone="success"
+          />
+          <Indicador
+            label="Reportes"
+            valor={`${m.reportes.abiertos} abiertos`}
+            nota={`${m.reportes.resueltos} resueltos`}
+            tone={m.reportes.abiertos > 0 ? "danger" : "ink"}
+          />
+        </div>
+        <ExportMetricsButton metrics={m} />
       </div>
     </div>
   );
@@ -131,7 +138,7 @@ function Kpi({
   tone?: "ink" | "success";
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-white p-5">
+    <div className="rounded-2xl border border-border bg-white p-6">
       <p
         className={cn(
           "text-3xl font-bold",
@@ -140,25 +147,34 @@ function Kpi({
       >
         {value}
       </p>
-      <p className="mt-1 text-sm text-muted">{label}</p>
+      <p className="mt-1.5 text-sm text-muted">{label}</p>
     </div>
   );
 }
+
+const INDICADOR_TONE = {
+  ink: "text-ink",
+  brand: "text-electric",
+  success: "text-sprout",
+  danger: "text-coral",
+} as const;
 
 function Indicador({
   label,
   valor,
   nota,
+  tone = "ink",
 }: {
   label: string;
   valor: string;
-  nota: string;
+  /** Detalle ("7 de 10"): no ocupa layout, aparece al pasar el mouse. */
+  nota?: string;
+  tone?: keyof typeof INDICADOR_TONE;
 }) {
   return (
-    <div>
-      <p className="text-xs text-muted">{label}</p>
-      <p className="mt-1 text-xl font-semibold text-ink">{valor}</p>
-      <p className="text-xs text-muted">{nota}</p>
+    <div title={nota}>
+      <p className="text-sm text-muted">{label}</p>
+      <p className={cn("mt-1 text-xl font-semibold", INDICADOR_TONE[tone])}>{valor}</p>
     </div>
   );
 }

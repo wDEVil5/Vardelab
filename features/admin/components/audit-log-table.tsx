@@ -11,12 +11,14 @@ const ACCION_LABEL: Record<string, string> = {
   rol_actualizado: "Rol actualizado",
   cuenta_suspendida: "Cuenta suspendida",
   cuenta_reactivada: "Cuenta reactivada",
+  catalogo_editado: "Catálogo editado",
 };
 
 const ACCION_TONE: Record<string, BadgeTone> = {
   rol_actualizado: "brand",
   cuenta_suspendida: "danger",
   cuenta_reactivada: "success",
+  catalogo_editado: "outline",
 };
 
 const ROL_LABEL: Record<string, string> = {
@@ -31,10 +33,10 @@ function etiquetaAccion(accion: string): string {
   return ACCION_LABEL[accion] ?? accion.replaceAll("_", " ");
 }
 
-/** El `rol_nuevo` que guarda `changeUserRole` en `metadata` (jsonb sin tipar). */
-function leerRolNuevo(metadata: unknown): string | null {
-  if (metadata && typeof metadata === "object" && "rol_nuevo" in metadata) {
-    const valor = (metadata as { rol_nuevo?: unknown }).rol_nuevo;
+/** Lee un campo de texto de `metadata` (jsonb sin tipar) sin lanzar si falta. */
+function leerCampo(metadata: unknown, campo: string): string | null {
+  if (metadata && typeof metadata === "object" && campo in metadata) {
+    const valor = (metadata as Record<string, unknown>)[campo];
     return typeof valor === "string" ? valor : null;
   }
   return null;
@@ -45,7 +47,7 @@ function describirEvento(e: AuditLogEntry): string {
   const entidad = e.entidadNombre ?? "un usuario";
   switch (e.accion) {
     case "rol_actualizado": {
-      const rolNuevo = leerRolNuevo(e.metadata);
+      const rolNuevo = leerCampo(e.metadata, "rol_nuevo");
       const rolLabel = rolNuevo ? (ROL_LABEL[rolNuevo] ?? rolNuevo) : "otro rol";
       return `${e.actorNombre} cambió el rol de ${entidad} a ${rolLabel}.`;
     }
@@ -53,6 +55,23 @@ function describirEvento(e: AuditLogEntry): string {
       return `${e.actorNombre} suspendió la cuenta de ${entidad}.`;
     case "cuenta_reactivada":
       return `${e.actorNombre} reactivó la cuenta de ${entidad}.`;
+    case "catalogo_editado": {
+      const tipo = leerCampo(e.metadata, "tipo");
+      const nombre = leerCampo(e.metadata, "nombre");
+      if (tipo === "categoria_renombrada") {
+        const de = leerCampo(e.metadata, "categoria_de");
+        const a = leerCampo(e.metadata, "categoria_a");
+        return `${e.actorNombre} renombró la categoría "${de}" a "${a}".`;
+      }
+      const nombreHabilidad = nombre ?? entidad.replace(/^Habilidad: /, "");
+      const verbo: Record<string, string> = {
+        creada: "creó",
+        editada: "editó",
+        activada: "activó",
+        desactivada: "desactivó",
+      };
+      return `${e.actorNombre} ${verbo[tipo ?? ""] ?? "modificó"} la habilidad "${nombreHabilidad}".`;
+    }
     default:
       return `${e.actorNombre} registró "${etiquetaAccion(e.accion)}" sobre ${entidad}.`;
   }

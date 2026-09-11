@@ -145,3 +145,169 @@ export async function reactivateUser(
   revalidatePath("/admin/usuarios");
   return {};
 }
+
+export type CatalogState = { error?: string };
+
+const NOMBRE_MAX = 60;
+const CATEGORIA_MAX = 40;
+
+/** Crea una habilidad nueva en el catálogo (D-02). */
+export async function createSkill(
+  _prevState: CatalogState,
+  formData: FormData,
+): Promise<CatalogState> {
+  const admin = await getCurrentUser();
+  if (!admin?.esAdmin) return { error: "No autorizado." };
+
+  const nombre = String(formData.get("nombre") ?? "").trim();
+  const categoria = String(formData.get("categoria") ?? "").trim();
+  if (!nombre || !categoria) return { error: "Nombre y categoría son obligatorios." };
+  if (nombre.length > NOMBRE_MAX || categoria.length > CATEGORIA_MAX) {
+    return { error: "Nombre o categoría demasiado largos." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("skills")
+    .insert({ nombre, categoria })
+    .select("id")
+    .single();
+
+  if (error) {
+    if (error.code === "23505") return { error: "Ya existe una habilidad con ese nombre." };
+    console.error("[createSkill]", error.message);
+    return { error: "No se pudo crear la habilidad." };
+  }
+
+  await supabase.from("audit_logs").insert({
+    actor_id: admin.id,
+    accion: "catalogo_editado",
+    entidad: "skills",
+    entidad_id: data.id,
+    metadata: { tipo: "creada", nombre },
+  });
+
+  revalidatePath("/admin/catalogos");
+  return {};
+}
+
+/** Edita nombre y/o categoría de una habilidad existente. */
+export async function updateSkill(
+  _prevState: CatalogState,
+  formData: FormData,
+): Promise<CatalogState> {
+  const admin = await getCurrentUser();
+  if (!admin?.esAdmin) return { error: "No autorizado." };
+
+  const skillId = String(formData.get("skillId") ?? "");
+  const nombre = String(formData.get("nombre") ?? "").trim();
+  const categoria = String(formData.get("categoria") ?? "").trim();
+  if (!skillId || !nombre || !categoria) {
+    return { error: "Nombre y categoría son obligatorios." };
+  }
+  if (nombre.length > NOMBRE_MAX || categoria.length > CATEGORIA_MAX) {
+    return { error: "Nombre o categoría demasiado largos." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("skills")
+    .update({ nombre, categoria })
+    .eq("id", skillId);
+
+  if (error) {
+    if (error.code === "23505") return { error: "Ya existe una habilidad con ese nombre." };
+    console.error("[updateSkill]", error.message);
+    return { error: "No se pudo editar la habilidad." };
+  }
+
+  await supabase.from("audit_logs").insert({
+    actor_id: admin.id,
+    accion: "catalogo_editado",
+    entidad: "skills",
+    entidad_id: skillId,
+    metadata: { tipo: "editada", nombre },
+  });
+
+  revalidatePath("/admin/catalogos");
+  return {};
+}
+
+/**
+ * Activa o desactiva una habilidad. No la borra — `profile_skills` y
+ * `project_role_skills` la referencian con `on delete restrict` — así que las
+ * relaciones existentes no desaparecen; una habilidad inactiva solo deja de
+ * ofrecerse en formularios nuevos.
+ */
+export async function toggleSkillActivo(
+  _prevState: CatalogState,
+  formData: FormData,
+): Promise<CatalogState> {
+  const admin = await getCurrentUser();
+  if (!admin?.esAdmin) return { error: "No autorizado." };
+
+  const skillId = String(formData.get("skillId") ?? "");
+  const nombre = String(formData.get("nombre") ?? "");
+  const activo = formData.get("activo") === "true";
+  if (!skillId) return { error: "Falta la habilidad." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("skills").update({ activo }).eq("id", skillId);
+  if (error) {
+    console.error("[toggleSkillActivo]", error.message);
+    return { error: "No se pudo cambiar el estado de la habilidad." };
+  }
+
+  await supabase.from("audit_logs").insert({
+    actor_id: admin.id,
+    accion: "catalogo_editado",
+    entidad: "skills",
+    entidad_id: skillId,
+    metadata: { tipo: activo ? "activada" : "desactivada", nombre },
+  });
+
+  revalidatePath("/admin/catalogos");
+  return {};
+}
+
+/**
+ * Renombra una categoría: actualiza el texto `categoria` en todas las
+ * habilidades que la usan. No es una entidad propia en el modelo (`categoria`
+ * es una columna de texto en `skills`, no una tabla aparte) — renombrar es la
+ * única operación que tiene sentido sobre ella; no se puede "crear" una
+ * categoría vacía ni "desactivarla" como a una habilidad.
+ */
+export async function renameCategoria(
+  _prevState: CatalogState,
+  formData: FormData,
+): Promise<CatalogState> {
+  const admin = await getCurrentUser();
+  if (!admin?.esAdmin) return { error: "No autorizado." };
+
+  const categoriaActual = String(formData.get("categoriaActual") ?? "").trim();
+  const categoriaNueva = String(formData.get("categoriaNueva") ?? "").trim();
+  if (!categoriaActual || !categoriaNueva) return { error: "Falta el nombre nuevo." };
+  if (categoriaNueva.length > CATEGORIA_MAX) return { error: "Nombre demasiado largo." };
+  if (categoriaActual === categoriaNueva) return {};
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("skills")
+    .update({ categoria: categoriaNueva })
+    .eq("categoria", categoriaActual);
+
+  if (error) {
+    console.error("[renameCategoria]", error.message);
+    return { error: "No se pudo renombrar la categoría." };
+  }
+
+  await supabase.from("audit_logs").insert({
+    actor_id: admin.id,
+    accion: "catalogo_editado",
+    entidad: "skills",
+    metadata: { tipo: "categoria_renombrada", categoria_de: categoriaActual, categoria_a: categoriaNueva },
+  });
+
+  revalidatePath("/admin/catalogos");
+  return {};
+}

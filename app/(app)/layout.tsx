@@ -49,6 +49,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     ...(user.esAdmin
       ? ([
           { href: "/admin", label: "Métricas", icon: "admin" },
+          { href: "/admin/catalogos", label: "Catálogos", icon: "catalogos" },
           { href: "/admin/usuarios", label: "Usuarios", icon: "usuarios" },
           { href: "/admin/auditoria", label: "Auditoría", icon: "auditoria" },
         ] as AppNavItem[])
