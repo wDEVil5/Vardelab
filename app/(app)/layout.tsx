@@ -13,8 +13,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
   if (!user) redirect("/ingresar");
 
-  const roleLabel =
-    user.esModerador || user.esAdmin
+  const roleLabel = user.esAdmin
+    ? "Administrador"
+    : user.esModerador
       ? "Moderador"
       : user.esPatrocinador
         ? "Patrocinador"
@@ -44,6 +45,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           { href: "/moderacion/reportes", label: "Reportes", icon: "reportes" },
           { href: "/leads", label: "Leads", icon: "leads" },
         ] as AppNavItem[])
+      : []),
+    ...(user.esAdmin
+      ? ([{ href: "/admin", label: "Métricas", icon: "admin" }] as AppNavItem[])
       : []),
   ];
 
