@@ -61,6 +61,7 @@ export async function createOrganization(
   }
 
   revalidatePath("/mis-organizaciones");
+  revalidatePath("/organizaciones");
   redirect("/mis-organizaciones?creada=1");
 }
 
@@ -106,6 +107,7 @@ export async function updateOrganization(
   }
 
   revalidatePath("/mis-organizaciones");
+  revalidatePath("/organizaciones");
   redirect("/mis-organizaciones?editada=1");
 }
 
@@ -147,5 +149,6 @@ export async function deleteOrganization(
   }
 
   revalidatePath("/mis-organizaciones");
+  revalidatePath("/organizaciones");
   redirect("/mis-organizaciones?eliminada=1");
 }
