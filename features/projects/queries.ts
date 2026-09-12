@@ -359,6 +359,7 @@ export async function getManagedProject(id: string) {
       modalidad,
       duracion_semanas,
       comentario_moderacion,
+      created_at,
       roles:project_roles (
         id,
         nombre,

@@ -80,3 +80,61 @@ export async function getMilestonesWithSubmissions(projectId: string) {
 export type MilestoneWithSubmissions = Awaited<
   ReturnType<typeof getMilestonesWithSubmissions>
 >[number];
+
+export type MilestoneActivity = {
+  id: string;
+  milestoneTitulo: string;
+  actorNombre: string | null;
+  created_at: string;
+  url: string | null;
+};
+
+/**
+ * Entregas recientes de cualquier hito del proyecto, de la más nueva a la más
+ * vieja — es "Actividad reciente" (S-05): no hace falta una tabla de eventos
+ * propia, cada entrega ya es un evento ("fulano registró un avance"). Los
+ * nombres van en una consulta aparte: `submissions.submitted_by` referencia
+ * `auth.users`, no `profiles`.
+ */
+export async function getRecentProjectActivity(
+  projectId: string,
+  limit = 5,
+): Promise<MilestoneActivity[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("submissions")
+    .select(
+      "id, url, created_at, submitted_by, milestone:milestones!inner ( titulo, project_id )",
+    )
+    .eq("milestone.project_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("[getRecentProjectActivity]", error.message);
+    return [];
+  }
+
+  const rows = data ?? [];
+  const actorIds = Array.from(
+    new Set(rows.map((r) => r.submitted_by).filter((id): id is string => !!id)),
+  );
+
+  const nombres = new Map<string, string | null>();
+  if (actorIds.length > 0) {
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, nombre")
+      .in("id", actorIds);
+    for (const p of profs ?? []) nombres.set(p.id, p.nombre);
+  }
+
+  return rows.map((r) => ({
+    id: r.id,
+    milestoneTitulo: r.milestone?.titulo ?? "",
+    actorNombre: r.submitted_by ? (nombres.get(r.submitted_by) ?? null) : null,
+    created_at: r.created_at,
+    url: r.url,
+  }));
+}
