@@ -31,10 +31,10 @@ export async function getStudentDashboard() {
   };
 }
 
-type SupabaseServer = Awaited<ReturnType<typeof createClient>>;
+export type SupabaseServer = Awaited<ReturnType<typeof createClient>>;
 
 // Completitud del perfil: % y qué campos clave faltan (para una acción concreta).
-async function perfilCompleto(supabase: SupabaseServer, userId: string) {
+export async function perfilCompleto(supabase: SupabaseServer, userId: string) {
   const [{ data: profile }, { count: skills }] = await Promise.all([
     supabase
       .from("profiles")

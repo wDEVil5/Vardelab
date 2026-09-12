@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
  * El modelo es "enlace + contexto": la evidencia apunta a dónde vive el trabajo.
  */
 
-export type PortfolioState = { error?: string };
+export type PortfolioState = { error?: string; success?: boolean };
 
 export async function addPortfolioItem(
   _prevState: PortfolioState,
@@ -47,7 +47,7 @@ export async function addPortfolioItem(
   }
 
   revalidatePath("/perfil");
-  return {};
+  return { success: true };
 }
 
 /** Elimina una evidencia propia. La RLS restringe al dueño. */
