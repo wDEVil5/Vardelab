@@ -16,6 +16,7 @@ import {
   getMyActiveApplicationInProject,
   type MyProjectApplication,
 } from "@/features/applications/queries";
+import { getPublicProjectTeam } from "@/features/teams/queries";
 
 // Etiquetas legibles de los enums para la interfaz.
 const MODALIDAD_LABEL: Record<string, string> = {
@@ -64,9 +65,10 @@ export default async function ProyectoPage({ params }: PageProps) {
   // Postulación activa del usuario en este proyecto (si la hay). Regla: a lo
   // sumo un rol por proyecto, así que si existe, el resto de roles no ofrece
   // postular y el rol postulado muestra su estado.
-  const miPostulacion = user
-    ? await getMyActiveApplicationInProject(project.id)
-    : null;
+  const [miPostulacion, equipo] = await Promise.all([
+    user ? getMyActiveApplicationInProject(project.id) : Promise.resolve(null),
+    getPublicProjectTeam(project.id),
+  ]);
 
   // Cupos totales (suma de los roles) para el estado del proyecto.
   const cuposTotales = roles.reduce((total, rol) => total + rol.cupos, 0);
@@ -158,6 +160,26 @@ export default async function ProyectoPage({ params }: PageProps) {
                 Condiciones orientativas del piloto; no constituyen un contrato.
               </p>
             </div>
+
+            {/* Equipo ya seleccionado: antes no había forma de ver quién
+                trabaja en el proyecto una vez formado (M27 habilita la
+                lectura pública). Un integrante con perfil privado se muestra
+                sin nombre, no se omite. */}
+            {equipo.length > 0 && (
+              <section>
+                <h2 className="text-xl font-semibold text-ink">
+                  Equipo seleccionado
+                </h2>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {equipo.map((m) => (
+                    <Badge key={m.userId} tone="outline">
+                      {m.nombre ?? "Integrante"}
+                      {m.rol && <span className="text-muted/70"> · {m.rol}</span>}
+                    </Badge>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Roles */}
             {roles.length > 0 && (
