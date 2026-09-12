@@ -10,6 +10,13 @@ import type { MemberEvaluation } from "@/features/evaluations/queries";
 const INITIAL: EvaluateState = {};
 const PUNTAJES = [1, 2, 3, 4, 5];
 
+// Iniciales para el avatar del integrante — mismo criterio que en el resto
+// del sitio.
+function iniciales(nombre: string | null): string {
+  const partes = (nombre ?? "").trim().split(/\s+/).slice(0, 2);
+  return partes.map((p) => p[0]?.toUpperCase() ?? "").join("") || "?";
+}
+
 /**
  * Evaluación de un integrante por el gestor: puntaje 1–5 + comentario. Precarga
  * la evaluación existente (re-evaluar actualiza la misma fila). La evaluación es
@@ -28,11 +35,19 @@ export function MemberEvaluationForm({
   return (
     <li className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4">
       <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium text-ink">{member.nombre}</span>
-          {member.carrera && (
-            <span className="text-xs text-muted">{member.carrera}</span>
-          )}
+        {/* Avatar + nombre: antes la identidad se leía solo como texto plano
+            arriba del formulario, sin ninguna referencia visual de "esto es
+            un roster", no solo un formulario. */}
+        <div className="flex items-center gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-ink">
+            {iniciales(member.nombre)}
+          </span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium text-ink">{member.nombre}</span>
+            {member.carrera && (
+              <span className="text-xs text-muted">{member.carrera}</span>
+            )}
+          </div>
         </div>
         {member.rol && <Badge tone="brand">{member.rol}</Badge>}
       </div>

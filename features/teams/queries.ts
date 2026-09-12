@@ -118,3 +118,46 @@ export async function getMyTeams() {
 }
 
 export type MyTeam = Awaited<ReturnType<typeof getMyTeams>>[number];
+
+export type PublicTeamMember = { userId: string; nombre: string | null; rol: string | null };
+
+/**
+ * Equipo de un proyecto para su ficha pública: solo nombre (si el perfil del
+ * integrante es público) y rol. La RLS `teams_select_public` /
+ * `team_members_select_public` (M27) lo permite mientras el proyecto esté
+ * publicado. Un integrante con perfil privado no rompe la consulta: la RLS de
+ * `profiles` (M1) simplemente no devuelve esa fila, y acá se muestra como
+ * "Integrante" — no se expone nada que ya no fuera visible antes.
+ */
+export async function getPublicProjectTeam(
+  projectId: string,
+): Promise<PublicTeamMember[]> {
+  const supabase = await createClient();
+
+  const { data: team } = await supabase
+    .from("teams")
+    .select("id")
+    .eq("project_id", projectId)
+    .maybeSingle();
+  if (!team) return [];
+
+  const { data: members } = await supabase
+    .from("team_members")
+    .select("user_id, role:project_roles ( nombre )")
+    .eq("team_id", team.id);
+  if (!members || members.length === 0) return [];
+
+  const userIds = members.map((m) => m.user_id);
+  const { data: profs } = await supabase
+    .from("profiles")
+    .select("id, nombre")
+    .in("id", userIds);
+  const nombres = new Map<string, string | null>();
+  for (const p of profs ?? []) nombres.set(p.id, p.nombre);
+
+  return members.map((m) => ({
+    userId: m.user_id,
+    nombre: nombres.get(m.user_id) ?? null,
+    rol: m.role?.nombre ?? null,
+  }));
+}

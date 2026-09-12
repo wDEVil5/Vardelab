@@ -3,6 +3,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { NavLink } from "@/components/nav-link";
 import { SiteHeaderBar } from "@/components/site-header-bar";
 import { MobileMenu, type MobileNavItem } from "@/components/mobile-menu";
+import { AccountMenu, type AccountMenuItem } from "@/components/account-menu";
 import { getCurrentUser } from "@/features/auth/queries";
 
 /**
@@ -22,6 +23,30 @@ export async function SiteHeader() {
     { href: "/#como-funciona", label: "Cómo funciona" },
     { href: "/organizaciones", label: "Para organizaciones" },
   ];
+
+  // Destinos del menú de cuenta (desktop), según el rol — mismo criterio que
+  // arma la navegación del sidebar en `app/(app)/layout.tsx`.
+  const accountItems: AccountMenuItem[] = user
+    ? [
+        { href: "/inicio", label: "Ir a mi panel", icon: "inicio" },
+        { href: "/perfil", label: "Mi perfil", icon: "perfil" },
+        ...(user.esEstudiante
+          ? ([{ href: "/mis-postulaciones", label: "Mis postulaciones", icon: "postulaciones" }] as AccountMenuItem[])
+          : []),
+        ...(user.esPatrocinador
+          ? ([
+              { href: "/mis-proyectos", label: "Mis proyectos", icon: "proyecto" },
+              { href: "/mis-organizaciones", label: "Mis organizaciones", icon: "organizacion" },
+            ] as AccountMenuItem[])
+          : []),
+        ...(user.esModerador || user.esAdmin
+          ? ([{ href: "/moderacion", label: "Moderación", icon: "moderacion" }] as AccountMenuItem[])
+          : []),
+        ...(user.esAdmin
+          ? ([{ href: "/admin", label: "Administración", icon: "admin" }] as AccountMenuItem[])
+          : []),
+      ]
+    : [];
 
   return (
     <SiteHeaderBar>
@@ -54,14 +79,13 @@ export async function SiteHeader() {
                 >
                   Ir a mi panel
                 </Link>
-                <Link
-                  href="/perfil"
-                  aria-label={`Mi perfil (${user.nombre})`}
-                  title={user.nombre}
-                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                >
-                  {iniciales(user.nombre)}
-                </Link>
+                <AccountMenu
+                  nombre={user.nombre}
+                  email={user.email}
+                  avatarUrl={user.avatarUrl}
+                  initials={iniciales(user.nombre)}
+                  items={accountItems}
+                />
               </>
             ) : (
               <Link

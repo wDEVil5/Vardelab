@@ -61,7 +61,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-surface lg:flex">
       <SkipLink />
       <AppSidebar
-        user={{ nombre: user.nombre, initials: iniciales(user.nombre), roleLabel }}
+        user={{
+          nombre: user.nombre,
+          initials: iniciales(user.nombre),
+          avatarUrl: user.avatarUrl,
+          roleLabel,
+        }}
         items={items}
         exploreItem={{ href: "/proyectos", label: "Explorar catálogo", icon: "explorar" }}
       />
