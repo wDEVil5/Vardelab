@@ -1,0 +1,63 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ForgotPasswordForm } from "@/features/auth/components/forgot-password-form";
+
+export const metadata: Metadata = {
+  title: "Recuperar contraseña · CampusLab",
+};
+
+type PageProps = { searchParams: Promise<{ error?: string }> };
+
+/**
+ * A-03 · Recuperar contraseña. Pantalla secundaria (se llega desde "¿Olvidaste
+ * tu contraseña?" en /ingresar): una sola tarjeta centrada, sin el mensaje de
+ * marca a dos columnas que sí tienen ingresar/registro — es un paso de
+ * trámite, no una puerta de entrada. Si `/auth/confirm` rechazó un enlace
+ * vencido o inválido, redirige acá con `?error=` para explicarlo.
+ */
+export default async function RecuperarPage({ searchParams }: PageProps) {
+  const { error } = await searchParams;
+
+  return (
+    <main className="animate-fade-in relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-surface px-6 py-12">
+      <div
+        className="animate-breathe pointer-events-none absolute -top-32 left-1/2 -z-10 size-96 -translate-x-1/2 rounded-full bg-electric/15 blur-3xl"
+        aria-hidden
+      />
+
+      <Link href="/" className="text-lg font-bold text-ink">
+        CampusLab
+      </Link>
+
+      <div className="mt-10 w-full max-w-sm">
+        <div className="rounded-3xl border border-border bg-white p-8 shadow-[0_4px_16px_-8px_rgba(13,37,59,0.12)]">
+          <h1 className="text-2xl font-bold text-ink">
+            Recuperar contraseña
+          </h1>
+          <p className="mt-1 text-sm text-muted">
+            Ingresa tu correo y te mandamos un enlace para restablecerla.
+          </p>
+
+          {error && (
+            <p role="alert" className="mt-4 text-sm text-coral">
+              {error}
+            </p>
+          )}
+
+          <div className="mt-6">
+            <ForgotPasswordForm />
+          </div>
+        </div>
+
+        <p className="mt-6 text-center text-sm text-muted">
+          <Link
+            href="/ingresar"
+            className="font-medium text-electric hover:underline"
+          >
+            ← Volver a ingresar
+          </Link>
+        </p>
+      </div>
+    </main>
+  );
+}

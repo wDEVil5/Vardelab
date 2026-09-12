@@ -37,7 +37,6 @@ Convierte necesidades reales en microproyectos acotados y acompañados, para que
 - [Arquitectura](#-arquitectura)
 - [Estructura del repositorio](#-estructura-del-repositorio)
 - [Puesta en marcha](#-puesta-en-marcha)
-- [Roadmap](#-roadmap)
 - [Documentación](#-documentación)
 - [Contribución](#-contribución)
 - [Licencia](#-licencia)
@@ -75,22 +74,24 @@ Un patrocinador describe una necesidad mediante una **plantilla obligatoria**; u
 
 ## 🚦 Estado del proyecto
 
-> **Fase actual: construcción del MVP — el loop principal ya funciona.**
+> **Fase actual: MVP funcional de punta a punta — corre en local, falta pulir diseño y desplegar a producción.**
 
-La **especificación de producto (PRD) está completa** y el proyecto avanza en código. Están el **scaffold** (Next.js + Supabase), el **modelo de datos completo** (17 migraciones · 17 tablas con Row Level Security), los **tipos TypeScript** generados desde el esquema y el **despliegue de migraciones por CI**. Sobre esa base ya está implementado el **circuito central del producto**:
+La **especificación de producto (PRD) está completa** y el **prototipo en Figma** (todas las pantallas del MVP, mobile + desktop) también. El proyecto avanzó en código sobre esa base: **scaffold** (Next.js + Supabase), **modelo de datos completo** (28 migraciones · 17 tablas de dominio con Row Level Security en el 100%), **tipos TypeScript** generados desde el esquema y **despliegue de migraciones por CI**. Ya está construido el **circuito completo del producto**, de punta a punta:
 
-- **Público** — catálogo de proyectos y ficha de detalle (SSR).
-- **Autenticación** — registro con rol, ingreso y sesión.
-- **Estudiante** — postular a un rol y seguir/retirar sus postulaciones.
-- **Patrocinador** — crear organización, crear/editar/publicar proyectos con roles y habilidades, y **revisar postulaciones** (aceptar/rechazar).
+- **Público** — landing, catálogo con búsqueda/filtros, ficha de proyecto y perfil público de portafolio (SSR).
+- **Autenticación** — registro con rol, ingreso, sesión, **confirmación de correo** y **recuperación de contraseña**.
+- **Estudiante** — postular a un rol, seguir/retirar postulaciones, integrar equipo, entregar hitos, ver evaluación recibida y publicar evidencia de portafolio.
+- **Patrocinador** — crear organización, crear/editar/publicar proyectos con roles y habilidades, revisar postulaciones, formar equipo, definir hitos, aprobar entregas y evaluar al equipo.
+- **Moderador** — cola de revisión de proyectos y gestión de reportes.
+- **Administrador** — métricas del piloto, gestión de catálogos, usuarios y permisos, registro de auditoría y configuración del piloto.
 
-Corre en local contra Supabase. Falta la **pasada de diseño** (alinear con Figma), la **moderación** de proyectos y el despliegue a producción.
+Corre en local contra Supabase. Falta el **despliegue a producción**, terminar de alinear con Figma algunas pantallas secundarias, y las **pruebas automatizadas de políticas RLS**.
 
 | Fase | Descripción | Estado |
 |------|-------------|--------|
-| 0 · Descubrimiento | Entrevistas y validación del problema | 🟡 En progreso |
-| 1 · Prototipo | Flujo completo en Figma, probado con usuarios | 🟡 En progreso |
-| 2 · MVP | Flujo publicación → portafolio en producción | 🟡 En progreso (loop principal en código; falta portafolio, diseño y deploy) |
+| 0 · Descubrimiento | Entrevistas y validación del problema | ✅ Completado |
+| 1 · Prototipo | Flujo completo en Figma, probado con usuarios | ✅ Completado |
+| 2 · MVP | Flujo publicación → portafolio en producción | 🟡 En progreso (todo el flujo funciona en local; falta pulir diseño y desplegar) |
 | 3 · Piloto | 10 proyectos, 30–50 estudiantes, 8 semanas | ⬜ Pendiente |
 | 4 · Institucionalización | Presentar resultados y buscar continuidad | ⬜ Pendiente |
 
@@ -102,7 +103,7 @@ Corre en local contra Supabase. Falta la **pasada de diseño** (alinear con Figm
 | Backend administrado | **Supabase** | Autenticación, PostgreSQL, almacenamiento y políticas de acceso |
 | Base de datos | **PostgreSQL** | Modelo relacional (proyectos, roles, postulaciones, equipos…) |
 | Seguridad | **Row Level Security** | Permisos por rol y por propiedad del registro, en la base |
-| Correo transaccional | **Brevo** | Confirmación de cuentas, recuperación de contraseña y notificaciones mediante correos personales |
+| Correo transaccional | **Supabase Auth** (confirmación/recuperación) + **Brevo** (a integrar, avisos de producto) | Confirmación de cuentas, recuperación de contraseña y notificaciones mediante correos personales |
 | Despliegue | **Vercel** | Entrega continua + dominio propio (HTTPS) |
 | CI/CD | **GitHub Actions** | Despliegue automático de migraciones al mergear a `main` |
 | Diseño | **Figma** | Prototipos y pruebas antes de programar |
@@ -136,7 +137,7 @@ Corre en local contra Supabase. Falta la **pasada de diseño** (alinear con Figm
 </td></tr>
 </table>
 
-**Definición de Terminado:** el MVP está listo cuando un patrocinador puede publicar un proyecto aprobado, estudiantes postulan, se forma un equipo, se registran hitos, se entrega un resultado, el patrocinador evalúa y la plataforma genera una evidencia de portafolio.
+**Definición de Terminado:** el MVP está listo cuando un patrocinador puede publicar un proyecto aprobado, estudiantes postulan, se forma un equipo, se registran hitos, se entrega un resultado, el patrocinador evalúa y la plataforma genera una evidencia de portafolio. **Ese circuito ya funciona de punta a punta en local**; queda pulir diseño en pantallas secundarias y desplegar a producción.
 
 ## 🏗️ Arquitectura
 
@@ -165,6 +166,8 @@ campuslab/
 ├── docs/         # Decisiones y documentación
 └── supabase/     # Migraciones y políticas
 ```
+
+---
 
 ## 🚀 Puesta en marcha
 
@@ -201,14 +204,6 @@ SUPABASE_SERVICE_ROLE_KEY=   # solo servidor, nunca en el cliente
 ```
 
 > La app arranca aunque Supabase no esté configurado todavía: el `proxy.ts` se salta la sesión si faltan las claves.
-
-## 🗺️ Roadmap
-
-- [ ] **Fase 0** — Entrevistas (12 estudiantes, 5 patrocinadores) y validación del problema
-- [ ] **Fase 1** — Prototipo del flujo completo en Figma u otro
-- [ ] **Fase 2** — MVP: auth, perfiles, proyectos, moderación, postulaciones, equipos, hitos, evaluación y portafolio
-- [ ] **Fase 3** — Piloto controlado (10 proyectos · 30–50 estudiantes · 8 semanas)
-- [ ] **Fase 4** — Presentación de resultados y búsqueda de colaboración institucional
 
 ## 📚 Documentación
 

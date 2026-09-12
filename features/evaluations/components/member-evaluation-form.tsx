@@ -63,7 +63,7 @@ export function MemberEvaluationForm({
             {PUNTAJES.map((n) => (
               <label
                 key={n}
-                className="cursor-pointer rounded-md border border-border px-2.5 py-1 text-sm text-muted transition-colors has-[:checked]:border-electric has-[:checked]:bg-electric has-[:checked]:text-white hover:border-electric"
+                className="cursor-pointer rounded-md border border-border px-2.5 py-1 text-sm text-muted transition-colors has-checked:border-electric has-checked:bg-electric has-checked:text-white hover:border-electric"
               >
                 <input
                   type="radio"
