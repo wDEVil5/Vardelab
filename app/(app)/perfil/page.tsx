@@ -2,12 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { buttonClasses } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { getCurrentUser } from "@/features/auth/queries";
 import {
   getMyProfile,
   getMyProfileCompletion,
   getAvatarPresets,
   getMyProfileSkills,
   type ProfileLinks,
+  type AvatarPreset,
 } from "@/features/profile/queries";
 import { setProfileVisibility } from "@/features/profile/actions";
 import { VisibilityToggle } from "@/features/profile/components/visibility-toggle";
@@ -17,6 +21,7 @@ import { getActiveSkills } from "@/features/skills/queries";
 import { getMyPortfolioItems } from "@/features/portfolio/queries";
 import { getMyTeams } from "@/features/teams/queries";
 import { EditProfileDialog } from "@/features/profile/components/edit-profile-dialog";
+import { EditPatrocinadorProfileDialog } from "@/features/profile/components/edit-patrocinador-profile-dialog";
 import { ProfileSkillsEditor } from "@/features/profile/components/profile-skills-editor";
 import { PortfolioEditor } from "@/features/portfolio/components/portfolio-editor";
 
@@ -93,6 +98,25 @@ function SectionTitle({
 
 /** Edición del perfil propio, distribuida en tarjetas. Requiere sesión. */
 export default async function PerfilPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/ingresar?next=/perfil");
+
+  // Un patrocinador puro no tiene carrera, habilidades ni portafolio — antes
+  // veía el editor de estudiante completo (con el "% de perfil completo"
+  // pidiéndole Carrera/Semestre/Habilidades), que no le servía de nada. Su
+  // identidad pública real la administra en su organización (S-01 del Figma).
+  if (user.esPatrocinador && !user.esEstudiante) {
+    const avatarPresets = await getAvatarPresets();
+    return (
+      <PerfilPatrocinador
+        nombre={user.nombre}
+        email={user.email}
+        avatarUrl={user.avatarUrl}
+        avatarPresets={avatarPresets}
+      />
+    );
+  }
+
   const profile = await getMyProfile();
   if (!profile) redirect("/ingresar?next=/perfil");
 
@@ -296,6 +320,68 @@ export default async function PerfilPage() {
           </section>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Versión mínima del perfil para una cuenta de patrocinador puro: identidad
+ * básica (nombre, correo, avatar) y un enlace a su organización, que es donde
+ * realmente administra lo que ven los estudiantes (S-01 del Figma). Sin
+ * carrera/habilidades/portafolio ni el medidor de "% completo" — nada de eso
+ * aplica a una organización.
+ */
+function PerfilPatrocinador({
+  nombre,
+  email,
+  avatarUrl,
+  avatarPresets,
+}: {
+  nombre: string;
+  email: string;
+  avatarUrl: string | null;
+  avatarPresets: AvatarPreset[];
+}) {
+  return (
+    <div className="mx-auto w-full max-w-2xl px-6 py-8 lg:py-10">
+      <header className="flex flex-col gap-2">
+        <h1 className="text-2xl font-bold text-ink">
+          Hola, {nombre.split(/\s+/)[0] || "patrocinador"}.
+        </h1>
+        <p className="text-sm text-muted">Tu información de cuenta en CampusLab.</p>
+      </header>
+
+      <section className="mt-6 rounded-2xl border border-border bg-white p-6">
+        <div className="flex flex-wrap items-center gap-4">
+          <AvatarPicker
+            avatarUrl={avatarUrl}
+            iniciales={iniciales(nombre)}
+            presets={avatarPresets}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="truncate text-xl font-bold text-ink">{nombre}</p>
+              <EditPatrocinadorProfileDialog nombre={nombre} />
+            </div>
+            <p className="mt-1 text-sm text-muted">{email}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-border bg-white p-6">
+        <h2 className="text-lg font-semibold text-ink">Tu organización</h2>
+        <p className="mt-1 text-sm text-muted">
+          El nombre, la descripción y los datos de contacto que ven los
+          estudiantes al revisar tus proyectos se administran desde tu
+          organización, no desde acá.
+        </p>
+        <Link
+          href="/mis-organizaciones"
+          className={cn(buttonClasses({ variant: "outline", size: "sm" }), "mt-4")}
+        >
+          Ir a mis organizaciones
+        </Link>
+      </section>
     </div>
   );
 }
