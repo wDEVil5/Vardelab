@@ -33,14 +33,23 @@ export function LoginForm() {
             autoComplete="current-password"
             required
             placeholder="••••••••"
-            className="pr-16"
+            className="pr-10"
           />
           <button
             type="button"
             onClick={() => setVisible((v) => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted hover:text-electric"
+            aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+            className="absolute top-1/2 right-3 flex -translate-y-1/2 items-center text-muted transition-colors hover:text-electric"
           >
-            {visible ? "Ocultar" : "Mostrar"}
+            {visible ? (
+              <svg viewBox="0 0 24 24" className="size-4.5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M3 3l18 18M10.6 10.6a3 3 0 004 4M9.4 5.5A9.6 9.6 0 0112 5c6.5 0 10 7 10 7a15.6 15.6 0 01-3.2 4.1M6.6 6.6C4 8.3 2 12 2 12s3.5 7 10 7c1.4 0 2.6-.3 3.7-.8" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" className="size-4.5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7zM12 15a3 3 0 100-6 3 3 0 000 6z" />
+              </svg>
+            )}
           </button>
         </div>
       </label>

@@ -2,113 +2,101 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  AuthShell,
-  AuthShellStep,
-  AuthSlide,
-} from "@/features/auth/components/auth-shell";
 import { SignupForm, type Rol } from "@/features/auth/components/signup-form";
 
-// Contenido del carrusel según el rol elegido: el panel habla de quién eres.
-const CONTENIDO: Record<
-  Rol,
-  {
-    pasosTitulo: string;
-    pasos: { titulo: string; texto: string }[];
-    valor: { eyebrow: string; titulo: string; texto: string };
-  }
-> = {
+// Mensaje de marca según el rol elegido — mismo criterio visual que
+// `/ingresar` (mensaje grande + acentos geométricos), pero reactivo al rol en
+// vez de un carrusel de diapositivas aparte.
+const MENSAJE: Record<Rol, { titulo: string; texto: string }> = {
   estudiante: {
-    pasosTitulo: "Un camino simple para empezar",
-    pasos: [
-      { titulo: "Completa tu perfil", texto: "Cuéntanos qué sabes hacer." },
-      { titulo: "Explora un microproyecto", texto: "Elige un desafío real." },
-      {
-        titulo: "Colabora y demuestra",
-        texto: "Construye evidencia para tu portafolio.",
-      },
-    ],
-    valor: {
-      eyebrow: "Evidencia verificable",
-      titulo: "Tu trabajo, demostrable",
-      texto:
-        "Cada participación queda ligada a una organización real: es un hecho, no una línea más de CV.",
-    },
+    titulo: "Tu próximo desafío empieza acá.",
+    texto: "Microproyectos reales que se suman a tu portafolio.",
   },
   patrocinador: {
-    pasosTitulo: "Del desafío a tu equipo",
-    pasos: [
-      { titulo: "Publica un desafío", texto: "Describe una necesidad acotada." },
-      {
-        titulo: "Recibe postulaciones",
-        texto: "Elige a los estudiantes que calcen.",
-      },
-      {
-        titulo: "Acompaña y evalúa",
-        texto: "Sigue los hitos y evalúa el trabajo.",
-      },
-    ],
-    valor: {
-      eyebrow: "Talento cerca",
-      titulo: "Estudiantes resolviendo",
-      texto:
-        "Suma un equipo motivado a una necesidad concreta, con acompañamiento y resultados por hitos.",
-    },
+    titulo: "Encuentra el talento que tu proyecto necesita.",
+    texto:
+      "Publica un desafío real y conecta con estudiantes listos para resolverlo.",
   },
 };
 
-/** A-01 · Vista de registro: el rol elegido controla el carrusel del panel. */
-export function RegistroView({ initialRol = "estudiante" }: { initialRol?: Rol }) {
+/**
+ * A-01 · Vista de registro. Mismo layout de dos columnas que `/ingresar`: a
+ * la izquierda el mensaje de marca (cambia según el rol elegido) con acentos
+ * geométricos, a la derecha la tarjeta del formulario.
+ */
+export function RegistroView({
+  initialRol = "estudiante",
+}: {
+  initialRol?: Rol;
+}) {
   const [rol, setRol] = useState<Rol>(initialRol);
-  const c = CONTENIDO[rol];
-
-  const slides = [
-    <AuthSlide key="pasos" eyebrow="Así funciona" titulo={c.pasosTitulo}>
-      <div className="flex flex-col gap-5">
-        {c.pasos.map((paso, i) => (
-          <AuthShellStep
-            key={paso.titulo}
-            n={i + 1}
-            titulo={paso.titulo}
-            texto={paso.texto}
-            active={i === c.pasos.length - 1}
-          />
-        ))}
-      </div>
-    </AuthSlide>,
-    <AuthSlide key="valor" eyebrow={c.valor.eyebrow} titulo={c.valor.titulo}>
-      <p className="text-sm text-white/60">{c.valor.texto}</p>
-    </AuthSlide>,
-    <AuthSlide key="piloto" eyebrow="El piloto" titulo="Microproyectos guiados">
-      <p className="text-sm text-white/60">
-        10+ proyectos piloto · 4 semanas de duración promedio, por hitos y con
-        acompañamiento.
-      </p>
-    </AuthSlide>,
-  ];
+  const mensaje = MENSAJE[rol];
 
   return (
-    <AuthShell slides={slides} resetKey={rol}>
-      <div className="rounded-2xl border border-border bg-white p-8">
-        <h1 className="text-2xl font-bold text-ink">Crea tu cuenta</h1>
-        <p className="mt-1 text-sm text-muted">
-          Elige cómo participarás en el piloto.
-        </p>
+    <div className="animate-fade-in flex min-h-screen bg-surface">
+      <div className="relative hidden flex-1 flex-col overflow-hidden p-10 lg:flex">
+        <Link href="/" className="text-lg font-bold text-ink">
+          CampusLab
+        </Link>
 
-        <div className="mt-6">
-          <SignupForm rol={rol} onRolChange={setRol} />
+        <div className="mt-20 max-w-md">
+          <h1 className="text-5xl leading-[1.1] font-bold text-ink">
+            {mensaje.titulo}
+          </h1>
+          <p className="mt-4 text-lg text-muted">{mensaje.texto}</p>
         </div>
 
-        <p className="mt-6 text-center text-sm text-muted">
-          ¿Ya tienes cuenta?{" "}
-          <Link
-            href="/ingresar"
-            className="font-medium text-electric hover:underline"
-          >
-            Ingresar
-          </Link>
-        </p>
+        {/* Acentos geométricos: mismos tokens de color que el resto del sitio
+            (y los mismos que ya usa `/ingresar`, para que ambas pantallas se
+            sientan parte de un mismo par). */}
+        <div
+          className="pointer-events-none absolute -bottom-24 -left-24 size-72 rounded-full bg-electric/10 blur-2xl"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute bottom-12 left-16 size-28 rounded-full bg-sprout/20 blur-xl"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute bottom-40 left-56 size-12 rotate-45 rounded-xl border-2 border-electric/30"
+          aria-hidden
+        />
+        <span
+          className="pointer-events-none absolute bottom-64 left-40 size-2.5 rounded-full bg-coral/50"
+          aria-hidden
+        />
+        <span
+          className="pointer-events-none absolute bottom-28 left-72 size-2 rounded-full bg-electric/50"
+          aria-hidden
+        />
       </div>
-    </AuthShell>
+
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
+        <Link href="/" className="mb-8 text-lg font-bold text-ink lg:hidden">
+          CampusLab
+        </Link>
+
+        <div className="w-full max-w-sm rounded-3xl border border-border bg-white p-8 shadow-[0_4px_16px_-8px_rgba(13,37,59,0.12)]">
+          <h2 className="text-center text-2xl font-bold text-ink">
+            Crea tu cuenta
+          </h2>
+          <p className="mt-1 text-center text-sm text-muted">
+            ¿Ya tienes cuenta?{" "}
+            <Link
+              href="/ingresar"
+              className="font-medium text-electric hover:underline"
+            >
+              Ingresar
+            </Link>
+          </p>
+
+          <div className="mt-6">
+            <SignupForm rol={rol} onRolChange={setRol} />
+          </div>
+        </div>
+
+        <p className="mt-6 text-xs text-muted">Piloto independiente</p>
+      </div>
+    </div>
   );
 }
