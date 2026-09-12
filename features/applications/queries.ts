@@ -108,6 +108,81 @@ export async function getMyActiveApplicationInProject(
   };
 }
 
+export type SponsorPendingApplication = {
+  id: string;
+  status: string;
+  created_at: string;
+  applicant: ApplicantProfile | null;
+  roleNombre: string | null;
+  projectId: string;
+  projectTitulo: string | null;
+};
+
+/**
+ * Postulaciones `enviada` (pendientes de revisar) en cualquier proyecto propio
+ * del patrocinador, de la más reciente a la más antigua. Es la bandeja de
+ * entrada agregada que faltaba en el sidebar (S-04): antes solo se veían
+ * postulaciones entrando a cada proyecto por separado. El filtro por
+ * `role.project.created_by` hace de barrera de alcance (solo lo propio); la RLS
+ * `applications_select_own_or_manager` es la que realmente lo garantiza.
+ */
+export async function getPendingApplicationsForSponsor(): Promise<
+  SponsorPendingApplication[]
+> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("applications")
+    .select(
+      `
+      id,
+      status,
+      created_at,
+      applicant_id,
+      role:project_roles!inner (
+        id,
+        nombre,
+        project:projects!inner ( id, titulo, created_by )
+      )
+    `,
+    )
+    .eq("status", "enviada")
+    .eq("role.project.created_by", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[getPendingApplicationsForSponsor]", error.message);
+    throw error;
+  }
+
+  const rows = data ?? [];
+  const applicantIds = Array.from(new Set(rows.map((r) => r.applicant_id)));
+
+  const perfiles = new Map<string, ApplicantProfile>();
+  if (applicantIds.length > 0) {
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, nombre, carrera")
+      .in("id", applicantIds);
+    for (const p of profs ?? []) perfiles.set(p.id, p);
+  }
+
+  return rows.map((r) => ({
+    id: r.id,
+    status: r.status,
+    created_at: r.created_at,
+    applicant: perfiles.get(r.applicant_id) ?? null,
+    roleNombre: r.role?.nombre ?? null,
+    projectId: r.role?.project?.id ?? "",
+    projectTitulo: r.role?.project?.titulo ?? null,
+  }));
+}
+
 /**
  * Roles de un proyecto con las postulaciones de cada uno, para que el gestor las
  * revise. Verifica la propiedad con `created_by`; la RLS de M4/M12/M13 permite
