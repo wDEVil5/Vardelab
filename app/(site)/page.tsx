@@ -4,7 +4,10 @@ import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/reveal";
 import { Faq } from "@/components/faq";
-import { ScrollPrinciples, type Principio } from "@/components/scroll-principles";
+import {
+  ScrollPrinciples,
+  type Principio,
+} from "@/components/scroll-principles-horizontal";
 import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 import { getPublishedProjects } from "@/features/projects/queries";
