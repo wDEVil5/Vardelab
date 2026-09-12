@@ -113,12 +113,23 @@ export async function getMyActiveApplicationInProject(
  * revise. Verifica la propiedad con `created_by`; la RLS de M4/M12/M13 permite
  * al gestor leer las postulaciones y el perfil de cada postulante. `null` si el
  * proyecto no existe o no es del usuario → 404.
+ *
+ * También calcula, por postulación, cuántas de las habilidades exigidas por el
+ * rol tiene el postulante en su perfil (`matchCount`/`matchTotal`) — es lo que
+ * decide el badge "Recomendado" en la pantalla de selección de equipo (S-04) —
+ * y trae el equipo ya formado (M29: `teams`/`team_members`).
  */
 // Perfil resumido del postulante que ve el gestor.
 export type ApplicantProfile = {
   id: string;
   nombre: string | null;
   carrera: string | null;
+};
+
+export type TeamMember = {
+  userId: string;
+  nombre: string | null;
+  roleNombre: string | null;
 };
 
 export async function getProjectApplications(projectId: string) {
@@ -129,19 +140,24 @@ export async function getProjectApplications(projectId: string) {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  // 1) Proyecto + roles + postulaciones. No se embebe el perfil aquí porque
-  // applications.applicant_id referencia auth.users (no profiles), así que
-  // PostgREST no puede inferir la relación; se resuelve con una segunda consulta.
+  // 1) Proyecto + roles + postulaciones + habilidades exigidas por rol. No se
+  // embebe el perfil del postulante aquí porque applications.applicant_id
+  // referencia auth.users (no profiles), así que PostgREST no puede inferir
+  // la relación; se resuelve con una segunda consulta.
   const { data: project, error } = await supabase
     .from("projects")
     .select(
       `
       id,
       titulo,
+      status,
+      modalidad,
+      duracion_semanas,
       roles:project_roles (
         id,
         nombre,
         cupos,
+        skills:project_role_skills ( skill_id ),
         applications (
           id,
           status,
@@ -164,37 +180,82 @@ export async function getProjectApplications(projectId: string) {
   }
   if (!project) return null;
 
+  const roles = project.roles ?? [];
+
   // 2) Perfiles de los postulantes (la RLS de M13 permite verlos al gestor).
   const applicantIds = Array.from(
-    new Set(
-      (project.roles ?? []).flatMap((r) =>
-        (r.applications ?? []).map((a) => a.applicant_id),
-      ),
-    ),
+    new Set(roles.flatMap((r) => (r.applications ?? []).map((a) => a.applicant_id))),
   );
 
   const perfiles = new Map<string, ApplicantProfile>();
+  const habilidadesPorPostulante = new Map<string, Set<string>>();
   if (applicantIds.length > 0) {
-    const { data: profs } = await supabase
-      .from("profiles")
-      .select("id, nombre, carrera")
-      .in("id", applicantIds);
+    const [{ data: profs }, { data: skills }] = await Promise.all([
+      supabase.from("profiles").select("id, nombre, carrera").in("id", applicantIds),
+      supabase
+        .from("profile_skills")
+        .select("profile_id, skill_id")
+        .in("profile_id", applicantIds),
+    ]);
     for (const p of profs ?? []) perfiles.set(p.id, p);
+    for (const s of skills ?? []) {
+      const set = habilidadesPorPostulante.get(s.profile_id) ?? new Set<string>();
+      set.add(s.skill_id);
+      habilidadesPorPostulante.set(s.profile_id, set);
+    }
   }
 
-  // 3) Adjuntar el perfil a cada postulación.
+  // 3) Equipo ya formado (si existe): integrantes con su nombre y el rol que cubren.
+  const { data: team } = await supabase
+    .from("teams")
+    .select("id, team_members ( user_id, project_role_id )")
+    .eq("project_id", projectId)
+    .maybeSingle();
+
+  const miembros = team?.team_members ?? [];
+  const equipoIds = miembros.map((m) => m.user_id);
+  const perfilesEquipo = new Map<string, string | null>();
+  if (equipoIds.length > 0) {
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, nombre")
+      .in("id", equipoIds);
+    for (const p of profs ?? []) perfilesEquipo.set(p.id, p.nombre);
+  }
+  const nombreRolPorId = new Map(roles.map((r) => [r.id, r.nombre]));
+
+  const equipo: TeamMember[] = miembros.map((m) => ({
+    userId: m.user_id,
+    nombre: perfilesEquipo.get(m.user_id) ?? null,
+    roleNombre: m.project_role_id ? (nombreRolPorId.get(m.project_role_id) ?? null) : null,
+  }));
+
+  // 4) Adjuntar perfil y match de habilidades a cada postulación.
   return {
     id: project.id,
     titulo: project.titulo,
-    roles: (project.roles ?? []).map((r) => ({
-      id: r.id,
-      nombre: r.nombre,
-      cupos: r.cupos,
-      applications: (r.applications ?? []).map((a) => ({
-        ...a,
-        applicant: perfiles.get(a.applicant_id) ?? null,
-      })),
-    })),
+    status: project.status,
+    modalidad: project.modalidad,
+    duracion_semanas: project.duracion_semanas,
+    equipo,
+    roles: roles.map((r) => {
+      const requiredSkillIds = (r.skills ?? []).map((s) => s.skill_id);
+      return {
+        id: r.id,
+        nombre: r.nombre,
+        cupos: r.cupos,
+        applications: (r.applications ?? []).map((a) => {
+          const habilidades = habilidadesPorPostulante.get(a.applicant_id) ?? new Set<string>();
+          const matchCount = requiredSkillIds.filter((id) => habilidades.has(id)).length;
+          return {
+            ...a,
+            applicant: perfiles.get(a.applicant_id) ?? null,
+            matchCount,
+            matchTotal: requiredSkillIds.length,
+          };
+        }),
+      };
+    }),
   };
 }
 
