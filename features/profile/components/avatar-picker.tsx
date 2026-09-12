@@ -41,7 +41,13 @@ export function AvatarPicker({
           // Foto propia (M25) o avatar del catálogo (M26); ambos casos son
           // imágenes propias de la app, no una URL externa arbitraria.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" className="size-16 object-cover" />
+          <img
+            src={avatarUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="size-16 object-cover"
+          />
         ) : (
           iniciales
         )}
@@ -161,7 +167,13 @@ function PresetButton({
         className="aspect-square w-full overflow-hidden rounded-full border-2 border-transparent transition-colors hover:border-electric disabled:opacity-60"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={preset.url} alt="" className="size-full object-cover" />
+        <img
+          src={preset.url}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="size-full object-cover"
+        />
       </button>
     </form>
   );

@@ -78,6 +78,8 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
               <img
                 src={profile.avatar_url}
                 alt=""
+                loading="lazy"
+                decoding="async"
                 className="size-16 object-cover"
               />
             ) : (
