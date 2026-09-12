@@ -271,6 +271,60 @@ export type Database = {
         }
         Relationships: []
       }
+      pilot_config: {
+        Row: {
+          autoaprobacion_proyectos: boolean
+          duracion_max_semanas: number
+          duracion_min_semanas: number
+          id: boolean
+          max_estudiantes: number
+          max_proyectos_activos: number
+          moderacion_previa_obligatoria: boolean
+          notif_hito_proximo_vencer: boolean
+          notif_postulacion_recibida: boolean
+          notif_respuesta_moderacion: boolean
+          notif_resumen_semanal: boolean
+          patrocinadores_externos: boolean
+          registro_abierto: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          autoaprobacion_proyectos?: boolean
+          duracion_max_semanas?: number
+          duracion_min_semanas?: number
+          id?: boolean
+          max_estudiantes?: number
+          max_proyectos_activos?: number
+          moderacion_previa_obligatoria?: boolean
+          notif_hito_proximo_vencer?: boolean
+          notif_postulacion_recibida?: boolean
+          notif_respuesta_moderacion?: boolean
+          notif_resumen_semanal?: boolean
+          patrocinadores_externos?: boolean
+          registro_abierto?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          autoaprobacion_proyectos?: boolean
+          duracion_max_semanas?: number
+          duracion_min_semanas?: number
+          id?: boolean
+          max_estudiantes?: number
+          max_proyectos_activos?: number
+          moderacion_previa_obligatoria?: boolean
+          notif_hito_proximo_vencer?: boolean
+          notif_postulacion_recibida?: boolean
+          notif_respuesta_moderacion?: boolean
+          notif_resumen_semanal?: boolean
+          patrocinadores_externos?: boolean
+          registro_abierto?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       portfolio_items: {
         Row: {
           created_at: string
@@ -787,6 +841,10 @@ export type Database = {
       is_team_member: { Args: { _team_id: string }; Returns: boolean }
       manages_applicant: { Args: { _applicant_id: string }; Returns: boolean }
       owns_org: { Args: { _org_id: string }; Returns: boolean }
+      pilot_autoaprobacion_activa: { Args: never; Returns: boolean }
+      pilot_moderacion_obligatoria: { Args: never; Returns: boolean }
+      pilot_permite_patrocinadores_externos: { Args: never; Returns: boolean }
+      pilot_registro_abierto: { Args: never; Returns: boolean }
       shares_team_with: { Args: { _other: string }; Returns: boolean }
     }
     Enums: {
