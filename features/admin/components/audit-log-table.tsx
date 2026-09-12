@@ -12,6 +12,7 @@ const ACCION_LABEL: Record<string, string> = {
   cuenta_suspendida: "Cuenta suspendida",
   cuenta_reactivada: "Cuenta reactivada",
   catalogo_editado: "Catálogo editado",
+  configuracion_actualizada: "Configuración actualizada",
 };
 
 const ACCION_TONE: Record<string, BadgeTone> = {
@@ -19,6 +20,7 @@ const ACCION_TONE: Record<string, BadgeTone> = {
   cuenta_suspendida: "danger",
   cuenta_reactivada: "success",
   catalogo_editado: "outline",
+  configuracion_actualizada: "brand",
 };
 
 const ROL_LABEL: Record<string, string> = {
@@ -38,6 +40,15 @@ function leerCampo(metadata: unknown, campo: string): string | null {
   if (metadata && typeof metadata === "object" && campo in metadata) {
     const valor = (metadata as Record<string, unknown>)[campo];
     return typeof valor === "string" ? valor : null;
+  }
+  return null;
+}
+
+/** Igual que `leerCampo`, pero para un arreglo de strings (ej. `metadata.campos`). */
+function leerListaCampo(metadata: unknown, campo: string): string[] | null {
+  if (metadata && typeof metadata === "object" && campo in metadata) {
+    const valor = (metadata as Record<string, unknown>)[campo];
+    if (Array.isArray(valor) && valor.every((v) => typeof v === "string")) return valor;
   }
   return null;
 }
@@ -71,6 +82,13 @@ function describirEvento(e: AuditLogEntry): string {
         desactivada: "desactivó",
       };
       return `${e.actorNombre} ${verbo[tipo ?? ""] ?? "modificó"} la habilidad "${nombreHabilidad}".`;
+    }
+    case "configuracion_actualizada": {
+      const campos = leerListaCampo(e.metadata, "campos");
+      if (campos && campos.length > 0) {
+        return `${e.actorNombre} actualizó la configuración del piloto: ${campos.join(", ")}.`;
+      }
+      return `${e.actorNombre} actualizó la configuración del piloto.`;
     }
     default:
       return `${e.actorNombre} registró "${etiquetaAccion(e.accion)}" sobre ${entidad}.`;

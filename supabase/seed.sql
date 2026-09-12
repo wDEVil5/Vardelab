@@ -251,3 +251,28 @@ delete from public.user_roles
 insert into public.user_roles (user_id, role)
 values ('44444444-4444-4444-4444-444444444444', 'moderador')
 on conflict (user_id, role) do nothing;
+
+-- Cuenta de admin, para probar el panel /admin sin recrearla a mano cada vez
+-- que se corre `supabase db reset` (antes no existía en el seed y se perdía).
+insert into auth.users
+  (instance_id, id, aud, role, email, encrypted_password,
+   email_confirmed_at, created_at, updated_at,
+   raw_app_meta_data, raw_user_meta_data,
+   confirmation_token, recovery_token, email_change,
+   email_change_token_new, email_change_token_current,
+   phone_change, phone_change_token, reauthentication_token)
+values
+  ('00000000-0000-0000-0000-000000000000',
+   '55555555-5555-5555-5555-555555555555',
+   'authenticated', 'authenticated', 'admin@demo.cl',
+   crypt('demo1234', gen_salt('bf')), now(), now(), now(),
+   '{"provider":"email","providers":["email"]}',
+   '{"nombre":"Admin CampusLab"}',
+   '', '', '', '', '', '', '', '')
+on conflict (id) do nothing;
+
+delete from public.user_roles
+  where user_id = '55555555-5555-5555-5555-555555555555' and role = 'estudiante';
+insert into public.user_roles (user_id, role)
+values ('55555555-5555-5555-5555-555555555555', 'admin')
+on conflict (user_id, role) do nothing;
