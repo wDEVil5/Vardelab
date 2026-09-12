@@ -1,13 +1,13 @@
 "use client";
 
 import { useActionState } from "react";
-import { signUp, type AuthState } from "@/features/auth/actions";
+import { signUp, type SignUpState } from "@/features/auth/actions";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { PasswordField } from "./password-field";
 import { SubmitButton } from "./submit-button";
 
-const INITIAL: AuthState = {};
+const INITIAL: SignUpState = {};
 
 export type Rol = "estudiante" | "patrocinador";
 
@@ -56,20 +56,9 @@ export const ROLES: {
   valor: Rol;
   Icono: () => React.ReactElement;
   titulo: string;
-  detalle: string;
 }[] = [
-  {
-    valor: "estudiante",
-    Icono: IconEstudiante,
-    titulo: "Estudiante",
-    detalle: "Explora microproyectos y crea evidencia para tu portafolio.",
-  },
-  {
-    valor: "patrocinador",
-    Icono: IconPatrocinador,
-    titulo: "Patrocinador",
-    detalle: "Publica un desafío y suma un equipo de estudiantes.",
-  },
+  { valor: "estudiante", Icono: IconEstudiante, titulo: "Estudiante" },
+  { valor: "patrocinador", Icono: IconPatrocinador, titulo: "Patrocinador" },
 ];
 
 /**
@@ -84,6 +73,15 @@ export function SignupForm({
   onRolChange: (rol: Rol) => void;
 }) {
   const [state, formAction] = useActionState(signUp, INITIAL);
+
+  if (state.ok) {
+    return (
+      <p className="text-sm text-ink">
+        Te enviamos un enlace de confirmación a tu correo. Ábrelo para
+        activar tu cuenta (revisa también spam).
+      </p>
+    );
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -122,7 +120,6 @@ export function SignupForm({
                 >
                   {tipo.titulo}
                 </span>
-                <span className="text-xs text-muted">{tipo.detalle}</span>
               </label>
             );
           })}
