@@ -1,111 +1,82 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LoginForm } from "@/features/auth/components/login-form";
-import { AuthShell, AuthSlide } from "@/features/auth/components/auth-shell";
-import { getPublishedProjects } from "@/features/projects/queries";
 
 export const metadata: Metadata = {
   title: "Ingresar · CampusLab",
 };
 
-/** A-02 · Inicio de sesión. */
-export default async function IngresarPage() {
-  // Para la slide de oportunidades: proyectos reales del catálogo.
-  const proyectos = await getPublishedProjects();
-  const primeros = proyectos.slice(0, 3);
-  const resto = Math.max(0, proyectos.length - primeros.length);
-
-  const oportunidades =
-    primeros.length > 0 ? (
-      <AuthSlide
-        key="oportunidades"
-        eyebrow="Oportunidades abiertas"
-        titulo="Encuentra un desafío para ti"
-      >
-        <ul className="flex flex-col gap-5">
-          {primeros.map((p, i) => {
-            const cupos = (p.roles ?? []).reduce((t, r) => t + r.cupos, 0);
-            return (
-              <li
-                key={p.id}
-                className="flex items-center justify-between gap-3"
-              >
-                <span className="line-clamp-1 text-sm font-medium text-white">
-                  {p.titulo}
-                </span>
-                <span
-                  className={
-                    i === 0
-                      ? "shrink-0 rounded-full bg-electric px-3 py-1 text-xs font-medium text-white"
-                      : "shrink-0 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/80"
-                  }
-                >
-                  {i === 0 || cupos === 0 ? "Abierto" : `${cupos} cupos`}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-        {resto > 0 && (
-          <p className="text-sm text-white/40">
-            +{resto} {resto === 1 ? "desafío más" : "desafíos más"} en el piloto
-          </p>
-        )}
-      </AuthSlide>
-    ) : (
-      <AuthSlide
-        key="oportunidades"
-        eyebrow="Oportunidades abiertas"
-        titulo="Encuentra un desafío para ti"
-      >
-        <p className="text-sm text-white/60">
-          Microproyectos reales, por hitos y con evidencia verificable para tu
-          portafolio.
-        </p>
-      </AuthSlide>
-    );
-
-  const slides = [
-    oportunidades,
-    <AuthSlide
-      key="evidencia"
-      eyebrow="Evidencia verificable"
-      titulo="Tu trabajo, demostrable"
-    >
-      <p className="text-sm text-white/60">
-        Cada participación queda ligada a una organización real: es un hecho, no
-        una línea más de CV.
-      </p>
-    </AuthSlide>,
-    <AuthSlide key="piloto" eyebrow="El piloto" titulo="Del desafío a tu portafolio">
-      <p className="text-sm text-white/60">
-        10+ proyectos piloto · 4 semanas de duración promedio, con acompañamiento.
-      </p>
-    </AuthSlide>,
-  ];
-
+/**
+ * A-02 · Inicio de sesión. Dos columnas otra vez, pero no el `AuthShell`
+ * anterior (panel oscuro + carrusel): a la izquierda el mensaje de marca con
+ * acentos geométricos en los colores de CampusLab (electric/sprout/coral) en
+ * vez de una ilustración, a la derecha la tarjeta del formulario. Columna
+ * izquierda oculta en mobile — el formulario es lo único imprescindible ahí.
+ */
+export default function IngresarPage() {
   return (
-    <AuthShell slides={slides}>
-      <div className="rounded-2xl border border-border bg-white p-8">
-        <h1 className="text-2xl font-bold text-ink">Bienvenido de vuelta</h1>
-        <p className="mt-1 text-sm text-muted">
-          Ingresa para continuar con tus proyectos.
-        </p>
+    <div className="animate-fade-in flex min-h-screen bg-surface">
+      <div className="relative hidden flex-1 flex-col overflow-hidden p-10 lg:flex">
+        <Link href="/" className="text-lg font-bold text-ink">
+          CampusLab
+        </Link>
 
-        <div className="mt-6">
-          <LoginForm />
+        <div className="mt-20 max-w-md">
+          <h1 className="text-5xl leading-[1.1] font-bold text-ink">
+            Tu próximo desafío empieza acá.
+          </h1>
+          <p className="mt-4 text-lg text-muted">
+            Microproyectos reales que conectan estudiantes con organizaciones.
+          </p>
         </div>
 
-        <p className="mt-6 text-center text-sm text-muted">
-          ¿Aún no tienes cuenta?{" "}
-          <Link
-            href="/registro"
-            className="font-medium text-electric hover:underline"
-          >
-            Crear cuenta
-          </Link>
-        </p>
+        {/* Acentos geométricos: mismos tokens de color que el resto del sitio. */}
+        <div
+          className="pointer-events-none absolute -bottom-24 -left-24 size-72 rounded-full bg-electric/10 blur-2xl"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute bottom-12 left-16 size-28 rounded-full bg-sprout/20 blur-xl"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute bottom-40 left-56 size-12 rotate-45 rounded-xl border-2 border-electric/30"
+          aria-hidden
+        />
+        <span
+          className="pointer-events-none absolute bottom-64 left-40 size-2.5 rounded-full bg-coral/50"
+          aria-hidden
+        />
+        <span
+          className="pointer-events-none absolute bottom-28 left-72 size-2 rounded-full bg-electric/50"
+          aria-hidden
+        />
       </div>
-    </AuthShell>
+
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
+        <Link href="/" className="mb-8 text-lg font-bold text-ink lg:hidden">
+          CampusLab
+        </Link>
+
+        <div className="w-full max-w-sm rounded-3xl border border-border bg-white p-8 shadow-[0_4px_16px_-8px_rgba(13,37,59,0.12)]">
+          <h2 className="text-center text-2xl font-bold text-ink">Ingresar</h2>
+          <p className="mt-1 text-center text-sm text-muted">
+            ¿Aún no tienes cuenta?{" "}
+            <Link
+              href="/registro"
+              className="font-medium text-electric hover:underline"
+            >
+              Crear cuenta
+            </Link>
+          </p>
+
+          <div className="mt-6">
+            <LoginForm />
+          </div>
+        </div>
+
+        <p className="mt-6 text-xs text-muted">Piloto independiente</p>
+      </div>
+    </div>
   );
 }
