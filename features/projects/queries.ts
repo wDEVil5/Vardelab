@@ -306,7 +306,8 @@ export async function getMyProjects() {
       duracion_semanas,
       created_at,
       organization:organizations ( nombre ),
-      roles:project_roles ( id )
+      roles:project_roles ( id, applications ( status ) ),
+      team:teams ( team_members ( id ) )
     `,
     )
     .eq("created_by", user.id)
@@ -317,7 +318,17 @@ export async function getMyProjects() {
     throw error;
   }
 
-  return data;
+  // Deriva el tamaño del equipo y las postulaciones pendientes acá: la
+  // página no necesita conocer la forma anidada cruda (team/roles/applications).
+  return (data ?? []).map((p) => ({
+    ...p,
+    equipoTamano: p.team?.team_members?.length ?? 0,
+    postulacionesPendientes: (p.roles ?? []).reduce(
+      (total, r) =>
+        total + (r.applications ?? []).filter((a) => a.status === "enviada").length,
+      0,
+    ),
+  }));
 }
 
 export type MyProject = Awaited<ReturnType<typeof getMyProjects>>[number];
@@ -393,7 +404,7 @@ export async function getEditableProject(id: string) {
   const { data, error } = await supabase
     .from("projects")
     .select(
-      "id, titulo, resumen, problema, alcance, entregable, expectativas, modalidad, duracion_semanas",
+      "id, titulo, resumen, problema, alcance, entregable, expectativas, modalidad, duracion_semanas, dedicacion_semanal",
     )
     .eq("id", id)
     .eq("created_by", user.id)
