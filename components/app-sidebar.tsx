@@ -251,7 +251,13 @@ export function AppSidebar({
         <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-electric text-sm font-semibold text-white">
           {user.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.avatarUrl} alt="" className="size-10 object-cover" />
+            <img
+              src={user.avatarUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="size-10 object-cover"
+            />
           ) : (
             user.initials
           )}
