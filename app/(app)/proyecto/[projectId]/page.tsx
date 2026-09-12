@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/features/auth/queries";
 import { getMyTeams } from "@/features/teams/queries";
 import { getProjectMilestones } from "@/features/milestones/queries";
+import { getProjectMessages } from "@/features/messages/queries";
+import { MessageThread } from "@/features/messages/components/message-thread";
 
 export const metadata: Metadata = {
   title: "Mi proyecto · CampusLab",
@@ -63,7 +65,10 @@ export default async function ProyectoWorkspacePage({ params }: PageProps) {
   const equipo = misProyectos.find((t) => t.projectId === projectId);
   if (!equipo) notFound();
 
-  const hitos = await getProjectMilestones(projectId);
+  const [hitos, mensajes] = await Promise.all([
+    getProjectMilestones(projectId),
+    getProjectMessages(projectId),
+  ]);
   const total = hitos.length;
   const aprobados = hitos.filter((h) => h.estado === "aprobado").length;
   const progreso = total > 0 ? Math.round((aprobados / total) * 100) : 0;
@@ -189,6 +194,16 @@ export default async function ProyectoWorkspacePage({ params }: PageProps) {
           </Link>
         </div>
       )}
+
+      {/* Mensajes con la organización (M30). */}
+      <section className="mt-4 rounded-2xl border border-border bg-white p-6">
+        <h2 className="mb-3 text-lg font-semibold text-ink">Mensajes</h2>
+        <MessageThread
+          projectId={projectId}
+          redirectPath={`/proyecto/${projectId}`}
+          messages={mensajes}
+        />
+      </section>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
   type AddMilestoneState,
 } from "@/features/milestones/actions";
 import { Input } from "@/components/ui/input";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { Textarea } from "@/components/ui/textarea";
 import { SubmitButton } from "@/features/auth/components/submit-button";
 
@@ -32,16 +33,17 @@ export function AddMilestoneForm({ projectId }: { projectId: string }) {
       <p className="text-sm font-medium text-ink">Agregar un hito</p>
 
       <div className="flex flex-col gap-3 sm:flex-row">
-        <Input name="titulo" required placeholder="Título del hito" />
-        <Input
-          type="number"
-          name="orden"
-          min={0}
-          defaultValue={0}
-          className="sm:max-w-24"
-          aria-label="Orden"
-          placeholder="Orden"
-        />
+        <label className="flex flex-1 flex-col gap-1.5">
+          <span className="text-xs text-muted">Título</span>
+          <Input name="titulo" required placeholder="Título del hito" />
+        </label>
+        <label className="flex flex-col gap-1.5 sm:max-w-24">
+          <span className="flex items-center gap-1 text-xs text-muted">
+            Orden
+            <InfoTooltip text="Define en qué posición aparece este hito dentro del plan. El de menor número va primero." />
+          </span>
+          <Input type="number" name="orden" min={0} defaultValue={0} />
+        </label>
       </div>
 
       <Textarea
