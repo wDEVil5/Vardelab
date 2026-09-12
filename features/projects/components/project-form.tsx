@@ -168,7 +168,7 @@ export function ProjectForm({
             {MODALIDADES.map((m, i) => (
               <label
                 key={m.valor}
-                className="flex cursor-pointer items-center justify-center rounded-md border border-border p-2.5 text-sm text-ink transition-colors has-[:checked]:border-electric has-[:checked]:bg-electric/5"
+                className="flex cursor-pointer items-center justify-center rounded-md border border-border p-2.5 text-sm text-ink transition-colors has-checked:border-electric has-checked:bg-electric/5"
               >
                 <input
                   type="radio"
