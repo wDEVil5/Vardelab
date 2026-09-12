@@ -15,6 +15,15 @@ import { createClient } from "@/lib/supabase/server";
  * `auth.users`, no `profiles`, así que no se puede anidar el perfil. Igual con
  * las evaluaciones, que se resuelven por `evaluatee_id` y se cruzan en memoria.
  */
+// Puntajes 1–5 por criterio (S-06). `puntaje` se conserva como la nota global
+// (promedio redondeado de los tres) para no romper lo que ya lo usa (el panel
+// del estudiante, el catálogo de portafolio, etc.).
+export type EvaluationCriteria = {
+  calidad: number;
+  colaboracion: number;
+  cumplimientoHitos: number;
+};
+
 export type MemberEvaluation = {
   userId: string;
   nombre: string;
@@ -22,8 +31,27 @@ export type MemberEvaluation = {
   rol: string | null;
   // Evaluación de este integrante por el gestor actual, si ya existe.
   puntaje: number | null;
+  criterios: EvaluationCriteria | null;
   comentario: string | null;
 };
+
+// El jsonb se guarda en snake_case (mismo criterio que las columnas de la
+// base); esto lo traduce a la forma que usa la UI.
+function parseCriterios(raw: unknown): EvaluationCriteria | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const calidad = Number(r.calidad);
+  const colaboracion = Number(r.colaboracion);
+  const cumplimientoHitos = Number(r.cumplimiento_hitos);
+  if (
+    !Number.isFinite(calidad) ||
+    !Number.isFinite(colaboracion) ||
+    !Number.isFinite(cumplimientoHitos)
+  ) {
+    return null;
+  }
+  return { calidad, colaboracion, cumplimientoHitos };
+}
 
 export async function getTeamForEvaluation(
   projectId: string,
@@ -57,7 +85,7 @@ export async function getTeamForEvaluation(
     supabase.from("profiles").select("id, nombre, carrera").in("id", userIds),
     supabase
       .from("evaluations")
-      .select("evaluatee_id, puntaje, comentario")
+      .select("evaluatee_id, puntaje, criterios, comentario")
       .eq("project_id", projectId)
       .eq("evaluator_id", user.id),
   ]);
@@ -65,7 +93,10 @@ export async function getTeamForEvaluation(
   const perfiles = new Map<string, { nombre: string | null; carrera: string | null }>();
   for (const p of profs ?? []) perfiles.set(p.id, p);
 
-  const evaluaciones = new Map<string, { puntaje: number | null; comentario: string | null }>();
+  const evaluaciones = new Map<
+    string,
+    { puntaje: number | null; criterios: unknown; comentario: string | null }
+  >();
   for (const e of evals ?? []) evaluaciones.set(e.evaluatee_id, e);
 
   return members.map((m) => ({
@@ -74,6 +105,7 @@ export async function getTeamForEvaluation(
     carrera: perfiles.get(m.user_id)?.carrera ?? null,
     rol: m.role?.nombre ?? null,
     puntaje: evaluaciones.get(m.user_id)?.puntaje ?? null,
+    criterios: parseCriterios(evaluaciones.get(m.user_id)?.criterios),
     comentario: evaluaciones.get(m.user_id)?.comentario ?? null,
   }));
 }
