@@ -26,16 +26,34 @@ type IconName =
 
 // Iconos lineales del sidebar (se resuelven por nombre para pasar props serializables).
 const ICONS: Record<IconName, ReactNode> = {
-  inicio: <path d="M3 10.5L12 3l9 7.5M5 9.5V21h14V9.5" />,
+  inicio: (
+    <>
+      <rect x="3" y="3" width="8" height="8" rx="2" />
+      <rect x="13" y="3" width="8" height="8" rx="2" />
+      <rect x="3" y="13" width="8" height="8" rx="2" />
+      <rect x="13" y="13" width="8" height="8" rx="2" />
+    </>
+  ),
   explorar: <><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></>,
-  proyecto: <path d="M12 3l9 9-9 9-9-9 9-9z" />,
+  proyecto: (
+    <>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+      <path d="M9 4.5v15M15 4.5v15" />
+    </>
+  ),
   organizacion: (
     <>
       <path d="M3 21h18M5 21V7l7-4 7 4v14" />
       <path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01M10 21v-4h4v4" />
     </>
   ),
-  postulaciones: <><path d="M4 6h16M4 12h16M4 18h10" /></>,
+  postulaciones: (
+    <>
+      <rect x="6" y="4" width="12" height="17" rx="2" />
+      <path d="M9 4V3.5a1 1 0 011-1h4a1 1 0 011 1V4" />
+      <path d="M9 12.5l2 2 4-4.5" />
+    </>
+  ),
   moderacion: <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z" />,
   leads: (
     <>
@@ -117,7 +135,12 @@ export function AppSidebar({
   items,
   exploreItem,
 }: {
-  user: { nombre: string; initials: string; roleLabel: string };
+  user: {
+    nombre: string;
+    initials: string;
+    avatarUrl: string | null;
+    roleLabel: string;
+  };
   items: AppNavItem[];
   /**
    * Enlace al catálogo público (`/proyectos`): sale del shell hacia el sitio
@@ -192,7 +215,7 @@ export function AppSidebar({
         )}
       >
         {!compact && (
-          <Link href="/" className="min-w-0 truncate px-1 text-lg font-bold text-white">
+          <Link href="/" className="min-w-0 truncate px-1 text-lg font-bold text-ink">
             CampusLab
           </Link>
         )}
@@ -201,7 +224,7 @@ export function AppSidebar({
           onClick={alternarColapso}
           aria-label={compact ? "Desplegar menú" : "Plegar menú"}
           aria-expanded={!compact}
-          className="hidden size-9 shrink-0 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white lg:flex"
+          className="hidden size-9 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface hover:text-ink lg:flex"
         >
           <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M4 6h16M4 12h16M4 18h16" />
@@ -210,7 +233,7 @@ export function AppSidebar({
       </div>
 
       {!compact && (
-        <p className="px-2 text-xs text-white/50">{user.roleLabel}</p>
+        <p className="px-2 text-xs text-muted">{user.roleLabel}</p>
       )}
 
       {/* Tarjeta de usuario = acceso al perfil (reemplaza el ítem "Perfil"). */}
@@ -222,21 +245,26 @@ export function AppSidebar({
         className={cn(
           "flex items-center gap-3 rounded-xl transition-colors",
           compact ? "justify-center p-2" : "p-3",
-          pathname === "/perfil" ? "bg-white/10" : "bg-white/5 hover:bg-white/10",
+          pathname === "/perfil" ? "bg-electric/10" : "bg-surface hover:bg-electric/5",
         )}
       >
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-electric text-sm font-semibold text-white">
-          {user.initials}
+        <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-electric text-sm font-semibold text-white">
+          {user.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={user.avatarUrl} alt="" className="size-10 object-cover" />
+          ) : (
+            user.initials
+          )}
         </span>
         {!compact && (
           <>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-white">
+              <p className="truncate text-sm font-semibold text-ink">
                 {user.nombre}
               </p>
-              <p className="text-xs text-white/50">Ver mi perfil</p>
+              <p className="text-xs text-muted">Ver mi perfil</p>
             </div>
-            <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-white/40" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-muted/60" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M9 6l6 6-6 6" />
             </svg>
           </>
@@ -244,7 +272,7 @@ export function AppSidebar({
       </Link>
 
       {/* Separadora: identidad ↕ navegación. */}
-      <div className="h-px bg-white/10" />
+      <div className="h-px bg-border" />
 
       <nav className="flex flex-1 flex-col gap-1">
         {items.map((it) => {
@@ -260,11 +288,19 @@ export function AppSidebar({
                 "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors",
                 compact ? "justify-center px-0 py-2.5" : "px-3 py-2.5",
                 active
-                  ? "bg-white/10 text-white"
-                  : "text-white/60 hover:bg-white/5 hover:text-white",
+                  ? "text-electric"
+                  : "text-muted hover:bg-surface hover:text-ink",
               )}
             >
-              <span className={active ? "text-electric" : ""}>
+              {/* El ícono activo va en su propio chip de color — mismo
+                  lenguaje que ya usan las tarjetas KPI y `Campo` en el resto
+                  de la app — en vez de solo cambiar de color sobre el fondo. */}
+              <span
+                className={cn(
+                  "flex size-7 shrink-0 items-center justify-center rounded-lg",
+                  active && "bg-electric/15",
+                )}
+              >
                 <Icon name={it.icon} />
               </span>
               {!compact && it.label}
@@ -275,9 +311,9 @@ export function AppSidebar({
 
       {/* Explorar el catálogo público: aparte del resto (sale del shell). */}
       {exploreItem && (
-        <div className="border-t border-white/10 pt-3">
+        <div className="border-t border-border pt-3">
           {!compact && (
-            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-white/30">
+            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted/70">
               Sitio público
             </p>
           )}
@@ -288,7 +324,7 @@ export function AppSidebar({
             aria-label={compact ? `${exploreItem.label} (se abre en otra pestaña)` : undefined}
             title={compact ? exploreItem.label : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-lg border border-white/10 text-sm font-medium text-white/70 transition-colors hover:border-white/20 hover:bg-white/5 hover:text-white",
+              "flex items-center gap-3 rounded-lg border border-border text-sm font-medium text-muted transition-colors hover:border-electric/30 hover:bg-surface hover:text-ink",
               compact ? "justify-center px-0 py-2.5" : "px-3 py-2.5",
             )}
           >
@@ -296,7 +332,7 @@ export function AppSidebar({
             {!compact && (
               <>
                 <span className="flex-1">{exploreItem.label}</span>
-                <svg viewBox="0 0 24 24" className="size-3.5 shrink-0 text-white/40" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <svg viewBox="0 0 24 24" className="size-3.5 shrink-0 text-muted/60" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M7 17L17 7M9 7h8v8" />
                 </svg>
               </>
@@ -305,10 +341,10 @@ export function AppSidebar({
         </div>
       )}
 
-      <div className="flex flex-col gap-1 border-t border-white/10 pt-3">
+      <div className="flex flex-col gap-1 border-t border-border pt-3">
         <span
           className={cn(
-            "flex cursor-default items-center gap-3 rounded-lg py-2.5 text-sm font-medium text-white/40",
+            "flex cursor-default items-center gap-3 rounded-lg py-2.5 text-sm font-medium text-muted/60",
             compact ? "justify-center px-0" : "px-3",
           )}
           title="Disponible pronto"
@@ -325,7 +361,7 @@ export function AppSidebar({
             aria-label={compact ? "Cerrar sesión" : undefined}
             title={compact ? "Cerrar sesión" : undefined}
             className={cn(
-              "flex w-full items-center gap-3 rounded-lg py-2.5 text-sm font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-white",
+              "flex w-full items-center gap-3 rounded-lg py-2.5 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink",
               compact ? "justify-center px-0" : "px-3",
             )}
           >
@@ -341,14 +377,18 @@ export function AppSidebar({
 
   return (
     <>
-      {/* Sidebar fijo (desktop): ancho animado según el estado de plegado. */}
+      {/* Sidebar fijo (desktop): ancho animado según el estado de plegado.
+          Fondo claro (blanco) sobre el `bg-surface` de la página, no oscuro:
+          el salto de contraste con el resto del sitio, ya claro en todos
+          lados, se sentía como un elemento aparte en vez de parte del mismo
+          sistema. Un borde marca el límite en vez del contraste de color. */}
       <aside
         className={cn(
           "hidden shrink-0 transition-[width] duration-200 ease-out lg:block",
           colapsado ? "w-20" : "w-64",
         )}
       >
-        <div className="sticky top-0 h-dvh overflow-y-auto overflow-x-hidden rounded-r-3xl bg-ink">
+        <div className="sticky top-0 h-dvh overflow-y-auto overflow-x-hidden rounded-r-3xl border-r border-border bg-white">
           {contenido(colapsado)}
         </div>
       </aside>
@@ -379,7 +419,7 @@ export function AppSidebar({
             onClick={() => setOpen(false)}
             className="fixed inset-0 z-40 cursor-default bg-ink/40 lg:hidden"
           />
-          <div className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85%] overflow-y-auto bg-ink lg:hidden">
+          <div className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85%] overflow-y-auto bg-white shadow-xl lg:hidden">
             {contenido(false)}
           </div>
         </>
