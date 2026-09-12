@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import { buttonClasses } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { ProfileForm } from "./profile-form";
 import type { MyProfile } from "@/features/profile/queries";
 
@@ -16,12 +17,29 @@ export function EditProfileDialog({ profile }: { profile: MyProfile }) {
 
   return (
     <>
+      {/* Ghost + ícono, inline junto al nombre — antes era un botón de texto
+          anclado en la esquina de la tarjeta, con un vacío enorme en el medio. */}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={buttonClasses({ variant: "secondary", size: "sm" })}
+        className={cn(
+          buttonClasses({ variant: "ghost", size: "sm" }),
+          "gap-1.5",
+        )}
       >
-        Editar perfil
+        <svg
+          viewBox="0 0 24 24"
+          className="size-3.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
+        </svg>
+        Editar
       </button>
       <Modal open={open} onClose={() => setOpen(false)} title="Editar perfil">
         <ProfileForm profile={profile} />

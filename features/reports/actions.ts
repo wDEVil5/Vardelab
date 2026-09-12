@@ -39,6 +39,10 @@ export async function submitReport(
   } = await supabase.auth.getUser();
   if (!user) redirect("/ingresar");
 
+  if (targetType === "perfil" && targetId === user.id) {
+    return { error: "No puedes reportar tu propio perfil." };
+  }
+
   const { error } = await supabase.from("reports").insert({
     reporter_id: user.id,
     target_type: targetType,
