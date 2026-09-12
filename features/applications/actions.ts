@@ -261,3 +261,50 @@ export async function acceptApplication(formData: FormData): Promise<void> {
 export async function rejectApplication(formData: FormData): Promise<void> {
   return resolveApplication(formData, "rechazada");
 }
+
+export type ConfirmTeamState = { error?: string };
+
+/**
+ * Cierra la selección de equipo (`seleccion → activo`, M29): la hace el gestor
+ * una vez que ya aceptó a quienes quiere en el proyecto. Exige al menos un
+ * integrante — no tiene sentido "confirmar" un equipo vacío. El trigger
+ * `projects_guard_status` es la barrera real de la transición.
+ */
+export async function confirmTeam(
+  _prevState: ConfirmTeamState,
+  formData: FormData,
+): Promise<ConfirmTeamState> {
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!projectId) return { error: "Falta el proyecto." };
+
+  const supabase = await createClient();
+
+  const { data: team } = await supabase
+    .from("teams")
+    .select("id, team_members ( id )")
+    .eq("project_id", projectId)
+    .maybeSingle();
+
+  if (!team || (team.team_members ?? []).length === 0) {
+    return { error: "Selecciona al menos un integrante antes de confirmar el equipo." };
+  }
+
+  const { data, error } = await supabase
+    .from("projects")
+    .update({ status: "activo" })
+    .eq("id", projectId)
+    .eq("status", "seleccion")
+    .select("id");
+
+  if (error) {
+    console.error("[confirmTeam]", error.message);
+    return { error: "No se pudo confirmar el equipo." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "No se pudo confirmar (¿el proyecto ya no está en selección?)." };
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}/postulaciones`);
+  revalidatePath("/mis-proyectos");
+  return {};
+}
