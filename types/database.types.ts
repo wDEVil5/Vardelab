@@ -108,6 +108,36 @@ export type Database = {
         }
         Relationships: []
       }
+      avatar_presets: {
+        Row: {
+          activo: boolean
+          created_at: string
+          etiqueta: string
+          id: string
+          orden: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          etiqueta: string
+          id?: string
+          orden?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          etiqueta?: string
+          id?: string
+          orden?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       evaluations: {
         Row: {
           comentario: string | null

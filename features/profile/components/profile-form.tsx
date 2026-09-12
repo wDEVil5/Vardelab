@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SubmitButton } from "@/features/auth/components/submit-button";
 import type { MyProfile, ProfileLinks } from "@/features/profile/queries";
+import { PerfilIconSvg } from "@/features/profile/components/profile-icons";
 
 const INITIAL: ProfileState = {};
 
@@ -28,7 +29,7 @@ export function ProfileForm({ profile }: { profile: MyProfile }) {
           <Input
             name="carrera"
             defaultValue={profile.carrera ?? ""}
-            placeholder="Ej: Ingeniería en Computación"
+            placeholder="Ej: Ingeniería Comercial, Diseño, Psicología…"
           />
         </label>
         <label className="flex flex-col gap-1.5 sm:w-32">
@@ -47,7 +48,8 @@ export function ProfileForm({ profile }: { profile: MyProfile }) {
       </div>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-ink">
+          <PerfilIconSvg name="bio" className="size-4 text-muted" />
           Sobre ti <span className="text-muted">(opcional)</span>
         </span>
         <Textarea
@@ -59,18 +61,20 @@ export function ProfileForm({ profile }: { profile: MyProfile }) {
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink">
-          Intereses <span className="text-muted">(opcional)</span>
+        <span className="flex items-center gap-1.5 text-sm font-medium text-ink">
+          <PerfilIconSvg name="intereses" className="size-4 text-muted" />
+          Preferencias de proyectos <span className="text-muted">(opcional)</span>
         </span>
         <Input
           name="intereses"
           defaultValue={profile.intereses ?? ""}
-          placeholder="Ej: frontend, datos, diseño"
+          placeholder="Ej: análisis de datos, marketing digital, diseño gráfico"
         />
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-ink">
+          <PerfilIconSvg name="disponibilidad" className="size-4 text-muted" />
           Disponibilidad <span className="text-muted">(opcional)</span>
         </span>
         <Input
@@ -80,29 +84,49 @@ export function ProfileForm({ profile }: { profile: MyProfile }) {
         />
       </label>
 
-      {/* Enlaces */}
+      {/* Enlaces: cada campo con su propia etiqueta e ícono — antes solo el
+          placeholder los distinguía, y desaparece en cuanto el campo ya tiene
+          un valor guardado (el caso normal al reabrir este formulario). */}
       <fieldset className="flex flex-col gap-3 rounded-lg border border-border p-4">
         <legend className="px-1 text-sm font-medium text-ink">
           Enlaces <span className="text-muted">(opcional)</span>
         </legend>
-        <Input
-          type="url"
-          name="github"
-          defaultValue={links.github ?? ""}
-          placeholder="https://github.com/tuusuario"
-        />
-        <Input
-          type="url"
-          name="linkedin"
-          defaultValue={links.linkedin ?? ""}
-          placeholder="https://linkedin.com/in/tuusuario"
-        />
-        <Input
-          type="url"
-          name="sitio"
-          defaultValue={links.sitio ?? ""}
-          placeholder="https://tusitio.cl (portafolio, blog…)"
-        />
+        <label className="flex flex-col gap-1.5">
+          <span className="flex items-center gap-1.5 text-sm text-ink">
+            <PerfilIconSvg name="github" className="size-4 text-muted" />
+            GitHub
+          </span>
+          <Input
+            type="url"
+            name="github"
+            defaultValue={links.github ?? ""}
+            placeholder="https://github.com/tuusuario"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="flex items-center gap-1.5 text-sm text-ink">
+            <PerfilIconSvg name="linkedin" className="size-4 text-muted" />
+            LinkedIn
+          </span>
+          <Input
+            type="url"
+            name="linkedin"
+            defaultValue={links.linkedin ?? ""}
+            placeholder="https://linkedin.com/in/tuusuario"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="flex items-center gap-1.5 text-sm text-ink">
+            <PerfilIconSvg name="sitio" className="size-4 text-muted" />
+            Sitio
+          </span>
+          <Input
+            type="url"
+            name="sitio"
+            defaultValue={links.sitio ?? ""}
+            placeholder="https://tusitio.cl (portafolio, blog…)"
+          />
+        </label>
       </fieldset>
 
       {state.error && (
