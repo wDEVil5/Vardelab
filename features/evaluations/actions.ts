@@ -15,22 +15,37 @@ import { createClient } from "@/lib/supabase/server";
 
 export type EvaluateState = { error?: string; ok?: boolean };
 
+// Lee y valida un criterio 1–5 del formulario. Mismo CHECK de rango que
+// `puntaje` (M6): un criterio fuera de rango es un error de datos, no algo
+// que la UI (estrellas) debería poder producir.
+function leerCriterio(formData: FormData, campo: string): number | null {
+  const raw = String(formData.get(campo) ?? "").trim();
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 1 && n <= 5 ? n : null;
+}
+
 export async function evaluateMember(
   _prevState: EvaluateState,
   formData: FormData,
 ): Promise<EvaluateState> {
   const projectId = String(formData.get("projectId") ?? "");
   const evaluateeId = String(formData.get("evaluateeId") ?? "");
-  const puntajeRaw = String(formData.get("puntaje") ?? "").trim();
   const comentario = String(formData.get("comentario") ?? "").trim();
 
   if (!projectId || !evaluateeId) return { error: "Falta el integrante a evaluar." };
 
-  // Puntaje 1..5 (el CHECK de M6 lo exige; aquí se valida para dar mensaje claro).
-  const puntaje = Number(puntajeRaw);
-  if (!Number.isInteger(puntaje) || puntaje < 1 || puntaje > 5) {
-    return { error: "Elige un puntaje del 1 al 5." };
+  const calidad = leerCriterio(formData, "calidad");
+  const colaboracion = leerCriterio(formData, "colaboracion");
+  const cumplimientoHitos = leerCriterio(formData, "cumplimientoHitos");
+
+  if (calidad == null || colaboracion == null || cumplimientoHitos == null) {
+    return { error: "Califica los tres criterios (calidad, colaboración y cumplimiento)." };
   }
+
+  // `puntaje` se conserva como la nota global (promedio redondeado de los
+  // tres criterios): es lo que ya muestran el panel del estudiante y el
+  // portafolio, no hace falta tocar esas vistas.
+  const puntaje = Math.round((calidad + colaboracion + cumplimientoHitos) / 3);
 
   const supabase = await createClient();
   const {
@@ -44,6 +59,11 @@ export async function evaluateMember(
       evaluatee_id: evaluateeId,
       evaluator_id: user.id,
       puntaje,
+      criterios: {
+        calidad,
+        colaboracion,
+        cumplimiento_hitos: cumplimientoHitos,
+      },
       comentario: comentario || null,
     },
     { onConflict: "project_id,evaluatee_id,evaluator_id" },
