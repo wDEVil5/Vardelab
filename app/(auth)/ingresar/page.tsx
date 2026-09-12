@@ -13,7 +13,11 @@ export const metadata: Metadata = {
  * vez de una ilustración, a la derecha la tarjeta del formulario. Columna
  * izquierda oculta en mobile — el formulario es lo único imprescindible ahí.
  */
-export default function IngresarPage() {
+type PageProps = { searchParams: Promise<{ error?: string }> };
+
+export default async function IngresarPage({ searchParams }: PageProps) {
+  const { error } = await searchParams;
+
   return (
     <div className="animate-fade-in flex min-h-screen bg-surface">
       <div className="relative hidden flex-1 flex-col overflow-hidden p-10 lg:flex">
@@ -69,6 +73,12 @@ export default function IngresarPage() {
               Crear cuenta
             </Link>
           </p>
+
+          {error && (
+            <p role="alert" className="mt-4 text-center text-sm text-coral">
+              {error}
+            </p>
+          )}
 
           <div className="mt-6">
             <LoginForm />

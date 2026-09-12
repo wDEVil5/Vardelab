@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { signIn, type AuthState } from "@/features/auth/actions";
 import { Input } from "@/components/ui/input";
 import { SubmitButton } from "./submit-button";
@@ -25,7 +26,15 @@ export function LoginForm() {
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink">Contraseña</span>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-ink">Contraseña</span>
+          <Link
+            href="/recuperar"
+            className="text-xs font-medium text-electric hover:underline"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
         <div className="relative">
           <Input
             type={visible ? "text" : "password"}
