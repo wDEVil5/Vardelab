@@ -120,7 +120,13 @@ export function AccountMenu({
       >
         {avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" className="size-9 object-cover" />
+          <img
+            src={avatarUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="size-9 object-cover"
+          />
         ) : (
           initials
         )}
