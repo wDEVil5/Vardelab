@@ -71,6 +71,15 @@ export default async function ProyectoPage({ params }: PageProps) {
   // Cupos totales (suma de los roles) para el estado del proyecto.
   const cuposTotales = roles.reduce((total, rol) => total + rol.cupos, 0);
 
+  // Rango de dedicación semanal entre los roles, para el resumen del panel
+  // lateral (RF: "4 semanas" de duración no dice cuánto tiempo por semana).
+  // Es un dato por rol, no por proyecto, así que se muestra como rango.
+  const horasSemanales = roles
+    .map((r) => r.horas_semanales)
+    .filter((h): h is number => h != null);
+  const horasMin = horasSemanales.length ? Math.min(...horasSemanales) : null;
+  const horasMax = horasSemanales.length ? Math.max(...horasSemanales) : null;
+
   return (
     <main className="flex-1 bg-surface">
       <div className="mx-auto w-full max-w-5xl px-6 py-10">
@@ -107,7 +116,14 @@ export default async function ProyectoPage({ params }: PageProps) {
               )}
               <Section titulo="El desafío" contenido={project.problema} />
               <Section titulo="Alcance" contenido={project.alcance} />
-              <Section titulo="Entregable" contenido={project.entregable} />
+              {project.entregable && (
+                <section className="flex flex-col gap-1.5 rounded-xl border border-electric/20 bg-electric/5 p-5">
+                  <h2 className="text-lg font-semibold text-ink">Entregable</h2>
+                  <p className="whitespace-pre-line text-ink">
+                    {project.entregable}
+                  </p>
+                </section>
+              )}
               <Section titulo="Expectativas" contenido={project.expectativas} />
             </div>
 
@@ -155,7 +171,6 @@ export default async function ProyectoPage({ params }: PageProps) {
                       key={rol.id}
                       rol={rol}
                       projectId={project.id}
-                      isAuthenticated={Boolean(user)}
                       miPostulacion={miPostulacion}
                     />
                   ))}
@@ -166,7 +181,7 @@ export default async function ProyectoPage({ params }: PageProps) {
 
           {/* Tarjeta lateral: estado, compromiso y CTA a los roles. */}
           <aside className="lg:col-span-1">
-            <div className="sticky top-6 flex flex-col gap-4 rounded-2xl border border-border bg-white p-6">
+            <div className="sticky top-24 flex flex-col gap-4 rounded-2xl border border-border bg-white p-6">
               <span className="font-semibold text-sprout">
                 Abierto{cuposTotales > 0 && ` · ${cuposTotales} ${cuposTotales === 1 ? "cupo" : "cupos"}`}
               </span>
@@ -174,10 +189,15 @@ export default async function ProyectoPage({ params }: PageProps) {
                 Tu rol puede generar evidencia real para tu portafolio.
               </p>
 
-              {/* Compromiso: duración, modalidad y tamaño del equipo. */}
+              {/* Compromiso: duración, dedicación semanal, modalidad y equipo. */}
               <div className="flex flex-wrap gap-2">
                 {project.duracion_semanas && (
                   <Badge>{project.duracion_semanas} semanas</Badge>
+                )}
+                {horasMin !== null && (
+                  <Badge>
+                    ~{horasMin === horasMax ? horasMin : `${horasMin}–${horasMax}`} h/semana
+                  </Badge>
                 )}
                 {project.modalidad && (
                   <Badge tone="brand">
@@ -194,7 +214,7 @@ export default async function ProyectoPage({ params }: PageProps) {
                   href="#roles"
                   className={cn(buttonClasses({ variant: "primary" }), "w-full")}
                 >
-                  Postular a un rol
+                  Ver roles disponibles
                 </a>
               )}
             </div>
@@ -258,45 +278,54 @@ const ESTADO_ROL: Record<string, string> = {
   aceptada: "Aceptado en este rol",
 };
 
-/** Tarjeta de un rol con sus habilidades exigidas y el CTA de postulación. */
+// Máximo de habilidades visibles antes de resumir en "+N más" — con un
+// proyecto de muchos roles, cada uno con varias habilidades, la lista de
+// chips era lo que más alargaba la tarjeta.
+const SKILLS_VISIBLES = 3;
+
+/**
+ * Tarjeta de un rol, apilada (nombre → meta → habilidades → CTA), no en fila.
+ * Compacta sin cambiar de forma: la descripción y la dedicación semanal
+ * comparten una sola línea, y las habilidades se resumen en unas pocas + "+N
+ * más" — eso es lo que más alargaba la tarjeta con roles de muchas skills.
+ */
 function RoleCard({
   rol,
   projectId,
-  isAuthenticated,
   miPostulacion,
 }: {
   rol: ProjectDetail["roles"][number];
   projectId: string;
-  isAuthenticated: boolean;
   miPostulacion: MyProjectApplication | null;
 }) {
   const skills = rol.skills ?? [];
+  const skillsVisibles = skills.slice(0, SKILLS_VISIBLES);
+  const skillsRestantes = skills.length - skillsVisibles.length;
   // ¿Este rol es al que postulé, o postulé a otro del mismo proyecto?
   const esMiRol = miPostulacion?.roleId === rol.id;
   const tieneOtra = Boolean(miPostulacion) && !esMiRol;
+
+  // Meta en una sola línea, unida con "·" (mismo separador que el resto del
+  // panel admin) — descripción y dedicación ya no ocupan una línea cada una.
+  const meta = [rol.descripcion, rol.horas_semanales && `~${rol.horas_semanales} h/semana`]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <article className="rounded-lg border border-border bg-white p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h3 className="font-semibold text-ink">{rol.nombre}</h3>
-          {rol.descripcion && (
-            <p className="text-sm text-muted">{rol.descripcion}</p>
-          )}
-          {/* Claridad para el estudiante: dedicación y nivel de entrada. */}
-          {(rol.horas_semanales || esAptoSinExperiencia(skills)) && (
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-              {rol.horas_semanales && (
-                <span className="font-medium text-ink">
-                  ~{rol.horas_semanales} h/semana
-                </span>
-              )}
-              {esAptoSinExperiencia(skills) && (
-                <span className="inline-flex items-center rounded-full bg-sprout/15 px-2.5 py-0.5 text-xs font-medium text-sprout">
-                  Apto sin experiencia
-                </span>
-              )}
-            </div>
-          )}
+          {/* "Apto sin experiencia" junto al nombre: es la señal que más rápido
+              ayuda a autoseleccionarse, no algo para descubrir más abajo. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-semibold text-ink">{rol.nombre}</h3>
+            {esAptoSinExperiencia(skills) && (
+              <span className="inline-flex items-center rounded-full bg-sprout/15 px-2.5 py-0.5 text-xs font-medium text-sprout">
+                Apto sin experiencia
+              </span>
+            )}
+          </div>
+          {meta && <p className="text-sm text-muted">{meta}</p>}
         </div>
         <Badge>
           {rol.cupos} {rol.cupos === 1 ? "cupo" : "cupos"}
@@ -304,35 +333,30 @@ function RoleCard({
       </div>
 
       {skills.length > 0 && (
-        <div className="mt-4 flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-muted">Practicarás</span>
-          <div className="flex flex-wrap gap-1.5">
-            {skills.map((s) => (
-              <Badge key={s.skill?.id ?? s.nivel_minimo} tone="outline">
-                {s.skill?.nombre}
-                {s.nivel_minimo && (
-                  <span className="text-muted/70">
-                    · {NIVEL_LABEL[s.nivel_minimo] ?? s.nivel_minimo}
-                  </span>
-                )}
-              </Badge>
-            ))}
-          </div>
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {skillsVisibles.map((s) => (
+            <Badge key={s.skill?.id ?? s.nivel_minimo} tone="outline">
+              {s.skill?.nombre}
+              {s.nivel_minimo && (
+                <span className="text-muted/70">
+                  · {NIVEL_LABEL[s.nivel_minimo] ?? s.nivel_minimo}
+                </span>
+              )}
+            </Badge>
+          ))}
+          {skillsRestantes > 0 && (
+            <span className="text-xs text-muted">+{skillsRestantes} más</span>
+          )}
         </div>
       )}
 
       {/* CTA según el estado. La regla es un rol por proyecto: si ya hay una
           postulación activa, el rol postulado muestra su estado y el resto
-          queda deshabilitado. Sin sesión → Ingresar; libre → formulario (E-03). */}
-      <div className="mt-5">
-        {!isAuthenticated ? (
-          <Link
-            href="/ingresar"
-            className={buttonClasses({ variant: "primary", size: "sm" })}
-          >
-            Ingresar para postular
-          </Link>
-        ) : esMiRol ? (
+          queda deshabilitado. El botón siempre nombra el rol (no un genérico
+          "Ingresar para postular"): sin sesión, la propia página de postular
+          ya redirige a /ingresar con `?next=` de vuelta a este rol. */}
+      <div className="mt-4">
+        {esMiRol ? (
           <Badge tone="success">
             {ESTADO_ROL[miPostulacion!.status] ?? "Ya postulaste a este rol"}
           </Badge>
@@ -345,7 +369,7 @@ function RoleCard({
             href={`/proyectos/${projectId}/postular/${rol.id}`}
             className={buttonClasses({ variant: "primary", size: "sm" })}
           >
-            Postular a este rol
+            Postular a {rol.nombre}
           </Link>
         )}
       </div>

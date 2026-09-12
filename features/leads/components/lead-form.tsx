@@ -12,18 +12,33 @@ type LeadTipo = Database["public"]["Enums"]["lead_tipo"];
 
 const INITIAL: SubmitLeadState = {};
 
-// Textos que se adaptan según el origen del formulario.
+// Textos que se adaptan según el origen del formulario. `intro` encabeza la
+// tarjeta antes de los campos: hace que el formulario se sienta como el
+// comienzo de una conversación, no un trámite genérico.
 const COPY: Record<
   LeadTipo,
-  { mensajeLabel: string; mensajePlaceholder: string; submit: string }
+  {
+    intro: { titulo: string; texto: string };
+    mensajeLabel: string;
+    mensajePlaceholder: string;
+    submit: string;
+  }
 > = {
   contacto_organizacion: {
+    intro: {
+      titulo: "Cuéntanos lo esencial",
+      texto: "No necesitas tener el desafío definido todavía.",
+    },
     mensajeLabel: "¿Qué necesitas resolver?",
     mensajePlaceholder:
-      "Cuéntanos la necesidad o el problema que tienes en mente. No hace falta que esté resuelto.",
-    submit: "Enviar mensaje",
+      'Ej.: "Tenemos datos de ventas, pero no sabemos qué productos se mueven más."',
+    submit: "Enviar consulta",
   },
   propuesta_desafio: {
+    intro: {
+      titulo: "Cuéntanos lo esencial",
+      texto: "No necesitas tener todos los detalles de la organización.",
+    },
     mensajeLabel: "¿Qué desafío propones?",
     mensajePlaceholder:
       "Describe la organización y la necesidad que podría convertirse en un microproyecto.",
@@ -61,8 +76,13 @@ export function LeadForm({ tipo }: { tipo: LeadTipo }) {
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-5">
       <input type="hidden" name="tipo" value={tipo} />
+
+      <div>
+        <h2 className="text-lg font-semibold text-ink">{copy.intro.titulo}</h2>
+        <p className="mt-1 text-sm text-muted">{copy.intro.texto}</p>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5">
@@ -106,6 +126,9 @@ export function LeadForm({ tipo }: { tipo: LeadTipo }) {
       )}
 
       <SubmitButton pendingText="Enviando…">{copy.submit}</SubmitButton>
+      <p className="text-xs text-muted">
+        Usaremos estos datos solo para responder a tu consulta.
+      </p>
     </form>
   );
 }
