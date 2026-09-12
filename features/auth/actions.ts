@@ -47,6 +47,19 @@ export async function signUp(
 
   const supabase = await createClient();
 
+  // "Registro abierto/cerrado" (D-05): el admin puede pausar altas nuevas sin
+  // tocar código. Se consulta vía RPC (no hay sesión todavía en el registro,
+  // así que la RLS de `pilot_config` no alcanza) a una función `security
+  // definer` (M24) que sí puede leerla.
+  const { data: registroAbierto, error: configError } = await supabase.rpc(
+    "pilot_registro_abierto",
+  );
+  if (configError) {
+    console.error("[signUp:pilot_registro_abierto]", configError.message);
+  } else if (registroAbierto === false) {
+    return { error: "El registro de nuevas cuentas está pausado por el momento." };
+  }
+
   // `options.data` viaja como raw_user_meta_data: el trigger de M11 lo lee para
   // crear el profile (nombre) y asignar el rol inicial.
   const { error } = await supabase.auth.signUp({
