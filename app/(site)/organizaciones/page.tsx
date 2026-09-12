@@ -85,19 +85,33 @@ export default function OrganizacionesPage() {
               </p>
             </Reveal>
             <div className="mt-10 grid gap-4 md:grid-cols-3">
-              {PROPUESTA.map((item, i) => (
-                <Reveal key={item.titulo} delayMs={i * 80} className="h-full">
-                  <div className="flex h-full flex-col gap-3 rounded-2xl border border-border bg-white p-6">
-                    <span className="flex size-9 items-center justify-center rounded-lg bg-electric/10 text-electric">
-                      {item.icono}
-                    </span>
-                    <h3 className="font-semibold text-ink">{item.titulo}</h3>
-                    <p className="text-sm leading-relaxed text-muted">
-                      {item.texto}
-                    </p>
-                  </div>
-                </Reveal>
-              ))}
+              {PROPUESTA.map((item, i) => {
+                // La del medio es el diferenciador real: cualquiera promete
+                // "define bien" o "recibe algo útil"; el seguimiento durante
+                // el proceso es lo que distingue a CampusLab de encargar el
+                // trabajo y desaparecer hasta el final.
+                const destacada = i === 1;
+                return (
+                  <Reveal key={item.titulo} delayMs={i * 80} className="h-full">
+                    <div
+                      className={cn(
+                        "relative flex h-full flex-col gap-3 overflow-hidden rounded-2xl border bg-white p-6 transition-all duration-200",
+                        destacada
+                          ? "border-electric/40 shadow-[0_8px_24px_-12px_rgba(56,103,255,0.3)] md:-translate-y-2 md:hover:-translate-y-2.5 hover:shadow-[0_12px_28px_-12px_rgba(56,103,255,0.4)]"
+                          : "border-border hover:-translate-y-1 hover:border-electric/30 hover:shadow-[0_10px_20px_-12px_rgba(56,103,255,0.25)]",
+                      )}
+                    >
+                      <span className="relative flex size-9 items-center justify-center rounded-lg bg-electric/10 text-electric">
+                        {item.icono}
+                      </span>
+                      <h3 className="relative font-semibold text-ink">{item.titulo}</h3>
+                      <p className="relative text-sm leading-relaxed text-muted">
+                        {item.texto}
+                      </p>
+                    </div>
+                  </Reveal>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -116,7 +130,11 @@ export default function OrganizacionesPage() {
           </Reveal>
 
           <Reveal delayMs={80}>
-            <div className="mt-10">
+            <p className="mt-10 text-sm font-medium text-ink">
+              Si tu necesidad se parece a alguno de estos ejemplos, probablemente puede
+              convertirse en un microproyecto.
+            </p>
+            <div className="mt-4">
               <DesafiosExplorer items={EJEMPLOS} />
             </div>
           </Reveal>
@@ -134,7 +152,7 @@ export default function OrganizacionesPage() {
         </section>
 
         {/* 4 · CÓMO FUNCIONA */}
-        <section id="como-funciona" className="scroll-mt-20 bg-surface">
+        <section id="como-funciona" className="scroll-mt-28 bg-surface">
           <div className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
             <Reveal>
               <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
@@ -175,7 +193,7 @@ export default function OrganizacionesPage() {
         <section className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
           <Reveal>
             <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-              Un proyecto claro para ambas partes.
+              Lo que probablemente te preguntas antes de publicar.
             </h2>
           </Reveal>
           <div className="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2">
@@ -213,12 +231,12 @@ export default function OrganizacionesPage() {
           <Reveal>
             <div className="flex flex-col gap-4 rounded-3xl border border-electric/20 bg-electric/5 p-8 sm:p-12">
               <h2 className="max-w-2xl text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-                ¿No sabes aún cómo convertir tu necesidad en un desafío?
+                No necesitas tener el desafío resuelto.
               </h2>
               <p className="max-w-xl text-muted">
-                En esta etapa piloto, CampusLab puede ayudarte a identificar si tu
-                necesidad calza con un microproyecto y a definir una primera
-                versión del desafío.
+                Cuéntanos la necesidad tal como la tienes hoy, aunque sea una idea
+                suelta. En esta etapa piloto te acompañamos a acotarla en un desafío
+                concreto antes de publicarlo — sin costo y sin compromiso.
               </p>
               <div className="mt-2">
                 <Link
@@ -315,22 +333,22 @@ function TransformacionHero() {
                 secuencia (respeta reduced-motion). */}
             <div
               className={cn(
-                "animate-rise rounded-2xl border p-5 shadow-sm backdrop-blur-sm",
+                "animate-rise rounded-2xl border p-5",
                 bloque.destacado
-                  ? "border-electric/30 bg-electric/10"
-                  : "border-border bg-white/80",
+                  ? "border-2 border-electric/40 bg-electric/10 shadow-[0_6px_20px_-8px_rgba(56,103,255,0.35)]"
+                  : "border-border bg-white shadow-[0_4px_16px_-8px_rgba(13,37,59,0.18)]",
               )}
               style={{ animationDelay: `${250 + i * 250}ms` }}
             >
               <span
                 className={cn(
-                  "text-xs font-semibold uppercase tracking-wide",
-                  bloque.destacado ? "text-electric" : "text-muted",
+                  "text-xs font-bold uppercase tracking-wide",
+                  bloque.destacado ? "text-electric" : "text-ink/70",
                 )}
               >
                 {bloque.etiqueta}
               </span>
-              <p className="mt-1.5 text-sm leading-relaxed text-ink">
+              <p className="mt-1.5 text-sm font-medium leading-relaxed text-ink">
                 {bloque.texto}
               </p>
             </div>
@@ -474,25 +492,37 @@ const PASOS = [
   },
 ];
 
-// Confianza y control (cuatro puntos). Lenguaje de expectativas, sin garantías.
+// Confianza y control: las preocupaciones concretas de quien nunca publicó un
+// desafío (cuánto tiempo, qué recibe, qué pasa con su información, qué pasa si
+// no calza, quién responde), no una repetición de "claridad/alcance" del hero.
+// El lenguaje de "información"/"acompañamiento" refleja lo que existe hoy
+// (coordinación entre partes, moderación previa, reportes) sin prometer un
+// contrato de confidencialidad que el producto no tiene.
 const CONFIANZA = [
   {
-    titulo: "Expectativas visibles",
-    texto: "Objetivo, alcance y resultado esperado desde el inicio.",
-  },
-  {
-    titulo: "Perfiles con contexto",
+    titulo: "Cuánto tiempo dedicas",
     texto:
-      "Habilidades, disponibilidad y presentación visibles al revisar postulaciones.",
+      "Revisar postulaciones y validar hitos toma bloques puntuales, no una dedicación diaria. Tú decides cuánto acompañar.",
   },
   {
-    titulo: "Seguimiento por hitos",
+    titulo: "Qué recibes al final",
     texto:
-      "Avances concretos para mantener visibilidad durante el proyecto.",
+      "Un entregable concreto y usable —un prototipo, un análisis, una propuesta o un proceso documentado— coherente con lo que definiste al publicar.",
   },
   {
-    titulo: "Cierre con evidencia",
-    texto: "Retroalimentación y resultado final documentado.",
+    titulo: "Cómo se protege tu información",
+    texto:
+      "No compartas información sensible por defecto: la confidencialidad se coordina entre las partes antes de comenzar, no es un campo que se publica.",
+  },
+  {
+    titulo: "Qué pasa si no calza",
+    texto:
+      "Puedes ajustar el alcance, repostear o cerrar el desafío. No hay compromiso más allá de publicarlo.",
+  },
+  {
+    titulo: "Quién acompaña o modera",
+    texto:
+      "Antes de publicarse, un moderador revisa el alcance del desafío; durante el proyecto, cualquiera de las partes puede reportar un problema.",
   },
 ];
 

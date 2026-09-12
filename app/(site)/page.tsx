@@ -171,7 +171,7 @@ export default async function Home() {
       </section>
 
       {/* 4 · CÓMO FUNCIONA (flujo del estudiante como protagonista) */}
-      <section id="como-funciona" className="scroll-mt-20 bg-surface">
+      <section id="como-funciona" className="scroll-mt-28 bg-surface">
         <div className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
           <Reveal>
             <span className="text-xs font-semibold uppercase tracking-wide text-electric">
@@ -203,24 +203,48 @@ export default async function Home() {
       {/* 4.5 · PROPONER UN DESAFÍO (growth loop: el estudiante detecta necesidades) */}
       <section className="mx-auto w-full max-w-5xl px-6 py-12 sm:py-16">
         <Reveal>
-          <div className="flex flex-col gap-4 rounded-2xl border border-electric/20 bg-electric/5 p-8 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-lg font-semibold text-ink">
-                ¿Conoces una organización con un desafío?
-              </p>
-              <p className="mt-1 text-sm text-muted">
-                Proponlo y ayúdanos a sumar proyectos reales para más estudiantes.
-              </p>
+          <div className="relative overflow-hidden rounded-2xl border border-electric/25 bg-electric/5 p-8 shadow-[0_4px_20px_-10px_rgba(56,103,255,0.25)]">
+            {/* Mismo halo difuminado que el hero de Organizaciones y /contacto:
+                le da presencia sin agregar un recurso visual nuevo. */}
+            <div
+              className="animate-breathe pointer-events-none absolute -top-12 -right-12 -z-10 size-48 rounded-full bg-electric/25 blur-3xl"
+              aria-hidden
+            />
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-4">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-electric/15 text-electric">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="size-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.4.3.6.8.6 1.3V16h5.8v-.8c0-.5.2-1 .6-1.3A6 6 0 0 0 12 3z" />
+                  </svg>
+                </span>
+                <div>
+                  <p className="text-lg font-semibold text-ink">
+                    ¿Conoces una organización con un desafío?
+                  </p>
+                  <p className="mt-1 text-sm text-muted">
+                    Proponlo y ayúdanos a sumar proyectos reales para más estudiantes.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/proponer"
+                className={cn(
+                  buttonClasses({ variant: "primary" }),
+                  "h-11 shrink-0 px-6 text-base",
+                )}
+              >
+                Proponer un desafío
+              </Link>
             </div>
-            <Link
-              href="/proponer"
-              className={cn(
-                buttonClasses({ variant: "primary" }),
-                "h-11 shrink-0 px-6 text-base",
-              )}
-            >
-              Proponer un desafío
-            </Link>
           </div>
         </Reveal>
       </section>
