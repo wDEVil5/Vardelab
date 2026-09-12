@@ -7,9 +7,10 @@ import { createPublicClient } from "@/lib/supabase/public";
  *
  * Estas funciones corren en el servidor (Server Components) usando el cliente
  * anónimo. La RLS decide qué filas son visibles: aunque la consulta no filtre
- * por estado, el rol anónimo solo puede leer proyectos publicados. Aun así se
- * filtra por `status = 'publicado'` de forma explícita, para que la intención
- * quede en el código y no dependa solo de la política.
+ * por estado, el rol anónimo solo puede leer proyectos 'publicado' o
+ * 'seleccion' (M33: sigue recibiendo postulaciones mientras se arma el
+ * equipo). Aun así se filtra por estado de forma explícita, para que la
+ * intención quede en el código y no dependa solo de la política.
  */
 
 // Campos que necesita una tarjeta del catálogo (P-02): datos del proyecto, la
@@ -45,7 +46,7 @@ async function fetchPublishedProjects() {
   const { data, error } = await supabase
     .from("projects")
     .select(PROJECT_CARD_SELECT)
-    .eq("status", "publicado")
+    .in("status", ["publicado", "seleccion"])
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -210,7 +211,7 @@ async function fetchPublishedProjectById(id: string) {
     .from("projects")
     .select(PROJECT_DETAIL_SELECT)
     .eq("id", id)
-    .eq("status", "publicado")
+    .in("status", ["publicado", "seleccion"])
     .maybeSingle();
 
   if (error) {
@@ -265,7 +266,7 @@ export async function getRoleForApplication(projectId: string, roleId: string) {
     )
     .eq("id", roleId)
     .eq("project_id", projectId)
-    .eq("project.status", "publicado")
+    .in("project.status", ["publicado", "seleccion"])
     .maybeSingle();
 
   if (error) {

@@ -55,6 +55,35 @@ export async function getAllReports() {
 
 export type Report = Awaited<ReturnType<typeof getAllReports>>[number];
 
+/**
+ * Reportes que el usuario actual presentó, del más reciente al más antiguo
+ * (S-08, "Mis reportes"). La RLS `reports_select_own_or_moderator` ya limita a
+ * los propios; el filtro por `reporter_id` es solo para no traer de más.
+ */
+export async function getMyReports() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("reports")
+    .select("id, target_type, target_id, motivo, descripcion, status, resolucion, created_at")
+    .eq("reporter_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[getMyReports]", error.message);
+    return [];
+  }
+
+  return data;
+}
+
+export type MyReport = Awaited<ReturnType<typeof getMyReports>>[number];
+
 /** Un reporte por id, con su detalle completo. `null` si no existe o no se ve. */
 export async function getReportById(id: string) {
   const supabase = await createClient();

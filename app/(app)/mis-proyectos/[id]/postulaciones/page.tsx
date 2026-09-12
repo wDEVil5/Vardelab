@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/features/auth/queries";
 import {
   getProjectApplications,
@@ -68,7 +69,7 @@ export default async function PostulacionesProyectoPage({ params }: PageProps) {
     .join(" · ");
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-6 py-8 lg:py-10">
+    <div className="mx-auto w-full max-w-6xl px-6 py-8 lg:py-10">
       <Link
         href={`/mis-proyectos/${id}`}
         className="text-sm text-muted transition-colors hover:text-electric"
@@ -83,47 +84,106 @@ export default async function PostulacionesProyectoPage({ params }: PageProps) {
         </p>
       </header>
 
-      <div className="mt-6 flex items-center justify-between gap-4 rounded-2xl border border-border bg-white p-5">
-        <div className="flex flex-col gap-1">
-          <span className="font-semibold text-ink">{project.titulo}</span>
-          <span className="text-xs text-muted">{detalle}</span>
+      <div className="mt-8 flex items-center justify-between gap-4 rounded-2xl border border-border bg-white p-6">
+        <div className="flex min-w-0 flex-col gap-1">
+          <span className="truncate font-semibold text-ink">{project.titulo}</span>
+          <span className="truncate text-xs text-muted">{detalle}</span>
         </div>
-        <Badge tone={estado.tone}>{estado.label}</Badge>
+        <Badge tone={estado.tone} className="shrink-0">
+          {estado.label}
+        </Badge>
       </div>
 
-      <h2 className="mt-8 text-lg font-semibold text-ink">Postulaciones</h2>
-      <div className="mt-3 flex flex-col gap-6">
-        {roles.map((rol) => (
-          <RoleApplications key={rol.id} rol={rol} projectId={id} />
-        ))}
-      </div>
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px] lg:items-start">
+        <div className="rounded-2xl border border-border bg-white p-8">
+          <h2 className="text-lg font-semibold text-ink">Postulaciones</h2>
+          <div className="mt-5 flex flex-col gap-8">
+            {roles.map((rol) => (
+              <RoleApplications key={rol.id} rol={rol} projectId={id} />
+            ))}
+          </div>
+        </div>
 
-      <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-border bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <span className="font-semibold text-ink">Equipo actual</span>
-          {project.equipo.length === 0 ? (
-            <span className="text-sm text-muted">
-              Todavía no seleccionaste a nadie.
+        <div className="flex flex-col gap-5 rounded-2xl border border-border bg-white p-6 lg:sticky lg:top-8">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-semibold text-ink">Equipo actual</span>
+            <span className="shrink-0 text-xs text-muted">
+              {project.equipo.length}/{cuposTotales}
             </span>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {project.equipo.map((m) => (
+          </div>
+
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface">
+            <div
+              className="h-full rounded-full bg-electric transition-[width]"
+              style={{
+                width: `${cuposTotales > 0 ? Math.min(100, Math.round((project.equipo.length / cuposTotales) * 100)) : 0}%`,
+              }}
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+            {roles.map((r) => {
+              const aceptadas = (r.applications ?? []).filter(
+                (a) => a.status === "aceptada",
+              ).length;
+              return (
                 <span
-                  key={m.userId}
-                  className="rounded-full bg-surface px-3 py-1 text-xs font-medium text-ink"
+                  key={r.id}
+                  className="flex max-w-full items-center gap-1.5 text-xs text-muted"
                 >
-                  {m.nombre ?? "Estudiante"}
-                  {m.roleNombre ? ` · ${m.roleNombre}` : ""}
+                  <span
+                    className={cn(
+                      "size-1.5 shrink-0 rounded-full",
+                      aceptadas >= r.cupos
+                        ? "bg-sprout"
+                        : aceptadas > 0
+                          ? "bg-electric"
+                          : "bg-border",
+                    )}
+                  />
+                  <span className="truncate">{r.nombre}</span>
+                  <span className="shrink-0">
+                    {aceptadas}/{r.cupos}
+                  </span>
                 </span>
+              );
+            })}
+          </div>
+
+          {project.equipo.length === 0 ? (
+            <p className="text-sm text-muted">
+              Todavía no seleccionaste a nadie.
+            </p>
+          ) : (
+            <ul className="-mr-1 flex max-h-72 flex-col gap-3 overflow-y-auto pr-1">
+              {project.equipo.map((m) => (
+                <li key={m.userId} className="flex min-w-0 items-center gap-3">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-electric/10 text-xs font-semibold text-electric">
+                    {iniciales(m.nombre)}
+                  </span>
+                  <div className="flex min-w-0 flex-col leading-tight">
+                    <span className="truncate text-sm font-medium text-ink">
+                      {m.nombre ?? "Estudiante"}
+                    </span>
+                    {m.roleNombre && (
+                      <span className="truncate text-xs text-muted">
+                        {m.roleNombre}
+                      </span>
+                    )}
+                  </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
+
+          <div className="border-t border-border pt-4">
+            <ConfirmTeamButton
+              projectId={id}
+              puedeConfirmar={project.status === "seleccion" && project.equipo.length > 0}
+              yaConfirmado={project.status === "activo"}
+            />
+          </div>
         </div>
-        <ConfirmTeamButton
-          projectId={id}
-          puedeConfirmar={project.status === "seleccion" && project.equipo.length > 0}
-          yaConfirmado={project.status === "activo"}
-        />
       </div>
     </div>
   );
@@ -188,16 +248,19 @@ function RoleApplications({
             return (
               <li
                 key={app.id}
-                className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-4 rounded-lg border border-border bg-white p-4 sm:flex-row sm:items-start sm:justify-between"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-electric/10 text-xs font-semibold text-electric">
                     {iniciales(app.applicant?.nombre ?? null)}
                   </span>
                   <div className="flex flex-col gap-0.5">
-                    <span className="font-medium text-ink">
-                      {app.applicant?.nombre ?? "Postulante"}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium text-ink">
+                        {app.applicant?.nombre ?? "Postulante"}
+                      </span>
+                      <Badge tone={badge.tone}>{badge.label}</Badge>
+                    </div>
                     {subtitulo && (
                       <span className="text-xs text-muted">{subtitulo}</span>
                     )}
@@ -217,38 +280,39 @@ function RoleApplications({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 sm:shrink-0">
-                  <Badge tone={badge.tone}>{badge.label}</Badge>
-                  {app.status === "enviada" &&
-                    (cuposLlenos ? (
-                      <span className="text-xs text-muted">Cupos completos</span>
-                    ) : (
-                      <>
-                        <form action={acceptApplication}>
-                          <input type="hidden" name="applicationId" value={app.id} />
-                          <input type="hidden" name="projectId" value={projectId} />
-                          <SubmitButton
-                            variant="primary"
-                            size="sm"
-                            pendingText="Seleccionando…"
-                          >
-                            Seleccionar
-                          </SubmitButton>
-                        </form>
-                        <form action={rejectApplication}>
-                          <input type="hidden" name="applicationId" value={app.id} />
-                          <input type="hidden" name="projectId" value={projectId} />
-                          <SubmitButton
-                            variant="ghost"
-                            size="sm"
-                            pendingText="Rechazando…"
-                          >
-                            Rechazar
-                          </SubmitButton>
-                        </form>
-                      </>
-                    ))}
-                </div>
+                {app.status === "enviada" &&
+                  (cuposLlenos ? (
+                    <span className="text-xs text-muted sm:shrink-0 sm:self-center">
+                      Cupos completos
+                    </span>
+                  ) : (
+                    <div className="flex flex-col gap-2 sm:w-32 sm:shrink-0 sm:self-center">
+                      <form action={acceptApplication}>
+                        <input type="hidden" name="applicationId" value={app.id} />
+                        <input type="hidden" name="projectId" value={projectId} />
+                        <SubmitButton
+                          variant="primary"
+                          size="sm"
+                          pendingText="Seleccionando…"
+                          className="w-full"
+                        >
+                          Seleccionar
+                        </SubmitButton>
+                      </form>
+                      <form action={rejectApplication}>
+                        <input type="hidden" name="applicationId" value={app.id} />
+                        <input type="hidden" name="projectId" value={projectId} />
+                        <SubmitButton
+                          variant="ghost"
+                          size="sm"
+                          pendingText="Rechazando…"
+                          className="w-full"
+                        >
+                          Rechazar
+                        </SubmitButton>
+                      </form>
+                    </div>
+                  ))}
               </li>
             );
           })}
