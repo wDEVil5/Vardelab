@@ -5,7 +5,7 @@ import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/features/auth/queries";
-import { getMyProjects } from "@/features/projects/queries";
+import { getMyProjects, type MyProject } from "@/features/projects/queries";
 
 export const metadata: Metadata = {
   title: "Mis proyectos · CampusLab",
@@ -24,6 +24,9 @@ const ESTADO: Record<string, { label: string; tone: BadgeTone }> = {
   cancelado: { label: "Cancelado", tone: "danger" },
 };
 
+// Estados que ya no están "en juego" (fuera del conteo de Activos).
+const TERMINADOS = new Set(["completado", "suspendido", "cancelado"]);
+
 /** Panel del patrocinador: sus proyectos. Requiere sesión de patrocinador. */
 export default async function MisProyectosPage() {
   const user = await getCurrentUser();
@@ -32,13 +35,19 @@ export default async function MisProyectosPage() {
 
   const proyectos = await getMyProjects();
 
+  const enRevision = proyectos.filter((p) => p.status === "en_revision").length;
+  const completados = proyectos.filter((p) => p.status === "completado").length;
+  const activos = proyectos.filter(
+    (p) => p.status !== "en_revision" && !TERMINADOS.has(p.status),
+  ).length;
+
   return (
-    <div className="mx-auto w-full max-w-2xl px-6 py-8 lg:py-10">
+    <div className="mx-auto w-full max-w-4xl px-6 py-8 lg:py-10">
       <header className="flex items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-ink">Mis proyectos</h1>
           <p className="text-sm text-muted">
-            Los proyectos que publicas para tu organización.
+            Gestiona el ciclo completo de cada desafío.
           </p>
         </div>
         <Link
@@ -67,36 +76,83 @@ export default async function MisProyectosPage() {
           </Link>
         </div>
       ) : (
-        <ul className="mt-8 flex flex-col gap-3">
-          {proyectos.map((p) => {
-            const estado = ESTADO[p.status] ?? {
-              label: p.status,
-              tone: "neutral" as BadgeTone,
-            };
-            const numRoles = p.roles?.length ?? 0;
-            return (
-              <li
-                key={p.id}
-                className="flex items-start justify-between gap-4 rounded-lg border border-border bg-white p-5"
-              >
-                <div className="flex flex-col gap-1">
-                  <Link
-                    href={`/mis-proyectos/${p.id}`}
-                    className="font-semibold text-ink hover:text-electric"
-                  >
-                    {p.titulo}
-                  </Link>
-                  <span className="text-sm text-muted">
-                    {p.organization?.nombre} · {numRoles}{" "}
-                    {numRoles === 1 ? "rol" : "roles"}
-                  </span>
-                </div>
-                <Badge tone={estado.tone}>{estado.label}</Badge>
-              </li>
-            );
-          })}
-        </ul>
+        <>
+          {/* Tarjetas KPI: panorama del ciclo completo de un vistazo, antes
+              de entrar al detalle de cada proyecto en la tabla. */}
+          <div className="mt-8 grid grid-cols-3 gap-4">
+            <KpiStat valor={activos} label="Activos" />
+            <KpiStat valor={enRevision} label="En revisión" />
+            <KpiStat valor={completados} label="Completados" />
+          </div>
+
+          <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-white">
+            <table className="w-full min-w-140 text-left text-sm">
+              <thead>
+                <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
+                  <th className="px-6 py-4 font-medium">Proyecto</th>
+                  <th className="px-6 py-4 font-medium">Estado</th>
+                  <th className="px-6 py-4 font-medium">Equipo</th>
+                  <th className="px-6 py-4 font-medium">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {proyectos.map((p) => (
+                  <FilaProyecto key={p.id} proyecto={p} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
+  );
+}
+
+function KpiStat({ valor, label }: { valor: number; label: string }) {
+  return (
+    <div className="rounded-2xl border border-border bg-white p-5">
+      <p className="text-2xl font-semibold tracking-tight text-ink">{valor}</p>
+      <p className="text-sm text-muted">{label}</p>
+    </div>
+  );
+}
+
+function FilaProyecto({ proyecto: p }: { proyecto: MyProject }) {
+  const estado = ESTADO[p.status] ?? { label: p.status, tone: "neutral" as BadgeTone };
+
+  // "Equipo" resume dónde está el proyecto en el ciclo aceptar → formar
+  // equipo: si ya hay integrantes, cuántos; si no, cuántas postulaciones
+  // esperan revisión; si no hay ninguna de las dos, aún no hay nada que ver.
+  const equipoTexto =
+    p.equipoTamano > 0
+      ? `${p.equipoTamano} ${p.equipoTamano === 1 ? "estudiante" : "estudiantes"}`
+      : p.postulacionesPendientes > 0
+        ? `${p.postulacionesPendientes} ${p.postulacionesPendientes === 1 ? "postulación" : "postulaciones"}`
+        : "Sin equipo";
+
+  return (
+    <tr className="border-b border-border/60 last:border-0">
+      <td className="px-6 py-5">
+        <Link
+          href={`/mis-proyectos/${p.id}`}
+          className="font-medium text-ink hover:text-electric"
+        >
+          {p.titulo}
+        </Link>
+        <p className="mt-0.5 text-xs text-muted">{p.organization?.nombre}</p>
+      </td>
+      <td className="px-6 py-5">
+        <Badge tone={estado.tone}>{estado.label}</Badge>
+      </td>
+      <td className="px-6 py-5 text-muted">{equipoTexto}</td>
+      <td className="px-6 py-5">
+        <Link
+          href={`/mis-proyectos/${p.id}`}
+          className={buttonClasses({ variant: "outline", size: "sm" })}
+        >
+          Abrir
+        </Link>
+      </td>
+    </tr>
   );
 }
