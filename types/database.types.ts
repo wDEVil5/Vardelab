@@ -579,6 +579,7 @@ export type Database = {
           comentario_moderacion: string | null
           created_at: string
           created_by: string | null
+          dedicacion_semanal: string | null
           descripcion: string | null
           duracion_semanas: number | null
           entregable: string | null
@@ -600,6 +601,7 @@ export type Database = {
           comentario_moderacion?: string | null
           created_at?: string
           created_by?: string | null
+          dedicacion_semanal?: string | null
           descripcion?: string | null
           duracion_semanas?: number | null
           entregable?: string | null
@@ -621,6 +623,7 @@ export type Database = {
           comentario_moderacion?: string | null
           created_at?: string
           created_by?: string | null
+          dedicacion_semanal?: string | null
           descripcion?: string | null
           duracion_semanas?: number | null
           entregable?: string | null
