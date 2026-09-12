@@ -25,6 +25,12 @@ const ESTADO: Record<string, { label: string; tone: BadgeTone }> = {
   borrador: { label: "Borrador", tone: "neutral" },
   en_revision: { label: "En revisión", tone: "brand" },
   publicado: { label: "Publicado", tone: "success" },
+  seleccion: { label: "En selección", tone: "brand" },
+  activo: { label: "Activo", tone: "success" },
+  revision_final: { label: "Revisión final", tone: "brand" },
+  completado: { label: "Completado", tone: "success" },
+  suspendido: { label: "Suspendido", tone: "danger" },
+  cancelado: { label: "Cancelado", tone: "danger" },
 };
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -50,7 +56,7 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-6 py-8 lg:py-10">
+    <div className="mx-auto w-full max-w-4xl px-6 py-8 lg:py-10">
       <Link
         href="/mis-proyectos"
         className="text-sm text-muted transition-colors hover:text-electric"

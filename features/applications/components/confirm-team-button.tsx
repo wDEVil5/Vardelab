@@ -26,16 +26,20 @@ export function ConfirmTeamButton({
   const [state, formAction] = useActionState(confirmTeam, INITIAL);
 
   if (yaConfirmado) {
-    return <Badge tone="success">Equipo confirmado</Badge>;
+    return (
+      <div className="flex items-center justify-center gap-2 rounded-lg bg-sprout/10 py-2.5">
+        <Badge tone="success">Equipo confirmado</Badge>
+      </div>
+    );
   }
 
   if (!puedeConfirmar) {
     return (
-      <div className="flex flex-col items-end gap-1.5">
-        <Button variant="primary" disabled>
+      <div className="flex flex-col items-stretch gap-1.5">
+        <Button variant="primary" disabled className="w-full">
           Confirmar equipo
         </Button>
-        <span className="text-xs text-muted">
+        <span className="text-center text-xs text-muted">
           Selecciona al menos un integrante para confirmar.
         </span>
       </div>
@@ -43,13 +47,13 @@ export function ConfirmTeamButton({
   }
 
   return (
-    <form action={formAction} className="flex flex-col items-end gap-1.5">
+    <form action={formAction} className="flex flex-col items-stretch gap-1.5">
       <input type="hidden" name="projectId" value={projectId} />
-      <SubmitButton variant="primary" pendingText="Confirmando…">
+      <SubmitButton variant="primary" pendingText="Confirmando…" className="w-full">
         Confirmar equipo
       </SubmitButton>
       {state.error && (
-        <p role="alert" className="text-xs text-coral">
+        <p role="alert" className="text-center text-xs text-coral">
           {state.error}
         </p>
       )}
