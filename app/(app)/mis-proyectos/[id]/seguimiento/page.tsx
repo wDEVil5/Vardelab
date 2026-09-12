@@ -85,7 +85,7 @@ export default async function SeguimientoProyectoPage({ params }: PageProps) {
   const redirectPath = `/mis-proyectos/${project.id}/seguimiento`;
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-6 py-8 lg:py-10">
+    <div className="mx-auto w-full max-w-6xl px-6 py-8 lg:py-10">
       <Link
         href={`/mis-proyectos/${project.id}`}
         className="text-sm text-muted transition-colors hover:text-electric"
@@ -98,7 +98,7 @@ export default async function SeguimientoProyectoPage({ params }: PageProps) {
         <p className="text-sm text-muted">Monitorea avances y desbloquea al equipo.</p>
       </header>
 
-      <div className="mt-6 flex items-center justify-between gap-4 rounded-2xl border border-border bg-white p-5">
+      <div className="mt-8 flex items-center justify-between gap-4 rounded-2xl border border-border bg-white p-6">
         <div className="flex flex-col gap-1">
           <span className="font-semibold text-ink">{project.titulo}</span>
           <span className="text-xs text-muted">
@@ -110,8 +110,8 @@ export default async function SeguimientoProyectoPage({ params }: PageProps) {
         </Badge>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
-        <div className="rounded-2xl border border-border bg-white p-6">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px] lg:items-start">
+        <div className="rounded-2xl border border-border bg-white p-8">
           <h2 className="text-lg font-semibold text-ink">Plan de hitos</h2>
 
           {totalHitos === 0 ? (
@@ -132,7 +132,7 @@ export default async function SeguimientoProyectoPage({ params }: PageProps) {
         </div>
 
         <div className="flex flex-col gap-6">
-          <div className="rounded-2xl border border-border bg-white p-5">
+          <div className="rounded-2xl border border-border bg-white p-6">
             <h2 className="text-sm font-semibold text-ink">Actividad reciente</h2>
             {actividad.length === 0 ? (
               <p className="mt-3 text-sm text-muted">Todavía no hay avances registrados.</p>
@@ -153,7 +153,7 @@ export default async function SeguimientoProyectoPage({ params }: PageProps) {
             )}
           </div>
 
-          <div className="rounded-2xl border border-border bg-white p-5">
+          <div className="rounded-2xl border border-border bg-white p-6">
             <h2 className="mb-3 text-sm font-semibold text-ink">Mensajes</h2>
             <MessageThread projectId={project.id} redirectPath={redirectPath} messages={mensajes} />
           </div>

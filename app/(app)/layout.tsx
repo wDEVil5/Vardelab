@@ -31,6 +31,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       ? ([
           { href: "/proyecto", label: "Proyecto", icon: "proyecto" },
           { href: "/mis-postulaciones", label: "Postulaciones", icon: "postulaciones" },
+          { href: "/mis-reportes", label: "Mis reportes", icon: "reportes" },
         ] as AppNavItem[])
       : []),
     ...(user.esPatrocinador
@@ -38,6 +39,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           { href: "/mis-organizaciones", label: "Organizaciones", icon: "organizacion" },
           { href: "/mis-proyectos", label: "Mis proyectos", icon: "proyecto" },
           { href: "/postulaciones", label: "Postulaciones", icon: "postulaciones" },
+          { href: "/mis-reportes", label: "Mis reportes", icon: "reportes" },
         ] as AppNavItem[])
       : []),
     ...(user.esModerador || user.esAdmin
