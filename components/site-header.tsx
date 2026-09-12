@@ -1,53 +1,16 @@
 import Link from "next/link";
-import { buttonClasses } from "@/components/ui/button";
 import { NavLink } from "@/components/nav-link";
 import { SiteHeaderBar } from "@/components/site-header-bar";
-import { MobileMenu, type MobileNavItem } from "@/components/mobile-menu";
-import { AccountMenu, type AccountMenuItem } from "@/components/account-menu";
-import { getCurrentUser } from "@/features/auth/queries";
+import { SiteAuthStatus } from "@/components/site-auth-status";
 
 /**
- * Cabecera global. Server Component: lee la sesión en el servidor y muestra el
- * estado según haya usuario o no. En desktop, navegación inline; en móvil, un
- * menú hamburguesa (`MobileMenu`). El cierre de sesión usa la Server Action
- * `signOut`.
+ * Cabecera global. Sin dependencias dinámicas (no lee cookies): el estado de
+ * sesión lo resuelve `SiteAuthStatus` en el navegador. Así las páginas
+ * públicas que no necesitan sesión por su cuenta (landing, catálogo,
+ * organizaciones...) pueden servirse estáticas en vez de forzarse a
+ * dinámicas solo por el header.
  */
-export async function SiteHeader() {
-  const user = await getCurrentUser();
-
-  // Enlaces del menú móvil según la sesión (la acción de sesión la resuelve el
-  // propio menú a partir de `userName`).
-  const mobileItems: MobileNavItem[] = [
-    ...(user ? [{ href: "/inicio", label: "Ir a mi panel" }] : []),
-    { href: "/proyectos", label: "Explorar" },
-    { href: "/#como-funciona", label: "Cómo funciona" },
-    { href: "/organizaciones", label: "Para organizaciones" },
-  ];
-
-  // Destinos del menú de cuenta (desktop), según el rol — mismo criterio que
-  // arma la navegación del sidebar en `app/(app)/layout.tsx`.
-  const accountItems: AccountMenuItem[] = user
-    ? [
-        { href: "/inicio", label: "Ir a mi panel", icon: "inicio" },
-        { href: "/perfil", label: "Mi perfil", icon: "perfil" },
-        ...(user.esEstudiante
-          ? ([{ href: "/mis-postulaciones", label: "Mis postulaciones", icon: "postulaciones" }] as AccountMenuItem[])
-          : []),
-        ...(user.esPatrocinador
-          ? ([
-              { href: "/mis-proyectos", label: "Mis proyectos", icon: "proyecto" },
-              { href: "/mis-organizaciones", label: "Mis organizaciones", icon: "organizacion" },
-            ] as AccountMenuItem[])
-          : []),
-        ...(user.esModerador || user.esAdmin
-          ? ([{ href: "/moderacion", label: "Moderación", icon: "moderacion" }] as AccountMenuItem[])
-          : []),
-        ...(user.esAdmin
-          ? ([{ href: "/admin", label: "Administración", icon: "admin" }] as AccountMenuItem[])
-          : []),
-      ]
-    : [];
-
+export function SiteHeader() {
   return (
     <SiteHeaderBar>
       <div className="relative mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-6">
@@ -66,48 +29,8 @@ export async function SiteHeader() {
           <NavLink href="/organizaciones">Para organizaciones</NavLink>
         </nav>
 
-        {/* Derecha: sesión (desktop) + menú móvil. */}
-        <div className="flex items-center gap-3">
-          <div className="hidden md:flex md:items-center md:gap-3">
-            {user ? (
-              <>
-                {/* Entrada al panel privado (como "Mi Escritorio"). El cierre de
-                    sesión vive dentro del panel (sidebar) y en el menú móvil. */}
-                <Link
-                  href="/inicio"
-                  className={buttonClasses({ variant: "primary", size: "sm" })}
-                >
-                  Ir a mi panel
-                </Link>
-                <AccountMenu
-                  nombre={user.nombre}
-                  email={user.email}
-                  avatarUrl={user.avatarUrl}
-                  initials={iniciales(user.nombre)}
-                  items={accountItems}
-                />
-              </>
-            ) : (
-              <Link
-                href="/ingresar"
-                className={buttonClasses({ variant: "outline", size: "sm" })}
-              >
-                Iniciar sesión
-              </Link>
-            )}
-          </div>
-
-          {/* Navegación móvil. */}
-          <MobileMenu items={mobileItems} userName={user?.nombre ?? null} />
-        </div>
+        <SiteAuthStatus />
       </div>
     </SiteHeaderBar>
   );
-}
-
-// Iniciales para el avatar: primeras letras de hasta dos palabras del nombre.
-function iniciales(nombre: string): string {
-  const partes = nombre.trim().split(/\s+/).slice(0, 2);
-  const ini = partes.map((p) => p[0]?.toUpperCase() ?? "").join("");
-  return ini || "?";
 }
