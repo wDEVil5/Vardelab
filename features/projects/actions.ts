@@ -30,6 +30,7 @@ export async function createProject(
   const expectativas = String(formData.get("expectativas") ?? "").trim();
   const modalidad = String(formData.get("modalidad") ?? "");
   const duracionRaw = String(formData.get("duracion_semanas") ?? "").trim();
+  const dedicacionSemanal = String(formData.get("dedicacion_semanal") ?? "").trim();
 
   if (!orgId) return { error: "Selecciona la organización del proyecto." };
   if (!titulo) return { error: "El proyecto necesita un título." };
@@ -50,6 +51,10 @@ export async function createProject(
     duracion = n;
   }
 
+  if (dedicacionSemanal.length > 60) {
+    return { error: "La dedicación semanal es demasiado larga (máximo 60 caracteres)." };
+  }
+
   const supabase = await createClient();
 
   const {
@@ -68,6 +73,7 @@ export async function createProject(
     expectativas: expectativas || null,
     modalidad: modalidad as (typeof MODALIDADES)[number],
     duracion_semanas: duracion,
+    dedicacion_semanal: dedicacionSemanal || null,
     status: "borrador",
   });
 
@@ -100,6 +106,7 @@ export async function updateProject(
   const expectativas = String(formData.get("expectativas") ?? "").trim();
   const modalidad = String(formData.get("modalidad") ?? "");
   const duracionRaw = String(formData.get("duracion_semanas") ?? "").trim();
+  const dedicacionSemanal = String(formData.get("dedicacion_semanal") ?? "").trim();
 
   if (!id) return { error: "Falta el proyecto." };
   if (!titulo) return { error: "El proyecto necesita un título." };
@@ -119,6 +126,10 @@ export async function updateProject(
     duracion = n;
   }
 
+  if (dedicacionSemanal.length > 60) {
+    return { error: "La dedicación semanal es demasiado larga (máximo 60 caracteres)." };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("projects")
@@ -131,6 +142,7 @@ export async function updateProject(
       expectativas: expectativas || null,
       modalidad: modalidad as (typeof MODALIDADES)[number],
       duracion_semanas: duracion,
+      dedicacion_semanal: dedicacionSemanal || null,
     })
     .eq("id", id);
 

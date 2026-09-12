@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/features/auth/queries";
@@ -21,7 +22,7 @@ export default async function NuevoProyectoPage() {
   const organizations = await getMyOrganizations();
 
   return (
-    <div className="mx-auto w-full max-w-xl px-6 py-8 lg:py-10">
+    <div className="mx-auto w-full max-w-6xl px-6 py-8 lg:py-10">
       <Link
         href="/mis-proyectos"
         className="text-sm text-muted transition-colors hover:text-electric"
@@ -30,10 +31,15 @@ export default async function NuevoProyectoPage() {
       </Link>
 
       <header className="mt-6 flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-ink">Nuevo proyecto</h1>
+        <h1 className="text-2xl font-bold text-ink">
+          Crear un nuevo proyecto
+        </h1>
         <p className="text-sm text-muted">
-          Se guarda como borrador. Luego podrás agregar roles y publicarlo.
+          Convierte una necesidad en un reto acotado y formativo.
         </p>
+        <Badge tone="neutral" className="mt-1 w-fit">
+          Borrador
+        </Badge>
       </header>
 
       <div className="mt-8">
