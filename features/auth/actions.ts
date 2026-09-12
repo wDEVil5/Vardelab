@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isPasswordValid } from "@/features/auth/password";
+import { SITE_URL } from "@/lib/site";
 
 /**
  * Acciones de autenticación (Server Actions).
@@ -14,6 +15,7 @@ import { isPasswordValid } from "@/features/auth/password";
  */
 
 export type AuthState = { error?: string };
+export type SignUpState = { error?: string; ok?: boolean };
 
 // Roles que un registro puede autoasignarse (coincide con la lista blanca del
 // trigger handle_new_user en M11). El trigger es la barrera real; esto es la
@@ -24,9 +26,9 @@ const ROLES_AUTOSERVICIO = ["estudiante", "patrocinador"] as const;
 const POST_AUTH_REDIRECT = "/inicio";
 
 export async function signUp(
-  _prevState: AuthState,
+  _prevState: SignUpState,
   formData: FormData,
-): Promise<AuthState> {
+): Promise<SignUpState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const nombre = String(formData.get("nombre") ?? "").trim();
@@ -61,19 +63,25 @@ export async function signUp(
   }
 
   // `options.data` viaja como raw_user_meta_data: el trigger de M11 lo lee para
-  // crear el profile (nombre) y asignar el rol inicial.
+  // crear el profile (nombre) y asignar el rol inicial. `emailRedirectTo` manda
+  // el enlace de confirmación por la misma ruta `/auth/confirm` que ya usa la
+  // recuperación de contraseña.
   const { error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { nombre, rol } },
+    options: {
+      data: { nombre, rol },
+      emailRedirectTo: `${SITE_URL}/auth/confirm?next=${POST_AUTH_REDIRECT}`,
+    },
   });
 
   if (error) {
     return { error: traducirError(error.message) };
   }
 
-  revalidatePath("/", "layout");
-  redirect(POST_AUTH_REDIRECT);
+  // Con confirmaciones activas, `signUp` no deja sesión iniciada: hay que
+  // avisar que revise su correo, no redirigir como si ya hubiera entrado.
+  return { ok: true };
 }
 
 export async function signIn(
@@ -105,6 +113,75 @@ export async function signOut() {
   redirect("/");
 }
 
+export type ResetRequestState = { error?: string; ok?: boolean };
+
+/**
+ * Pide el enlace de recuperación de contraseña. Siempre responde `ok` (exista
+ * o no una cuenta con ese correo): Supabase ya se comporta así para no dejar
+ * enumerar correos registrados, y el mensaje en pantalla es el mismo en
+ * ambos casos.
+ */
+export async function requestPasswordReset(
+  _prevState: ResetRequestState,
+  formData: FormData,
+): Promise<ResetRequestState> {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return { error: "Ingresa tu correo." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${SITE_URL}/auth/confirm?next=/actualizar-contrasena`,
+  });
+
+  // Solo se informa un error real de Supabase (p. ej. límite de envíos); que
+  // el correo no exista no cuenta como error de cara al usuario.
+  if (error && !error.message.includes("rate limit")) {
+    console.error("[requestPasswordReset]", error.message);
+  }
+
+  return { ok: true };
+}
+
+export type UpdatePasswordState = { error?: string };
+
+/**
+ * Define la nueva contraseña. Requiere la sesión que dejó `exchangeCodeForSession`
+ * en `/auth/confirm` al abrir el enlace del correo — sin eso, no hay a quién
+ * actualizarle la contraseña.
+ */
+export async function updatePassword(
+  _prevState: UpdatePasswordState,
+  formData: FormData,
+): Promise<UpdatePasswordState> {
+  const password = String(formData.get("password") ?? "");
+
+  if (!isPasswordValid(password)) {
+    return {
+      error:
+        "La contraseña no cumple los requisitos: 8+ caracteres, mayúscula, minúscula y número.",
+    };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return {
+      error: "El enlace expiró o ya se usó. Solicita uno nuevo desde \"Ingresar\".",
+    };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    console.error("[updatePassword]", error.message);
+    return { error: "No se pudo actualizar la contraseña. Inténtalo de nuevo." };
+  }
+
+  revalidatePath("/", "layout");
+  redirect(POST_AUTH_REDIRECT);
+}
+
 // Traduce los mensajes de Supabase (en inglés) a un texto claro en español.
 // Se mantiene acotado: cualquier otro caso muestra un mensaje genérico para no
 // filtrar detalles internos.
@@ -114,6 +191,9 @@ function traducirError(mensaje: string): string {
   }
   if (mensaje.includes("already registered")) {
     return "Ya existe una cuenta con ese correo.";
+  }
+  if (mensaje.includes("Email not confirmed")) {
+    return "Confirma tu correo antes de ingresar. Revisa el enlace que te enviamos.";
   }
   return "No se pudo completar la operación. Inténtalo de nuevo.";
 }
