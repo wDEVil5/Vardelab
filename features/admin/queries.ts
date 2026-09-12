@@ -315,3 +315,54 @@ export async function getModalidadUsage() {
 }
 
 export type ModalidadUsage = Awaited<ReturnType<typeof getModalidadUsage>>[number];
+
+/**
+ * Configuración del piloto (D-05, deseable). Fila única (`id = true`, M24).
+ * Usa el cliente normal: la RLS ya deja pasar a un admin. `updated_by` se
+ * resuelve a un nombre igual que en `getAuditLog`, para el bloque "Último
+ * cambio" de la tarjeta de gobernanza.
+ */
+export async function getPilotConfig() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("pilot_config")
+    .select("*")
+    .eq("id", true)
+    .single();
+
+  if (error || !data) {
+    console.error("[getPilotConfig]", error?.message);
+    return null;
+  }
+
+  let actualizadoPor: string | null = null;
+  if (data.updated_by) {
+    const { data: perfil } = await supabase
+      .from("profiles")
+      .select("nombre")
+      .eq("id", data.updated_by)
+      .maybeSingle();
+    actualizadoPor = perfil?.nombre ?? "(usuario eliminado)";
+  }
+
+  return { ...data, actualizadoPor };
+}
+
+export type PilotConfig = NonNullable<Awaited<ReturnType<typeof getPilotConfig>>>;
+
+/** Etiquetas legibles de los campos de `pilot_config`, para el detalle de auditoría. */
+export const CONFIG_CAMPO_LABEL: Record<string, string> = {
+  max_proyectos_activos: "Máximo de proyectos activos",
+  max_estudiantes: "Máximo de estudiantes",
+  duracion_min_semanas: "Duración permitida",
+  duracion_max_semanas: "Duración permitida",
+  registro_abierto: "Registro de nuevas cuentas",
+  moderacion_previa_obligatoria: "Moderación previa obligatoria",
+  patrocinadores_externos: "Patrocinadores externos",
+  autoaprobacion_proyectos: "Autoaprobación de proyectos",
+  notif_postulacion_recibida: "Notificación: postulación recibida",
+  notif_hito_proximo_vencer: "Notificación: hito próximo a vencer",
+  notif_respuesta_moderacion: "Notificación: respuesta de moderación",
+  notif_resumen_semanal: "Notificación: resumen semanal",
+};

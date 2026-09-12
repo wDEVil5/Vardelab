@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/features/auth/queries";
+import { CONFIG_CAMPO_LABEL } from "@/features/admin/queries";
 import type { Database } from "@/types/database.types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -309,5 +310,98 @@ export async function renameCategoria(
   });
 
   revalidatePath("/admin/catalogos");
+  return {};
+}
+
+export type PilotConfigState = { error?: string };
+
+const DURACIONES_VALIDAS = new Set(["2-4", "2-8", "4-12"]);
+
+/**
+ * Guarda la configuración del piloto (D-05, deseable). Solo compara y
+ * persiste los campos que en verdad cambiaron — el metadata de auditoría
+ * lista nombres de campo, no el objeto completo, para no duplicar en cada
+ * evento algo que ya se puede ver en la propia pantalla de configuración.
+ *
+ * `moderacion_previa_obligatoria`, `autoaprobacion_proyectos`,
+ * `patrocinadores_externos` y `registro_abierto` además cambian
+ * comportamiento real (ver M24): el trigger de estados de `projects`, la
+ * policy de creación de organizaciones y `signUp()` los leen directo de la
+ * tabla. El resto de los campos (límites de alcance, notificaciones) hoy
+ * solo quedan guardados.
+ */
+export async function updatePilotConfig(
+  _prevState: PilotConfigState,
+  formData: FormData,
+): Promise<PilotConfigState> {
+  const admin = await getCurrentUser();
+  if (!admin?.esAdmin) return { error: "No autorizado." };
+
+  const maxProyectos = Number(formData.get("maxProyectosActivos"));
+  const maxEstudiantes = Number(formData.get("maxEstudiantes"));
+  const duracion = String(formData.get("duracion") ?? "");
+  if (!Number.isInteger(maxProyectos) || maxProyectos <= 0) {
+    return { error: "El máximo de proyectos activos debe ser un número positivo." };
+  }
+  if (!Number.isInteger(maxEstudiantes) || maxEstudiantes <= 0) {
+    return { error: "El máximo de estudiantes debe ser un número positivo." };
+  }
+  if (!DURACIONES_VALIDAS.has(duracion)) return { error: "Duración inválida." };
+  const [duracionMin, duracionMax] = duracion.split("-").map(Number);
+
+  const boolField = (campo: string) => formData.get(campo) === "true";
+
+  const nuevo = {
+    max_proyectos_activos: maxProyectos,
+    max_estudiantes: maxEstudiantes,
+    duracion_min_semanas: duracionMin,
+    duracion_max_semanas: duracionMax,
+    registro_abierto: boolField("registroAbierto"),
+    moderacion_previa_obligatoria: boolField("moderacionPreviaObligatoria"),
+    patrocinadores_externos: boolField("patrocinadoresExternos"),
+    autoaprobacion_proyectos: boolField("autoaprobacionProyectos"),
+    notif_postulacion_recibida: boolField("notifPostulacionRecibida"),
+    notif_hito_proximo_vencer: boolField("notifHitoProximoVencer"),
+    notif_respuesta_moderacion: boolField("notifRespuestaModeracion"),
+    notif_resumen_semanal: boolField("notifResumenSemanal"),
+  };
+
+  const supabase = await createClient();
+  const { data: actual, error: lecturaError } = await supabase
+    .from("pilot_config")
+    .select("*")
+    .eq("id", true)
+    .single();
+  if (lecturaError || !actual) {
+    console.error("[updatePilotConfig:lectura]", lecturaError?.message);
+    return { error: "No se pudo leer la configuración actual." };
+  }
+
+  const camposCambiados = (Object.keys(nuevo) as (keyof typeof nuevo)[]).filter(
+    (campo) => actual[campo] !== nuevo[campo],
+  );
+  if (camposCambiados.length === 0) return {};
+
+  const { error } = await supabase
+    .from("pilot_config")
+    .update({ ...nuevo, updated_by: admin.id })
+    .eq("id", true);
+  if (error) {
+    console.error("[updatePilotConfig]", error.message);
+    return { error: "No se pudo guardar la configuración." };
+  }
+
+  const etiquetas = [
+    ...new Set(camposCambiados.map((campo) => CONFIG_CAMPO_LABEL[campo] ?? campo)),
+  ];
+  await supabase.from("audit_logs").insert({
+    actor_id: admin.id,
+    accion: "configuracion_actualizada",
+    entidad: "pilot_config",
+    metadata: { campos: etiquetas },
+  });
+
+  revalidatePath("/admin/configuracion");
+  revalidatePath("/admin/auditoria");
   return {};
 }
