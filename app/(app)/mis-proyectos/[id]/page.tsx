@@ -83,6 +83,14 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
             >
               Ver seguimiento de hitos
             </Link>
+            {project.status === "activo" && (
+              <Link
+                href={`/mis-proyectos/${project.id}/validar`}
+                className="text-sm text-electric hover:underline"
+              >
+                Validar y cerrar
+              </Link>
+            )}
           </div>
         </div>
         <Badge tone={estado.tone}>{estado.label}</Badge>

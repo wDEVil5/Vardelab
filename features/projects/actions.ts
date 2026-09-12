@@ -458,6 +458,72 @@ export async function rejectProject(
   return {};
 }
 
+export type CloseProjectState = { error?: string };
+
+/**
+ * Cierra un proyecto (`activo → completado`, M31): valida y aprueba el hito
+ * final si todavía estaba `entregado`, y recién ahí cierra el proyecto. No deja
+ * cerrar sin una entrega final real (`entregado` o ya `aprobado`) — es la
+ * precondición de negocio que el trigger `projects_guard_status` no valida (solo
+ * decide quién puede hacer la transición). El trigger es la barrera real de la
+ * transición.
+ */
+export async function closeProject(
+  _prevState: CloseProjectState,
+  formData: FormData,
+): Promise<CloseProjectState> {
+  const projectId = String(formData.get("projectId") ?? "");
+  const milestoneId = String(formData.get("milestoneId") ?? "");
+  if (!projectId) return { error: "Falta el proyecto." };
+  if (!milestoneId) {
+    return { error: "Define un hito final con una entrega antes de cerrar el proyecto." };
+  }
+
+  const supabase = await createClient();
+
+  const { data: milestone } = await supabase
+    .from("milestones")
+    .select("estado")
+    .eq("id", milestoneId)
+    .maybeSingle();
+
+  if (!milestone || (milestone.estado !== "entregado" && milestone.estado !== "aprobado")) {
+    return { error: "El equipo todavía no entregó el hito final." };
+  }
+
+  if (milestone.estado === "entregado") {
+    const { error: approveError } = await supabase
+      .from("milestones")
+      .update({ estado: "aprobado" })
+      .eq("id", milestoneId)
+      .eq("estado", "entregado");
+    if (approveError) {
+      console.error("[closeProject:approve]", approveError.message);
+      return { error: "No se pudo aprobar la entrega final." };
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("projects")
+    .update({ status: "completado" })
+    .eq("id", projectId)
+    .eq("status", "activo")
+    .select("id");
+
+  if (error) {
+    console.error("[closeProject]", error.message);
+    return { error: "No se pudo cerrar el proyecto." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "No se pudo cerrar (¿el proyecto ya no está activo?)." };
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}/validar`);
+  revalidatePath(`/mis-proyectos/${projectId}`);
+  revalidatePath("/mis-proyectos");
+  return {};
+}
+
 export type DeleteProjectState = { error?: string };
 
 /**
