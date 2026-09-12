@@ -7,35 +7,22 @@ import { ProjectCard } from "@/features/projects/components/project-card";
 import { PatrocinadorInicio } from "@/features/dashboard/components/patrocinador-inicio";
 import { ModeradorInicio } from "@/features/dashboard/components/moderador-inicio";
 import { buttonClasses } from "@/components/ui/button";
-import { ProgressGauge } from "@/components/progress-gauge";
+import { Badge } from "@/components/ui/badge";
+import { ProyectoCarousel } from "@/features/dashboard/components/proyecto-carousel";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Inicio · CampusLab",
 };
 
-function diasRestantes(f: string | null): number | null {
-  if (!f) return null;
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  const d = new Date(`${f}T00:00:00`);
-  return Math.round((d.getTime() - hoy.getTime()) / 86_400_000);
-}
-
-function vencimiento(n: number | null): string | null {
-  if (n === null) return null;
-  if (n < 0) return "vencido";
-  if (n === 0) return "vence hoy";
-  if (n === 1) return "vence mañana";
-  return `vence en ${n} días`;
-}
-
 /**
  * E-00 · Inicio del estudiante, como panel (dashboard). Jerarquía: una fila de
- * KPI arriba (perfil, postulaciones, pendientes, evidencias), y debajo dos
- * paneles —el medidor de progreso del proyecto y sus próximas entregas—. Los
- * KPI llevan contexto real (no tendencias: no hay histórico con qué comparar).
- * Sin proyecto activo, los paneles ceden lugar a una invitación a explorar.
+ * KPI arriba (perfil, postulaciones, pendientes, evidencias), y debajo el
+ * progreso del proyecto y sus próximas entregas — si hay más de un proyecto
+ * abierto, `ProyectoCarousel` lo vuelve un carrusel en vez de esconder el
+ * resto. Los KPI llevan contexto real (no tendencias: no hay histórico con
+ * qué comparar). Sin proyecto activo, el espacio cede a una invitación a
+ * explorar.
  */
 export default async function InicioPage() {
   const user = await getCurrentUser();
@@ -50,7 +37,8 @@ export default async function InicioPage() {
   }
 
   const dashboard = await getStudentDashboard();
-  const activo = dashboard?.proyectoActivo ?? null;
+  const proyectos = dashboard?.proyectosActivos ?? [];
+  const activo = proyectos[0] ?? null;
   const perfil = dashboard?.perfil ?? { pct: 0, faltan: [] as string[] };
   const post = dashboard?.postulaciones ?? {
     total: 0,
@@ -60,12 +48,7 @@ export default async function InicioPage() {
   };
   const pendientes = dashboard?.accionesPendientes ?? 0;
   const evidencias = dashboard?.portafolioCount ?? 0;
-
-  // Entregas abiertas del proyecto activo, de la más urgente a la menos.
-  const entregas = (activo?.hitos ?? [])
-    .filter((h) => h.estado !== "aprobado")
-    .map((h) => ({ ...h, dias: diasRestantes(h.fechaLimite) }))
-    .sort((a, b) => (a.dias ?? Infinity) - (b.dias ?? Infinity));
+  const evaluaciones = dashboard?.evaluaciones ?? [];
 
   // Recomendados solo cuando no hay proyecto activo (para no cargar de más).
   const recomendados = activo
@@ -129,93 +112,13 @@ export default async function InicioPage() {
         />
       </section>
 
-      {/* Paneles */}
-      {activo ? (
-        <section className="mt-4 grid gap-4 lg:grid-cols-2">
-          {/* Medidor de progreso */}
-          <div className="rounded-2xl border border-border bg-white p-6">
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-xs font-medium uppercase tracking-wide text-muted">
-                Progreso del proyecto
-              </span>
-            </div>
-            <Link
-              href={`/proyecto/${activo.id}`}
-              className="mt-1 block truncate font-semibold text-ink transition-colors hover:text-electric"
-            >
-              {activo.titulo}
-            </Link>
-
-            <div className="mt-4 flex flex-col items-center">
-              <ProgressGauge pct={activo.progreso} />
-              <p className="mt-3 text-sm text-muted">
-                <span className="font-medium text-ink">
-                  {activo.hitosAprobados} de {activo.hitosTotal}
-                </span>{" "}
-                hitos aprobados
-                {activo.equipoTamano > 0 &&
-                  ` · equipo de ${activo.equipoTamano}`}
-              </p>
-            </div>
-          </div>
-
-          {/* Próximas entregas */}
-          <div className="flex flex-col rounded-2xl border border-border bg-white p-6">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted">
-              Próximas entregas
-            </span>
-
-            {entregas.length > 0 ? (
-              <ul className="mt-3 flex-1">
-                {entregas.slice(0, 5).map((h) => {
-                  const venc = vencimiento(h.dias);
-                  const urgente = h.dias !== null && h.dias <= 2;
-                  const enCurso = h.estado === "en_progreso";
-                  return (
-                    <li key={h.id}>
-                      <Link
-                        href={`/proyecto/${activo.id}`}
-                        className="flex items-center gap-3 border-b border-border py-2.5 text-sm transition-colors last:border-0 hover:text-electric"
-                      >
-                        <span
-                          className={cn(
-                            "size-2 shrink-0 rounded-full",
-                            enCurso ? "bg-electric" : "bg-border",
-                          )}
-                          aria-hidden
-                        />
-                        <span className="flex-1 truncate text-ink">
-                          {h.titulo}
-                        </span>
-                        {venc && (
-                          <span
-                            className={cn(
-                              "shrink-0 text-xs",
-                              urgente ? "text-coral" : "text-muted",
-                            )}
-                          >
-                            {venc}
-                          </span>
-                        )}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="mt-3 flex-1 text-sm text-muted">
-                Sin entregas pendientes por ahora. Buen trabajo.
-              </p>
-            )}
-
-            <Link
-              href={`/proyecto/${activo.id}`}
-              className="mt-4 inline-flex text-sm font-medium text-electric hover:underline"
-            >
-              Ir al proyecto →
-            </Link>
-          </div>
-        </section>
+      {/* Paneles: con más de un proyecto abierto, se convierte en un
+          carrusel (puntos + flechas) para moverse entre ellos, en vez de
+          mostrar solo el más avanzado y esconder el resto. */}
+      {proyectos.length > 0 ? (
+        <div className="mt-4">
+          <ProyectoCarousel proyectos={proyectos} />
+        </div>
       ) : (
         <section className="mt-4 rounded-2xl border border-dashed border-border bg-white p-8">
           <p className="font-medium text-ink">Todavía no estás en un proyecto.</p>
@@ -232,6 +135,41 @@ export default async function InicioPage() {
           >
             Explorar proyectos
           </Link>
+        </section>
+      )}
+
+      {/* Evaluaciones recibidas: el gestor ya podía cargarlas desde su panel,
+          pero no había ninguna vista para que el estudiante evaluado las
+          viera — quedaban invisibles. No depende de tener un proyecto activo:
+          también aplica a proyectos ya cerrados. */}
+      {evaluaciones.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Evaluaciones recibidas
+          </h2>
+          <ul className="mt-4 flex flex-col gap-3">
+            {evaluaciones.map((e) => (
+              <li
+                key={e.projectId}
+                className="rounded-2xl border border-border bg-white p-5"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Link
+                    href={`/proyecto/${e.projectId}`}
+                    className="font-medium text-ink transition-colors hover:text-electric"
+                  >
+                    {e.projectTitulo}
+                  </Link>
+                  {e.puntaje != null && (
+                    <Badge tone="brand">{e.puntaje}/5</Badge>
+                  )}
+                </div>
+                {e.comentario && (
+                  <p className="mt-2 text-sm text-muted">{e.comentario}</p>
+                )}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

@@ -13,21 +13,27 @@ export async function getStudentDashboard() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [perfil, postulaciones, activo, portafolioCount] = await Promise.all([
-    perfilCompleto(supabase, user.id),
-    resumenPostulaciones(supabase, user.id),
-    proyectoActivo(supabase, user.id),
-    getMyPortfolioItems()
-      .then((items) => items.length)
-      .catch(() => 0),
-  ]);
+  const [perfil, postulaciones, proyectosActivos, portafolioCount, evaluaciones] =
+    await Promise.all([
+      perfilCompleto(supabase, user.id),
+      resumenPostulaciones(supabase, user.id),
+      proyectosAbiertos(supabase, user.id),
+      getMyPortfolioItems()
+        .then((items) => items.length)
+        .catch(() => 0),
+      evaluacionesRecibidas(supabase, user.id),
+    ]);
 
   return {
     perfil,
     postulaciones,
     portafolioCount,
-    proyectoActivo: activo?.proyecto ?? null,
-    accionesPendientes: activo?.accionesPendientes ?? 0,
+    proyectosActivos,
+    evaluaciones,
+    accionesPendientes: proyectosActivos.reduce(
+      (total, p) => total + p.accionesPendientes,
+      0,
+    ),
   };
 }
 
@@ -88,61 +94,120 @@ export type HitoResumen = {
   fechaLimite: string | null;
 };
 
-// Proyecto en curso del estudiante (miembro de equipo), con su línea de hitos.
-async function proyectoActivo(supabase: SupabaseServer, userId: string) {
+export type ProyectoAbierto = {
+  id: string;
+  titulo: string;
+  equipoTamano: number;
+  progreso: number;
+  hitosAprobados: number;
+  hitosTotal: number;
+  proximoHito: string | null;
+  proximaFecha: string | null;
+  hitos: HitoResumen[];
+  accionesPendientes: number;
+};
+
+// Proyectos en curso del estudiante (miembro de equipo), cada uno con su
+// línea de hitos. Un estudiante puede integrar más de un equipo a la vez
+// (proyectos distintos en momentos distintos) — antes solo se elegía uno
+// como "el activo" y el resto quedaba invisible en Inicio, sin forma de
+// pasar de uno a otro. Se devuelven todos los abiertos, con el que tiene más
+// avance real (algún hito que no está pendiente) primero.
+async function proyectosAbiertos(
+  supabase: SupabaseServer,
+  userId: string,
+): Promise<ProyectoAbierto[]> {
   const { data: memberships } = await supabase
     .from("team_members")
     .select("team:teams!inner ( id, project:projects!inner ( id, titulo, status ) )")
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
 
-  const activa = (memberships ?? []).find((m) => {
+  const abiertas = (memberships ?? []).filter((m) => {
     const estado = m.team?.project?.status ?? "";
     return m.team?.project && !CERRADOS.includes(estado);
   });
-  if (!activa?.team?.project) return null;
+  if (abiertas.length === 0) return [];
 
-  const teamId = activa.team.id;
-  const proj = activa.team.project;
+  const conDatos = await Promise.all(
+    abiertas.map(async (m) => {
+      const teamId = m.team!.id;
+      const proj = m.team!.project!;
 
-  const [{ data: hitosRaw }, { count: equipo }] = await Promise.all([
-    supabase
-      .from("milestones")
-      .select("id, titulo, estado, fecha_limite, orden")
-      .eq("project_id", proj.id)
-      .order("orden", { ascending: true }),
-    supabase
-      .from("team_members")
-      .select("user_id", { count: "exact", head: true })
-      .eq("team_id", teamId),
-  ]);
+      const [{ data: hitosRaw }, { count: equipo }] = await Promise.all([
+        supabase
+          .from("milestones")
+          .select("id, titulo, estado, fecha_limite, orden")
+          .eq("project_id", proj.id)
+          .order("orden", { ascending: true }),
+        supabase
+          .from("team_members")
+          .select("user_id", { count: "exact", head: true })
+          .eq("team_id", teamId),
+      ]);
 
-  const hitos: HitoResumen[] = (hitosRaw ?? []).map((h) => ({
-    id: h.id,
-    titulo: h.titulo,
-    estado: h.estado,
-    fechaLimite: h.fecha_limite,
+      const hitos: HitoResumen[] = (hitosRaw ?? []).map((h) => ({
+        id: h.id,
+        titulo: h.titulo,
+        estado: h.estado,
+        fechaLimite: h.fecha_limite,
+      }));
+      const total = hitos.length;
+      const aprobados = hitos.filter((h) => h.estado === "aprobado").length;
+      const conAvance = hitos.filter((h) => h.estado !== "pendiente").length;
+      const siguiente = hitos.find((h) => h.estado !== "aprobado") ?? null;
+
+      const proyecto: ProyectoAbierto = {
+        id: proj.id,
+        titulo: proj.titulo,
+        equipoTamano: equipo ?? 0,
+        progreso: total > 0 ? Math.round((aprobados / total) * 100) : 0,
+        hitosAprobados: aprobados,
+        hitosTotal: total,
+        proximoHito: siguiente?.titulo ?? null,
+        proximaFecha: siguiente?.fechaLimite ?? null,
+        hitos,
+        accionesPendientes: hitos.filter(
+          (h) => h.estado === "pendiente" || h.estado === "en_progreso",
+        ).length,
+      };
+      return { proyecto, avance: conAvance };
+    }),
+  );
+
+  // Sort estable: entre empates conserva el orden por fecha de ingreso
+  // (la consulta ya vino ordenada por `created_at` descendente).
+  conDatos.sort((a, b) => b.avance - a.avance);
+  return conDatos.map((d) => d.proyecto);
+}
+
+export type EvaluacionRecibida = {
+  projectId: string;
+  projectTitulo: string;
+  puntaje: number | null;
+  comentario: string | null;
+};
+
+// Evaluaciones que el estudiante recibió de sus gestores, sin importar si el
+// proyecto sigue abierto o ya se cerró. El gestor ya podía cargarlas
+// (`getTeamForEvaluation` / `evaluateMember`), pero no había ninguna vista
+// para quien las recibe — este feedback quedaba invisible.
+async function evaluacionesRecibidas(
+  supabase: SupabaseServer,
+  userId: string,
+): Promise<EvaluacionRecibida[]> {
+  const { data } = await supabase
+    .from("evaluations")
+    .select("project_id, puntaje, comentario, project:projects ( titulo )")
+    .eq("evaluatee_id", userId)
+    .order("created_at", { ascending: false });
+
+  return (data ?? []).map((e) => ({
+    projectId: e.project_id,
+    projectTitulo: e.project?.titulo ?? "Proyecto",
+    puntaje: e.puntaje,
+    comentario: e.comentario,
   }));
-  const total = hitos.length;
-  const aprobados = hitos.filter((h) => h.estado === "aprobado").length;
-  const siguiente = hitos.find((h) => h.estado !== "aprobado") ?? null;
-  const accionesPendientes = hitos.filter(
-    (h) => h.estado === "pendiente" || h.estado === "en_progreso",
-  ).length;
-
-  return {
-    proyecto: {
-      id: proj.id,
-      titulo: proj.titulo,
-      equipoTamano: equipo ?? 0,
-      progreso: total > 0 ? Math.round((aprobados / total) * 100) : 0,
-      hitosAprobados: aprobados,
-      hitosTotal: total,
-      proximoHito: siguiente?.titulo ?? null,
-      proximaFecha: siguiente?.fechaLimite ?? null,
-      hitos,
-    },
-    accionesPendientes,
-  };
 }
 
 export type StudentDashboard = NonNullable<

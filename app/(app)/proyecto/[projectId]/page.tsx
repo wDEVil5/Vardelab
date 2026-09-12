@@ -13,6 +13,13 @@ export const metadata: Metadata = {
 
 type PageProps = { params: Promise<{ projectId: string }> };
 
+// Iniciales para el avatar de cada integrante: primeras letras de hasta dos
+// palabras del nombre — mismo criterio que en el resto del sitio.
+function iniciales(nombre: string | null): string {
+  const partes = (nombre ?? "").trim().split(/\s+/).slice(0, 2);
+  return partes.map((p) => p[0]?.toUpperCase() ?? "").join("") || "?";
+}
+
 // Estado del hito → etiqueta, color del texto del badge y color del círculo.
 const HITO: Record<
   string,
@@ -91,10 +98,33 @@ export default async function ProyectoWorkspacePage({ params }: PageProps) {
             />
           </div>
         </div>
-        <p className="mt-4 text-sm text-muted">
-          Equipo de {equipo.members.length}
-          {equipo.projectOrg && ` · ${equipo.projectOrg}`}
-        </p>
+        {equipo.projectOrg && (
+          <p className="mt-4 text-sm text-muted">{equipo.projectOrg}</p>
+        )}
+      </section>
+
+      {/* Equipo: antes solo se veía "Equipo de N", sin saber quién ni en qué
+          rol — el dato ya lo traía `getMyTeams()`, solo no se mostraba. */}
+      <section className="mt-4 rounded-2xl border border-border bg-white p-6">
+        <h2 className="text-lg font-semibold text-ink">
+          Equipo <span className="font-normal text-muted">({equipo.members.length})</span>
+        </h2>
+        <ul className="mt-4 flex flex-col gap-3">
+          {equipo.members.map((m) => (
+            <li key={m.userId} className="flex items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-ink">
+                {iniciales(m.nombre)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-ink">
+                  {m.nombre}
+                  {m.esYo && <span className="text-muted"> (Tú)</span>}
+                </p>
+                {m.rol && <p className="text-xs text-muted">{m.rol}</p>}
+              </div>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* Hitos */}
