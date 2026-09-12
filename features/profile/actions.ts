@@ -97,6 +97,108 @@ export async function setProfileVisibility(formData: FormData): Promise<void> {
   revalidatePath("/perfil");
 }
 
+export type AvatarState = { error?: string };
+
+const AVATAR_TIPOS_PERMITIDOS = ["image/png", "image/jpeg", "image/webp"];
+const AVATAR_TAMANO_MAXIMO = 2 * 1024 * 1024; // 2 MB, igual que el límite del bucket.
+
+/**
+ * Sube (o reemplaza) la foto de perfil. Un archivo por usuario, nombrado con
+ * su propio id (`avatars_insert_own`/`avatars_update_own`, M25); `upsert`
+ * evita tener que borrar el anterior. El nombre incluye la hora de subida
+ * como query param para invalidar el caché del navegador ante un reemplazo.
+ */
+export async function uploadAvatar(
+  _prevState: AvatarState,
+  formData: FormData,
+): Promise<AvatarState> {
+  const file = formData.get("avatar");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Selecciona una imagen." };
+  }
+  if (!AVATAR_TIPOS_PERMITIDOS.includes(file.type)) {
+    return { error: "Formato no admitido. Usa PNG, JPG o WEBP." };
+  }
+  if (file.size > AVATAR_TAMANO_MAXIMO) {
+    return { error: "La imagen no puede pesar más de 2 MB." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/ingresar");
+
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(user.id, file, { upsert: true, contentType: file.type });
+
+  if (uploadError) {
+    console.error("[uploadAvatar]", uploadError.message);
+    return { error: "No se pudo subir la imagen. Inténtalo de nuevo." };
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("avatars").getPublicUrl(user.id);
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: `${publicUrl}?v=${Date.now()}` })
+    .eq("id", user.id);
+
+  if (error) {
+    console.error("[uploadAvatar]", error.message);
+    return { error: "No se pudo guardar la foto en tu perfil." };
+  }
+
+  revalidatePath("/perfil");
+  return {};
+}
+
+/**
+ * Elige un avatar del catálogo (M26) en vez de subir una foto propia. El
+ * cliente solo manda el id; la URL real se busca en el servidor para no
+ * confiar en una URL que llegue del formulario.
+ */
+export async function selectAvatarPreset(
+  _prevState: AvatarState,
+  formData: FormData,
+): Promise<AvatarState> {
+  const presetId = String(formData.get("presetId") ?? "");
+  if (!presetId) return { error: "Selecciona un avatar." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/ingresar");
+
+  const { data: preset, error: presetError } = await supabase
+    .from("avatar_presets")
+    .select("url")
+    .eq("id", presetId)
+    .eq("activo", true)
+    .maybeSingle();
+
+  if (presetError || !preset) {
+    return { error: "Ese avatar ya no está disponible." };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: preset.url })
+    .eq("id", user.id);
+
+  if (error) {
+    console.error("[selectAvatarPreset]", error.message);
+    return { error: "No se pudo actualizar tu foto." };
+  }
+
+  revalidatePath("/perfil");
+  return {};
+}
+
 export type AddSkillState = { error?: string };
 
 const NIVELES = ["basico", "intermedio", "avanzado"] as const;

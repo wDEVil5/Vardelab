@@ -51,7 +51,9 @@ export async function getPublicProfile(profileId: string) {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, nombre, carrera, semestre, bio, intereses, enlaces")
+    .select(
+      "id, nombre, carrera, semestre, bio, intereses, enlaces, avatar_url",
+    )
     .eq("id", profileId)
     .eq("visibility", "publico")
     .maybeSingle();
@@ -65,14 +67,23 @@ export async function getPublicProfile(profileId: string) {
   // Evidencias públicas del perfil (la RLS ya limita a las públicas; el filtro
   // explícito lo deja claro y excluye las privadas del propio dueño si mira su
   // página pública).
-  const { data: items } = await supabase
-    .from("portfolio_items")
-    .select("id, titulo, descripcion, url, project:projects ( id, titulo )")
-    .eq("profile_id", profileId)
-    .eq("visibility", "publico")
-    .order("created_at", { ascending: false });
+  const [{ data: items }, { data: skills }] = await Promise.all([
+    supabase
+      .from("portfolio_items")
+      .select("id, titulo, descripcion, url, project:projects ( id, titulo )")
+      .eq("profile_id", profileId)
+      .eq("visibility", "publico")
+      .order("created_at", { ascending: false }),
+    // Habilidades del perfil: la RLS `profile_skills_select_public_or_own`
+    // (M2) ya las deja ver si el perfil es público, pero la query nunca las
+    // había pedido — el patrocinador no tenía forma de verlas.
+    supabase
+      .from("profile_skills")
+      .select("skill_id, nivel, skill:skills ( id, nombre )")
+      .eq("profile_id", profileId),
+  ]);
 
-  return { profile, items: items ?? [] };
+  return { profile, items: items ?? [], skills: skills ?? [] };
 }
 
 export type PublicProfile = NonNullable<
