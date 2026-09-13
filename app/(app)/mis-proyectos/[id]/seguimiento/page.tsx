@@ -17,7 +17,7 @@ import {
   returnMilestone,
   deleteMilestone,
 } from "@/features/milestones/actions";
-import { AddMilestoneForm } from "@/features/milestones/components/add-milestone-form";
+import { AddMilestoneModal } from "@/features/milestones/components/add-milestone-modal";
 import { getProjectMessages } from "@/features/messages/queries";
 import { MessageThread } from "@/features/messages/components/message-thread";
 
@@ -112,7 +112,10 @@ export default async function SeguimientoProyectoPage({ params }: PageProps) {
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px] lg:items-start">
         <div className="rounded-2xl border border-border bg-white p-8">
-          <h2 className="text-lg font-semibold text-ink">Plan de hitos</h2>
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-lg font-semibold text-ink">Plan de hitos</h2>
+            <AddMilestoneModal projectId={project.id} />
+          </div>
 
           {totalHitos === 0 ? (
             <p className="mt-3 text-sm text-muted">
@@ -125,10 +128,6 @@ export default async function SeguimientoProyectoPage({ params }: PageProps) {
               ))}
             </ol>
           )}
-
-          <div className="mt-4">
-            <AddMilestoneForm projectId={project.id} />
-          </div>
         </div>
 
         <div className="flex flex-col gap-6">

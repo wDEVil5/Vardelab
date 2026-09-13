@@ -310,6 +310,7 @@ export async function getMyProjects() {
       status,
       modalidad,
       duracion_semanas,
+      comentario_moderacion,
       created_at,
       organization:organizations ( nombre ),
       roles:project_roles ( id, applications ( status ) ),

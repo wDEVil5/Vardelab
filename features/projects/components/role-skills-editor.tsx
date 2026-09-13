@@ -37,7 +37,7 @@ export function RoleSkillsEditor({
 
   return (
     <div className="mt-6 flex flex-col gap-4 border-t border-border pt-6">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col items-start gap-2">
         <span className="text-xs font-semibold uppercase tracking-wide text-muted">
           Habilidades requeridas
         </span>

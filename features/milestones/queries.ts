@@ -27,6 +27,63 @@ export type Milestone = Awaited<
   ReturnType<typeof getProjectMilestones>
 >[number];
 
+export type UpcomingMilestone = {
+  id: string;
+  titulo: string;
+  fecha_limite: string;
+  estado: string;
+  projectId: string;
+  projectTitulo: string | null;
+};
+
+/**
+ * Próximos hitos (con fecha límite, todavía sin aprobar) entre todos los
+ * proyectos propios del patrocinador, de más próximo a más lejano — para el
+ * inicio, donde hoy no había forma de ver qué se vence pronto sin entrar al
+ * seguimiento de cada proyecto por separado.
+ */
+export async function getUpcomingMilestonesForSponsor(
+  limit: number,
+): Promise<UpcomingMilestone[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("milestones")
+    .select(
+      `
+      id,
+      titulo,
+      fecha_limite,
+      estado,
+      project:projects!inner ( id, titulo, created_by )
+    `,
+    )
+    .eq("project.created_by", user.id)
+    .not("fecha_limite", "is", null)
+    .in("estado", ["pendiente", "en_progreso"])
+    .order("fecha_limite", { ascending: true })
+    .limit(limit);
+
+  if (error) {
+    console.error("[getUpcomingMilestonesForSponsor]", error.message);
+    throw error;
+  }
+
+  return (data ?? []).map((m) => ({
+    id: m.id,
+    titulo: m.titulo,
+    fecha_limite: m.fecha_limite as string,
+    estado: m.estado,
+    projectId: m.project?.id ?? "",
+    projectTitulo: m.project?.titulo ?? null,
+  }));
+}
+
 /**
  * Un hito por id para la pantalla de entrega (E-06). Se toma `project_id` de la
  * propia fila del hito (no un join a `projects`): la RLS de milestones (M5) ya
