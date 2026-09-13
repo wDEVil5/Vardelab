@@ -259,6 +259,36 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          leida: boolean
+          link: string | null
+          mensaje: string
+          tipo: Database["public"]["Enums"]["notification_tipo"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          leida?: boolean
+          link?: string | null
+          mensaje: string
+          tipo: Database["public"]["Enums"]["notification_tipo"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          leida?: boolean
+          link?: string | null
+          mensaje?: string
+          tipo?: Database["public"]["Enums"]["notification_tipo"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -986,6 +1016,7 @@ export type Database = {
       is_project_member: { Args: { _project_id: string }; Returns: boolean }
       is_team_member: { Args: { _team_id: string }; Returns: boolean }
       manages_applicant: { Args: { _applicant_id: string }; Returns: boolean }
+      org_recipient_ids: { Args: { _org_id: string }; Returns: string[] }
       owns_org: { Args: { _org_id: string }; Returns: boolean }
       pilot_autoaprobacion_activa: { Args: never; Returns: boolean }
       pilot_moderacion_obligatoria: { Args: never; Returns: boolean }
@@ -999,6 +1030,13 @@ export type Database = {
       lead_estado: "nuevo" | "contactado" | "descartado"
       lead_tipo: "contacto_organizacion" | "propuesta_desafio"
       milestone_status: "pendiente" | "en_progreso" | "entregado" | "aprobado"
+      notification_tipo:
+        | "postulacion_recibida"
+        | "postulacion_aceptada"
+        | "postulacion_rechazada"
+        | "invitacion_organizacion"
+        | "evaluacion_nueva"
+        | "hito_por_vencer"
       org_type:
         | "academica"
         | "social"
@@ -1156,6 +1194,14 @@ export const Constants = {
       lead_estado: ["nuevo", "contactado", "descartado"],
       lead_tipo: ["contacto_organizacion", "propuesta_desafio"],
       milestone_status: ["pendiente", "en_progreso", "entregado", "aprobado"],
+      notification_tipo: [
+        "postulacion_recibida",
+        "postulacion_aceptada",
+        "postulacion_rechazada",
+        "invitacion_organizacion",
+        "evaluacion_nueva",
+        "hito_por_vencer",
+      ],
       org_type: ["academica", "social", "emprendimiento", "empresa", "interna"],
       project_modality: ["presencial", "remoto", "hibrido"],
       project_status: [
