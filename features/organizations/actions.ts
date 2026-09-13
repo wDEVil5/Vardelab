@@ -227,15 +227,11 @@ export type InviteMemberState = { error?: string; ok?: boolean };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * Invita a alguien a una organización por correo (M37): backend únicamente,
- * sin pantalla propia todavía — se llama desde donde haga falta hasta que
- * exista la UI de gestión de miembros. Si el correo ya es de un usuario
- * registrado, la membresía queda 'activa' de una; si no, 'pendiente' hasta
- * que se registre con ese correo (`handle_new_user` la activa en ese momento).
- *
- * Ojo: esto solo deja invitar y guardar la membresía — todavía NO le da al
- * miembro acceso a los proyectos de la organización (eso sigue filtrado por
- * `created_by`, no por `org_id`); es un paso aparte, pendiente.
+ * Invita a alguien a una organización por correo (M37/M38). Si el correo ya
+ * es de un usuario registrado, la membresía queda 'activa' de una — con
+ * acceso real a los proyectos de la organización, mismo nivel que el dueño
+ * (M38); si no, 'pendiente' hasta que se registre con ese correo
+ * (`handle_new_user` la activa en ese momento).
  */
 export async function inviteOrganizationMember(
   _prevState: InviteMemberState,
@@ -278,6 +274,30 @@ export async function inviteOrganizationMember(
     return { error: "No se pudo enviar la invitación. Inténtalo de nuevo." };
   }
 
-  revalidatePath("/mis-organizaciones");
+  revalidatePath(`/mis-organizaciones/${orgId}/miembros`);
   return { ok: true };
+}
+
+/**
+ * Saca a alguien de una organización (o revoca una invitación pendiente). La
+ * RLS `organization_members_delete` deja hacerlo al dueño, a cualquier
+ * miembro activo (mismos permisos), o al propio invitado.
+ */
+export async function removeOrganizationMember(formData: FormData): Promise<void> {
+  const memberId = String(formData.get("memberId") ?? "");
+  const orgId = String(formData.get("orgId") ?? "");
+  if (!memberId || !orgId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("organization_members")
+    .delete()
+    .eq("id", memberId);
+
+  if (error) {
+    console.error("[removeOrganizationMember]", error.message);
+    return;
+  }
+
+  revalidatePath(`/mis-organizaciones/${orgId}/miembros`);
 }
