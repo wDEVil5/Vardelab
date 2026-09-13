@@ -5,10 +5,16 @@ import { cn } from "@/lib/utils";
  * al estilo de las marcas de verificación de redes. Toma el color de `className`
  * (por defecto el azul de marca) y muestra un tooltip "Verificado" al pasar el
  * mouse o enfocar con teclado (CSS puro, sin JS). Trae etiqueta accesible.
+ *
+ * El grupo lleva nombre propio (`group/verified`) a propósito: sin nombre,
+ * `group-hover` responde a CUALQUIER ancestro con clase `group` (por ejemplo
+ * la tarjeta u organización que lo envuelve), no solo a este `<span>` — el
+ * tooltip aparecía con pasar el mouse por la tarjeta entera, no solo por el
+ * sello.
  */
 export function VerifiedBadge({ className }: { className?: string }) {
   return (
-    <span className="group relative inline-flex shrink-0" tabIndex={0}>
+    <span className="group/verified relative inline-flex shrink-0" tabIndex={0}>
       <svg
         viewBox="0 0 24 24"
         fill="currentColor"
@@ -24,7 +30,7 @@ export function VerifiedBadge({ className }: { className?: string }) {
       </svg>
       <span
         role="tooltip"
-        className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-md bg-ink px-2 py-1 text-xs font-medium text-white opacity-0 shadow-sm transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
+        className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-md bg-ink px-2 py-1 text-xs font-medium text-white opacity-0 shadow-sm transition-all duration-150 group-hover/verified:translate-y-0 group-hover/verified:opacity-100 group-focus-visible/verified:translate-y-0 group-focus-visible/verified:opacity-100"
       >
         Verificado
       </span>
