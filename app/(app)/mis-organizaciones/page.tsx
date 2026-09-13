@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
+import { OrgLogo } from "@/components/ui/org-logo";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/features/auth/queries";
 import { getMyOrganizations } from "@/features/organizations/queries";
@@ -34,7 +35,7 @@ export default async function MisOrganizacionesPage() {
   const organizaciones = await getMyOrganizations();
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-6 py-8 lg:py-10">
+    <div className="mx-auto w-full max-w-4xl px-6 py-8 lg:py-10">
       <header className="flex items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-ink">Mis organizaciones</h1>
@@ -51,7 +52,7 @@ export default async function MisOrganizacionesPage() {
       </header>
 
       {organizaciones.length === 0 ? (
-        <div className="mt-8 rounded-lg border border-dashed border-border bg-surface/50 px-6 py-16 text-center">
+        <div className="mt-10 rounded-2xl border border-dashed border-border bg-surface/50 px-6 py-16 text-center">
           <p className="font-medium text-ink">Todavía no tienes organizaciones</p>
           <p className="mt-1 text-sm text-muted">
             Crea una para poder publicar proyectos bajo su nombre.
@@ -67,7 +68,7 @@ export default async function MisOrganizacionesPage() {
           </Link>
         </div>
       ) : (
-        <ul className="mt-8 flex flex-col gap-3">
+        <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {organizaciones.map((o) => {
             const verif = VERIFICACION[o.verificacion] ?? {
               label: o.verificacion,
@@ -76,20 +77,29 @@ export default async function MisOrganizacionesPage() {
             return (
               <li
                 key={o.id}
-                className="flex items-start justify-between gap-4 rounded-lg border border-border bg-white p-5"
+                className="flex flex-col gap-4 rounded-2xl border border-border bg-white p-6"
               >
-                <div className="flex flex-col gap-1">
-                  <Link
-                    href={`/mis-organizaciones/${o.id}/editar`}
-                    className="font-semibold text-ink hover:text-electric"
-                  >
+                <OrgLogo logoUrl={o.logo_url} nombre={o.nombre} size="lg" />
+                <div className="flex flex-1 flex-col gap-1.5">
+                  <span className="line-clamp-2 font-semibold text-ink">
                     {o.nombre}
-                  </Link>
+                  </span>
                   <span className="text-sm text-muted">
                     {TIPO_LABEL[o.tipo] ?? o.tipo}
                   </span>
+                  <Badge tone={verif.tone} className="w-fit">
+                    {verif.label}
+                  </Badge>
                 </div>
-                <Badge tone={verif.tone}>{verif.label}</Badge>
+                <Link
+                  href={`/mis-organizaciones/${o.id}/editar`}
+                  className={cn(
+                    buttonClasses({ variant: "outline", size: "sm" }),
+                    "w-full",
+                  )}
+                >
+                  Ver perfil
+                </Link>
               </li>
             );
           })}

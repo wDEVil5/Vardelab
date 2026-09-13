@@ -33,6 +33,7 @@ export async function createOrganization(
   const descripcion = String(formData.get("descripcion") ?? "").trim();
   const sitioWeb = String(formData.get("sitio_web") ?? "").trim();
   const contacto = String(formData.get("contacto") ?? "").trim();
+  const contactoEmail = String(formData.get("contacto_email") ?? "").trim();
 
   if (!nombre) return { error: "La organización necesita un nombre." };
   if (!TIPOS.includes(tipo as (typeof TIPOS)[number])) {
@@ -53,6 +54,7 @@ export async function createOrganization(
     descripcion: descripcion || null,
     sitio_web: sitioWeb || null,
     contacto: contacto || null,
+    contacto_email: contactoEmail || null,
   });
 
   if (error) {
@@ -82,6 +84,7 @@ export async function updateOrganization(
   const descripcion = String(formData.get("descripcion") ?? "").trim();
   const sitioWeb = String(formData.get("sitio_web") ?? "").trim();
   const contacto = String(formData.get("contacto") ?? "").trim();
+  const contactoEmail = String(formData.get("contacto_email") ?? "").trim();
 
   if (!id) return { error: "Falta la organización." };
   if (!nombre) return { error: "La organización necesita un nombre." };
@@ -98,6 +101,7 @@ export async function updateOrganization(
       descripcion: descripcion || null,
       sitio_web: sitioWeb || null,
       contacto: contacto || null,
+      contacto_email: contactoEmail || null,
     })
     .eq("id", id);
 
@@ -108,7 +112,8 @@ export async function updateOrganization(
 
   revalidatePath("/mis-organizaciones");
   revalidatePath("/organizaciones");
-  redirect("/mis-organizaciones?editada=1");
+  revalidatePath(`/mis-organizaciones/${id}/editar`);
+  redirect(`/mis-organizaciones/${id}/editar?guardado=1`);
 }
 
 export type DeleteOrgState = { error?: string };
@@ -151,4 +156,68 @@ export async function deleteOrganization(
   revalidatePath("/mis-organizaciones");
   revalidatePath("/organizaciones");
   redirect("/mis-organizaciones?eliminada=1");
+}
+
+export type OrgLogoState = { error?: string };
+
+const LOGO_TIPOS_PERMITIDOS = ["image/png", "image/jpeg", "image/webp"];
+const LOGO_TAMANO_MAXIMO = 2 * 1024 * 1024; // 2 MB, igual que el bucket (M35).
+
+/**
+ * Sube el logo de una organización propia (S-01). Mismo patrón que
+ * `uploadAvatar` (M25): un objeto por organización en el bucket `org-logos`,
+ * nombrado con su propio id — la política de Storage (`org_logos_insert_own`,
+ * M35) es la que realmente impide subir el logo de una organización ajena.
+ */
+export async function uploadOrgLogo(
+  _prevState: OrgLogoState,
+  formData: FormData,
+): Promise<OrgLogoState> {
+  const orgId = String(formData.get("orgId") ?? "");
+  const file = formData.get("logo");
+
+  if (!orgId) return { error: "Falta la organización." };
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Selecciona una imagen." };
+  }
+  if (!LOGO_TIPOS_PERMITIDOS.includes(file.type)) {
+    return { error: "Formato no admitido. Usa PNG, JPG o WEBP." };
+  }
+  if (file.size > LOGO_TAMANO_MAXIMO) {
+    return { error: "La imagen no puede pesar más de 2 MB." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/ingresar");
+
+  const { error: uploadError } = await supabase.storage
+    .from("org-logos")
+    .upload(orgId, file, { upsert: true, contentType: file.type });
+
+  if (uploadError) {
+    console.error("[uploadOrgLogo]", uploadError.message);
+    return { error: "No se pudo subir el logo. Inténtalo de nuevo." };
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("org-logos").getPublicUrl(orgId);
+
+  const { error } = await supabase
+    .from("organizations")
+    .update({ logo_url: `${publicUrl}?v=${Date.now()}` })
+    .eq("id", orgId);
+
+  if (error) {
+    console.error("[uploadOrgLogo]", error.message);
+    return { error: "No se pudo guardar el logo." };
+  }
+
+  revalidatePath(`/mis-organizaciones/${orgId}/editar`);
+  revalidatePath("/mis-organizaciones");
+  revalidatePath("/organizaciones");
+  return {};
 }

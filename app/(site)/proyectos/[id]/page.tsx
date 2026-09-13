@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
+import { OrgLogo } from "@/components/ui/org-logo";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { cn } from "@/lib/utils";
 import {
@@ -102,10 +103,13 @@ export default async function ProyectoPage({ params }: PageProps) {
             {project.titulo}
           </h1>
           {org?.nombre && (
-            <span className="flex items-center gap-1.5 text-muted">
-              {org.nombre}
-              {org.verificacion === "verificado" && <VerifiedBadge />}
-            </span>
+            <div className="flex items-center gap-2">
+              <OrgLogo logoUrl={org.logo_url} nombre={org.nombre} />
+              <span className="flex items-center gap-1.5 text-muted">
+                {org.nombre}
+                {org.verificacion === "verificado" && <VerifiedBadge />}
+              </span>
+            </div>
           )}
         </header>
 

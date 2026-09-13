@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
+import { OrgLogo } from "@/components/ui/org-logo";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { cn } from "@/lib/utils";
 import type { ProjectCard as ProjectCardData } from "@/features/projects/queries";
@@ -71,10 +72,13 @@ export function ProjectCard({ project }: { project: ProjectCardData }) {
 
       {/* Organización + verificación */}
       {org?.nombre && (
-        <span className="-mt-1 flex items-center gap-1.5 text-sm text-muted">
-          {org.nombre}
-          {org.verificacion === "verificado" && <VerifiedBadge />}
-        </span>
+        <div className="-mt-1 flex items-center gap-2">
+          <OrgLogo logoUrl={org.logo_url} nombre={org.nombre} size="sm" />
+          <span className="flex items-center gap-1.5 text-sm text-muted">
+            {org.nombre}
+            {org.verificacion === "verificado" && <VerifiedBadge />}
+          </span>
+        </div>
       )}
 
       {/* Habilidades exigidas (máx. 3) */}
