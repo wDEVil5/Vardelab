@@ -99,20 +99,15 @@ export default async function ValidarProyectoPage({ params }: PageProps) {
               ) : (
                 <ul className="mt-4 flex flex-col gap-3">
                   {entregas.map((s) => (
-                    <li key={s.id}>
-                      <a
-                        href={s.url ?? undefined}
-                        target={s.url ? "_blank" : undefined}
-                        rel={s.url ? "noopener noreferrer" : undefined}
-                        className="flex items-center justify-between gap-4 rounded-xl bg-surface/60 p-5 transition-colors hover:bg-surface"
-                      >
-                        <div className="min-w-0">
-                          {s.url && (
-                            <p className="truncate text-sm font-medium text-ink">{s.url}</p>
-                          )}
-                          {s.nota && <p className="mt-1 text-xs text-muted">{s.nota}</p>}
-                        </div>
-                        {s.url && (
+                    <li key={s.id} className="rounded-xl bg-surface/60 p-5">
+                      {s.url && (
+                        <a
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between gap-4"
+                        >
+                          <p className="min-w-0 truncate text-sm font-medium text-ink">{s.url}</p>
                           <svg
                             viewBox="0 0 24 24"
                             className="size-4 shrink-0 text-muted"
@@ -125,8 +120,26 @@ export default async function ValidarProyectoPage({ params }: PageProps) {
                           >
                             <path d="M7 17L17 7M9 7h8v8" />
                           </svg>
-                        )}
-                      </a>
+                        </a>
+                      )}
+                      {s.archivo_url && (
+                        <a
+                          href={s.archivo_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={cn(
+                            "flex items-center gap-1.5 text-sm font-medium text-electric hover:underline",
+                            s.url && "mt-2",
+                          )}
+                        >
+                          <svg viewBox="0 0 24 24" className="size-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                            <path d="M14 2v6h6" />
+                          </svg>
+                          Descargar archivo adjunto
+                        </a>
+                      )}
+                      {s.nota && <p className="mt-1 text-xs text-muted">{s.nota}</p>}
                     </li>
                   ))}
                 </ul>

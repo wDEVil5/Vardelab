@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/queries";
-import { getMilestoneById } from "@/features/milestones/queries";
-import { SubmitEvidenceForm } from "@/features/submissions/components/submit-evidence-form";
+import { getMilestoneWithSubmissionsById } from "@/features/milestones/queries";
+import { MilestoneSubmissions } from "@/features/submissions/components/milestone-submissions";
 
 export const metadata: Metadata = {
   title: "Entregar evidencia · CampusLab",
@@ -32,7 +32,7 @@ export default async function EntregarPage({ params }: PageProps) {
     redirect(`/ingresar?next=/proyecto/${projectId}/entregar/${hitoId}`);
   }
 
-  const hito = await getMilestoneById(hitoId);
+  const hito = await getMilestoneWithSubmissionsById(hitoId);
   if (!hito || hito.project_id !== projectId) notFound();
 
   const volver = `/proyecto/${projectId}`;
@@ -47,23 +47,18 @@ export default async function EntregarPage({ params }: PageProps) {
           ← Volver al proyecto
         </Link>
         <h1 className="text-2xl font-bold text-ink">Entregar evidencia</h1>
-        <p className="text-sm text-muted">
-          Hito: <span className="text-ink">{hito.titulo}</span>
-        </p>
       </header>
 
       <div className="mt-8 grid items-start gap-4 lg:grid-cols-[1fr_18rem]">
-        {/* Formulario */}
-        <section className="rounded-2xl border border-border bg-white p-6">
-          <h2 className="text-lg font-semibold text-ink">Entrega del hito</h2>
-          <div className="mt-4">
-            <SubmitEvidenceForm
-              milestoneId={hito.id}
-              projectId={projectId}
-              redirectTo={volver}
-            />
-          </div>
-        </section>
+        {/* Entregas ya hechas (si las hay) + formulario para subir una nueva —
+            antes esta pantalla siempre mostraba un formulario en blanco, sin
+            forma de ver qué se había entregado ya ni si el gestor pidió
+            cambios. Mismo componente que ya usa el gestor en Seguimiento. */}
+        <MilestoneSubmissions
+          milestone={hito}
+          projectId={projectId}
+          currentUserId={user.id}
+        />
 
         {/* Checklist (guía) */}
         <aside className="rounded-2xl border border-electric/15 bg-electric/5 p-6">
