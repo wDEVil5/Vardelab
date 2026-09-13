@@ -16,7 +16,7 @@ export async function getMyOrganizations() {
 
   const { data, error } = await supabase
     .from("organizations")
-    .select("id, nombre, tipo, verificacion")
+    .select("id, nombre, tipo, logo_url, verificacion")
     .eq("owner_id", user.id)
     .order("nombre");
 
@@ -47,7 +47,9 @@ export async function getMyOrganization(id: string) {
 
   const { data, error } = await supabase
     .from("organizations")
-    .select("id, nombre, tipo, descripcion, sitio_web, contacto, verificacion")
+    .select(
+      "id, nombre, tipo, descripcion, sitio_web, contacto, contacto_email, logo_url, verificacion",
+    )
     .eq("id", id)
     .eq("owner_id", user.id)
     .maybeSingle();
