@@ -82,27 +82,66 @@ export async function getUpcomingMilestonesForSponsor(
   }));
 }
 
+// El bucket `submission-files` (M48) es privado: `archivo_url` en la fila es
+// solo la ruta del objeto, no algo que se pueda enlazar directo. Acá se
+// reemplaza por una URL firmada (vence en 1h, se genera de nuevo en cada
+// carga de página) antes de devolver los datos — así ninguna pantalla que
+// consuma estas dos queries necesita saber que el archivo vive en un bucket
+// privado, solo recibe un link que funciona.
+async function firmarArchivosDeEntregas<
+  T extends { submissions: { archivo_url: string | null }[] | null },
+>(supabase: Awaited<ReturnType<typeof createClient>>, hitos: T[]): Promise<T[]> {
+  const rutas = hitos.flatMap((h) =>
+    (h.submissions ?? [])
+      .map((s) => s.archivo_url)
+      .filter((u): u is string => Boolean(u)),
+  );
+  if (rutas.length === 0) return hitos;
+
+  const { data } = await supabase.storage
+    .from("submission-files")
+    .createSignedUrls(rutas, 3600);
+  const firmadas = new Map((data ?? []).map((d) => [d.path, d.signedUrl]));
+
+  return hitos.map((h) => ({
+    ...h,
+    submissions: (h.submissions ?? []).map((s) => ({
+      ...s,
+      archivo_url: s.archivo_url ? (firmadas.get(s.archivo_url) ?? null) : null,
+    })),
+  }));
+}
+
 /**
- * Un hito por id para la pantalla de entrega (E-06). Se toma `project_id` de la
- * propia fila del hito (no un join a `projects`): la RLS de milestones (M5) ya
- * deja verlo al integrante, mientras que leer `projects` puede estar restringido
- * al gestor. `null` si el usuario no ve el hito → la página hace 404.
+ * Un hito con sus entregas anidadas, para la pantalla de entrega (E-06). Antes
+ * esa pantalla usaba `getMilestoneById` (sin entregas) y siempre mostraba un
+ * formulario en blanco, aunque el hito ya tuviera una entrega esperando
+ * revisión — el estudiante no tenía forma de ver qué había mandado antes.
+ * Mismo shape que `getMilestonesWithSubmissions` (uno de sus elementos), para
+ * poder reusar `MilestoneSubmissions` en las dos pantallas.
  */
-export async function getMilestoneById(id: string) {
+export async function getMilestoneWithSubmissionsById(id: string) {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("milestones")
-    .select("id, titulo, descripcion, estado, project_id")
+    .select(
+      `
+      id, titulo, descripcion, fecha_limite, orden, estado, project_id,
+      submissions ( id, url, nota, archivo_url, submitted_by, created_at )
+      `,
+    )
     .eq("id", id)
     .maybeSingle();
 
   if (error) {
-    console.error("[getMilestoneById]", error.message);
+    console.error("[getMilestoneWithSubmissionsById]", error.message);
     return null;
   }
+  if (!data) return null;
 
-  return data;
+  const [firmado] = await firmarArchivosDeEntregas(supabase, [data]);
+  return firmado;
 }
 
 /**
@@ -117,7 +156,7 @@ export async function getMilestonesWithSubmissions(projectId: string) {
     .select(
       `
       id, titulo, descripcion, fecha_limite, orden, estado,
-      submissions ( id, url, nota, submitted_by, created_at )
+      submissions ( id, url, nota, archivo_url, submitted_by, created_at )
     `,
     )
     .eq("project_id", projectId)
@@ -129,7 +168,7 @@ export async function getMilestonesWithSubmissions(projectId: string) {
     return [];
   }
 
-  return data;
+  return firmarArchivosDeEntregas(supabase, data ?? []);
 }
 
 export type MilestoneWithSubmissions = Awaited<

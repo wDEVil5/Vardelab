@@ -79,7 +79,7 @@ export default async function ProyectoWorkspacePage({ params }: PageProps) {
   const accionable = hitos.find((h) => h.estado !== "aprobado") ?? null;
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-6 py-8 lg:py-10">
+    <div className="mx-auto w-full max-w-5xl px-6 py-8 lg:py-10">
       <header className="flex flex-col gap-2">
         {misProyectos.length > 1 && (
           <Link
@@ -93,129 +93,141 @@ export default async function ProyectoWorkspacePage({ params }: PageProps) {
         <p className="text-sm text-muted">{equipo.projectTitulo} · Activo</p>
       </header>
 
-      {/* Progreso general */}
-      <section className="mt-6 rounded-2xl border border-border bg-white p-6">
-        <p className="text-sm text-muted">Progreso general</p>
-        <div className="mt-2 flex items-center gap-4">
-          <span className="text-4xl font-bold tracking-tight text-electric">
+      {/* Barra de progreso a todo el ancho, arriba de los dos bloques — mismo
+          patrón que la barra de resumen de `/mis-proyectos/[id]/seguimiento`
+          (la vista equivalente del gestor), para que las dos páginas del
+          mismo proyecto se sientan parte de un mismo sistema. */}
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-white p-6">
+        <div className="flex items-center gap-4">
+          <span className="text-3xl font-bold tracking-tight text-electric">
             {progreso}%
           </span>
-          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface">
-            <div
-              className="h-full rounded-full bg-electric transition-[width]"
-              style={{ width: `${progreso}%` }}
-            />
+          <div>
+            <p className="text-sm font-medium text-ink">Progreso general</p>
+            {equipo.projectOrg && (
+              <p className="text-xs text-muted">{equipo.projectOrg}</p>
+            )}
           </div>
         </div>
-        {equipo.projectOrg && (
-          <p className="mt-4 text-sm text-muted">{equipo.projectOrg}</p>
-        )}
-      </section>
-
-      {/* Equipo: antes solo se veía "Equipo de N", sin saber quién ni en qué
-          rol — el dato ya lo traía `getMyTeams()`, solo no se mostraba. */}
-      <section className="mt-4 rounded-2xl border border-border bg-white p-6">
-        <h2 className="text-lg font-semibold text-ink">
-          Equipo <span className="font-normal text-muted">({equipo.members.length})</span>
-        </h2>
-        <ul className="mt-4 flex flex-col gap-3">
-          {equipo.members.map((m) => (
-            <li key={m.userId} className="flex items-center gap-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-ink">
-                {iniciales(m.nombre)}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-ink">
-                  {m.nombre}
-                  {m.esYo && <span className="text-muted"> (Tú)</span>}
-                </p>
-                {m.rol && <p className="text-xs text-muted">{m.rol}</p>}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* Hitos */}
-      <section className="mt-4 rounded-2xl border border-border bg-white p-6">
-        <h2 className="text-lg font-semibold text-ink">Hitos</h2>
-
-        {total === 0 ? (
-          <p className="mt-3 text-sm text-muted">
-            La organización todavía no definió los hitos del proyecto.
-          </p>
-        ) : (
-          <ol className="mt-4 flex flex-col">
-            {hitos.map((h, i) => {
-              const est = HITO[h.estado] ?? HITO.pendiente;
-              const aprobado = h.estado === "aprobado";
-              return (
-                <li key={h.id}>
-                  <Link
-                    href={`/proyecto/${projectId}/entregar/${h.id}`}
-                    aria-disabled={aprobado}
-                    className={cn(
-                      "flex items-center gap-4 border-b border-border py-4 transition-colors last:border-0",
-                      aprobado
-                        ? "pointer-events-none"
-                        : "-mx-2 rounded-lg px-2 hover:bg-surface/50",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
-                        est.circulo,
-                      )}
-                    >
-                      {i + 1}
-                    </span>
-                    <span className="flex-1 font-semibold text-ink">
-                      {h.titulo}
-                    </span>
-                    <span
-                      className={cn(
-                        "shrink-0 rounded-full px-3 py-1 text-xs font-medium",
-                        est.badge,
-                      )}
-                    >
-                      {est.label}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </section>
-
-      {accionable && (
-        <div className="mt-6">
-          <Link
-            href={`/proyecto/${projectId}/entregar/${accionable.id}`}
-            className={buttonClasses({ variant: "primary" })}
-          >
-            Registrar avance
-          </Link>
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface sm:w-56">
+          <div
+            className="h-full rounded-full bg-electric transition-[width]"
+            style={{ width: `${progreso}%` }}
+          />
         </div>
-      )}
+      </div>
 
-      {/* Evaluación del gestor (S-06/M39): solo aparece si ya te evaluaron. */}
-      {miEvaluacion && (
-        <section className="mt-4 rounded-2xl border border-border bg-white p-6">
-          <h2 className="mb-3 text-lg font-semibold text-ink">Tu evaluación</h2>
-          <EvaluationSummary evaluation={miEvaluacion} />
-        </section>
-      )}
+      {/* Dos bloques: a la izquierda el trabajo del proyecto (hitos, avance,
+          evaluación); a la derecha el contexto social (equipo, mensajes). */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
+        <div className="flex flex-col gap-6">
+          {/* Hitos */}
+          <section className="rounded-2xl border border-border bg-white p-6">
+            <h2 className="text-lg font-semibold text-ink">Hitos</h2>
 
-      {/* Mensajes con la organización (M30). */}
-      <section className="mt-4 rounded-2xl border border-border bg-white p-6">
-        <h2 className="mb-3 text-lg font-semibold text-ink">Mensajes</h2>
-        <MessageThread
-          projectId={projectId}
-          redirectPath={`/proyecto/${projectId}`}
-          messages={mensajes}
-        />
-      </section>
+            {total === 0 ? (
+              <p className="mt-3 text-sm text-muted">
+                La organización todavía no definió los hitos del proyecto.
+              </p>
+            ) : (
+              <ol className="mt-4 flex flex-col">
+                {hitos.map((h, i) => {
+                  const est = HITO[h.estado] ?? HITO.pendiente;
+                  const aprobado = h.estado === "aprobado";
+                  return (
+                    <li key={h.id}>
+                      <Link
+                        href={`/proyecto/${projectId}/entregar/${h.id}`}
+                        aria-disabled={aprobado}
+                        className={cn(
+                          "flex items-center gap-4 border-b border-border py-4 transition-colors last:border-0",
+                          aprobado
+                            ? "pointer-events-none"
+                            : "-mx-2 rounded-lg px-2 hover:bg-surface/50",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+                            est.circulo,
+                          )}
+                        >
+                          {i + 1}
+                        </span>
+                        <span className="flex-1 font-semibold text-ink">
+                          {h.titulo}
+                        </span>
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full px-3 py-1 text-xs font-medium",
+                            est.badge,
+                          )}
+                        >
+                          {est.label}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+
+            {accionable && (
+              <Link
+                href={`/proyecto/${projectId}/entregar/${accionable.id}`}
+                className={cn(buttonClasses({ variant: "primary" }), "mt-4")}
+              >
+                Registrar avance
+              </Link>
+            )}
+          </section>
+
+          {/* Evaluación del gestor (S-06/M39): solo aparece si ya te evaluaron. */}
+          {miEvaluacion && (
+            <section className="rounded-2xl border border-border bg-white p-6">
+              <h2 className="mb-3 text-lg font-semibold text-ink">Tu evaluación</h2>
+              <EvaluationSummary evaluation={miEvaluacion} />
+            </section>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-6">
+          {/* Equipo: antes solo se veía "Equipo de N", sin saber quién ni en
+              qué rol — el dato ya lo traía `getMyTeams()`, solo no se
+              mostraba. */}
+          <section className="rounded-2xl border border-border bg-white p-6">
+            <h2 className="text-sm font-semibold text-ink">
+              Equipo <span className="font-normal text-muted">({equipo.members.length})</span>
+            </h2>
+            <ul className="mt-4 flex flex-col gap-3">
+              {equipo.members.map((m) => (
+                <li key={m.userId} className="flex items-center gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-ink">
+                    {iniciales(m.nombre)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-ink">
+                      {m.nombre}
+                      {m.esYo && <span className="text-muted"> (Tú)</span>}
+                    </p>
+                    {m.rol && <p className="text-xs text-muted">{m.rol}</p>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Mensajes con la organización (M30). */}
+          <section className="rounded-2xl border border-border bg-white p-6">
+            <h2 className="mb-3 text-sm font-semibold text-ink">Mensajes</h2>
+            <MessageThread
+              projectId={projectId}
+              redirectPath={`/proyecto/${projectId}`}
+              messages={mensajes}
+            />
+          </section>
+        </div>
+      </div>
     </div>
   );
 }
