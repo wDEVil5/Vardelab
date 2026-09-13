@@ -1,36 +1,24 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import {
-  markAllNotificationsRead,
-  markNotificationRead,
-} from "@/features/notifications/actions";
-import type { Notification } from "@/features/notifications/queries";
+import { useNotifications } from "@/features/notifications/notifications-context";
 import { NotificationRow } from "@/features/notifications/components/notification-row";
 
 /**
- * Campanita de notificaciones del shell (M39/M40). El panel se monta en un
- * portal sobre `document.body`, no como un simple `absolute` anidado en el
- * contenedor del sidebar — ese contenedor tiene `overflow-x-hidden` (para la
- * animación de plegado) y recortaría el panel a la mitad. Sin
- * suscripción en vivo (no hay Realtime en este proyecto todavía): la lista
- * inicial llega del servidor al cargar el shell y el panel actualiza su
- * propio estado local al marcar como leída, sin esperar una recarga.
+ * Campanita de notificaciones del shell (M39/M40/M42). El panel se monta en
+ * un portal sobre `document.body`, no como un simple `absolute` anidado en
+ * el contenedor del sidebar — ese contenedor tiene `overflow-x-hidden` (para
+ * la animación de plegado) y recortaría el panel a la mitad. Lee del
+ * `NotificationsProvider` compartido (no de estado propio) para que marcar
+ * como leída y las notificaciones nuevas detectadas por el sondeo se
+ * reflejen igual acá y en los toasts.
  */
-export function NotificationBell({
-  notifications: notificacionesIniciales,
-  unreadCount: noLeidasIniciales,
-}: {
-  notifications: Notification[];
-  unreadCount: number;
-}) {
+export function NotificationBell() {
+  const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const [posicion, setPosicion] = useState<{ top: number; left: number } | null>(null);
-  const [notificaciones, setNotificaciones] = useState(notificacionesIniciales);
-  const [noLeidas, setNoLeidas] = useState(noLeidasIniciales);
-  const [, startTransition] = useTransition();
 
   const botonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -82,28 +70,8 @@ export function NotificationBell({
     };
   }, [open]);
 
-  function marcarLeida(id: string) {
-    setNotificaciones((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, leida: true } : n)),
-    );
-    setNoLeidas((c) => Math.max(0, c - 1));
-    const formData = new FormData();
-    formData.set("id", id);
-    startTransition(() => {
-      markNotificationRead(formData);
-    });
-  }
-
-  function marcarTodasLeidas() {
-    setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })));
-    setNoLeidas(0);
-    startTransition(() => {
-      markAllNotificationsRead();
-    });
-  }
-
-  const noLeidasLista = notificaciones.filter((n) => !n.leida);
-  const leidasLista = notificaciones.filter((n) => n.leida);
+  const noLeidasLista = notifications.filter((n) => !n.leida);
+  const leidasLista = notifications.filter((n) => n.leida);
 
   return (
     <>
@@ -114,7 +82,7 @@ export function NotificationBell({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={
-          noLeidas > 0 ? `Notificaciones, ${noLeidas} sin leer` : "Notificaciones"
+          unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : "Notificaciones"
         }
         className="relative flex size-9 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface hover:text-ink"
       >
@@ -131,7 +99,7 @@ export function NotificationBell({
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
-        {noLeidas > 0 && (
+        {unreadCount > 0 && (
           <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-coral" />
         )}
       </button>
@@ -148,10 +116,10 @@ export function NotificationBell({
           >
             <div className="flex items-center justify-between px-3 py-2">
               <p className="text-sm font-semibold text-ink">Notificaciones</p>
-              {noLeidas > 0 && (
+              {unreadCount > 0 && (
                 <button
                   type="button"
-                  onClick={marcarTodasLeidas}
+                  onClick={markAllRead}
                   className="text-xs font-medium text-electric hover:underline"
                 >
                   Marcar todas como leídas
@@ -161,7 +129,7 @@ export function NotificationBell({
 
             <div className="h-px bg-border" />
 
-            {notificaciones.length === 0 ? (
+            {notifications.length === 0 ? (
               <p className="px-3 py-6 text-center text-sm text-muted">
                 Todavía no hay notificaciones.
               </p>
@@ -176,7 +144,8 @@ export function NotificationBell({
                       <NotificationRow
                         key={n.id}
                         notification={n}
-                        onRead={() => marcarLeida(n.id)}
+                        onRead={() => markRead(n.id)}
+                        onNavigate={() => setOpen(false)}
                       />
                     ))}
                   </div>
@@ -192,7 +161,8 @@ export function NotificationBell({
                       <NotificationRow
                         key={n.id}
                         notification={n}
-                        onRead={() => marcarLeida(n.id)}
+                        onRead={() => markRead(n.id)}
+                        onNavigate={() => setOpen(false)}
                       />
                     ))}
                   </div>
