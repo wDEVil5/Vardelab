@@ -103,13 +103,16 @@ export default async function ProyectoPage({ params }: PageProps) {
             {project.titulo}
           </h1>
           {org?.nombre && (
-            <div className="flex items-center gap-2">
+            <Link
+              href={`/organizaciones/${org.id}`}
+              className="group flex w-fit items-center gap-2"
+            >
               <OrgLogo logoUrl={org.logo_url} nombre={org.nombre} />
-              <span className="flex items-center gap-1.5 text-muted">
+              <span className="flex items-center gap-1.5 text-muted group-hover:text-electric">
                 {org.nombre}
                 {org.verificacion === "verificado" && <VerifiedBadge />}
               </span>
-            </div>
+            </Link>
           )}
         </header>
 
