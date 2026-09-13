@@ -167,7 +167,70 @@ export async function getPendingApplicationsForSponsor(): Promise<
   if (applicantIds.length > 0) {
     const { data: profs } = await supabase
       .from("profiles")
-      .select("id, nombre, carrera")
+      .select("id, nombre, carrera, visibility")
+      .in("id", applicantIds);
+    for (const p of profs ?? []) perfiles.set(p.id, p);
+  }
+
+  return rows.map((r) => ({
+    id: r.id,
+    status: r.status,
+    created_at: r.created_at,
+    applicant: perfiles.get(r.applicant_id) ?? null,
+    roleNombre: r.role?.nombre ?? null,
+    projectId: r.role?.project?.id ?? "",
+    projectTitulo: r.role?.project?.titulo ?? null,
+  }));
+}
+
+/**
+ * Las postulaciones más recientes (cualquier estado) en cualquier proyecto
+ * propio del patrocinador — a diferencia de `getPendingApplicationsForSponsor`
+ * (solo `enviada`), esta es para un vistazo de actividad reciente en el
+ * inicio, no una bandeja de pendientes.
+ */
+export async function getRecentApplicationsForSponsor(
+  limit: number,
+): Promise<SponsorPendingApplication[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("applications")
+    .select(
+      `
+      id,
+      status,
+      created_at,
+      applicant_id,
+      role:project_roles!inner (
+        id,
+        nombre,
+        project:projects!inner ( id, titulo, created_by )
+      )
+    `,
+    )
+    .eq("role.project.created_by", user.id)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("[getRecentApplicationsForSponsor]", error.message);
+    throw error;
+  }
+
+  const rows = data ?? [];
+  const applicantIds = Array.from(new Set(rows.map((r) => r.applicant_id)));
+
+  const perfiles = new Map<string, ApplicantProfile>();
+  if (applicantIds.length > 0) {
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, nombre, carrera, visibility")
       .in("id", applicantIds);
     for (const p of profs ?? []) perfiles.set(p.id, p);
   }
@@ -199,11 +262,13 @@ export type ApplicantProfile = {
   id: string;
   nombre: string | null;
   carrera: string | null;
+  visibility: string | null;
 };
 
 export type TeamMember = {
   userId: string;
   nombre: string | null;
+  perfilPublico: boolean;
   roleNombre: string | null;
 };
 
@@ -266,7 +331,7 @@ export async function getProjectApplications(projectId: string) {
   const habilidadesPorPostulante = new Map<string, Set<string>>();
   if (applicantIds.length > 0) {
     const [{ data: profs }, { data: skills }] = await Promise.all([
-      supabase.from("profiles").select("id, nombre, carrera").in("id", applicantIds),
+      supabase.from("profiles").select("id, nombre, carrera, visibility").in("id", applicantIds),
       supabase
         .from("profile_skills")
         .select("profile_id, skill_id")
@@ -289,19 +354,20 @@ export async function getProjectApplications(projectId: string) {
 
   const miembros = team?.team_members ?? [];
   const equipoIds = miembros.map((m) => m.user_id);
-  const perfilesEquipo = new Map<string, string | null>();
+  const perfilesEquipo = new Map<string, { nombre: string | null; visibility: string | null }>();
   if (equipoIds.length > 0) {
     const { data: profs } = await supabase
       .from("profiles")
-      .select("id, nombre")
+      .select("id, nombre, visibility")
       .in("id", equipoIds);
-    for (const p of profs ?? []) perfilesEquipo.set(p.id, p.nombre);
+    for (const p of profs ?? []) perfilesEquipo.set(p.id, p);
   }
   const nombreRolPorId = new Map(roles.map((r) => [r.id, r.nombre]));
 
   const equipo: TeamMember[] = miembros.map((m) => ({
     userId: m.user_id,
-    nombre: perfilesEquipo.get(m.user_id) ?? null,
+    nombre: perfilesEquipo.get(m.user_id)?.nombre ?? null,
+    perfilPublico: perfilesEquipo.get(m.user_id)?.visibility === "publico",
     roleNombre: m.project_role_id ? (nombreRolPorId.get(m.project_role_id) ?? null) : null,
   }));
 
