@@ -158,9 +158,45 @@ export async function updateProject(
 
 export type AddRoleState = { error?: string };
 
+// Habilidad exigida elegida al crear el rol: id del catálogo + nivel mínimo.
+// Se manda como JSON en un campo oculto, igual que las observaciones del
+// moderador (M36) — mismo motivo: la cantidad de filas es variable.
+type SkillInput = { skillId: string; nivel: string };
+
+function parseSkillsInput(raw: string): SkillInput[] | null {
+  if (!raw) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(parsed)) return null;
+
+  const limpias: SkillInput[] = [];
+  const vistos = new Set<string>();
+  for (const item of parsed) {
+    if (typeof item !== "object" || item === null) return null;
+    const skillId = String((item as Record<string, unknown>).skillId ?? "").trim();
+    const nivel = String((item as Record<string, unknown>).nivel ?? "").trim();
+    if (!skillId) continue;
+    if (!NIVELES_ROL.includes(nivel as (typeof NIVELES_ROL)[number])) return null;
+    if (vistos.has(skillId)) continue; // duplicada, se ignora
+    vistos.add(skillId);
+    limpias.push({ skillId, nivel });
+  }
+  return limpias;
+}
+
+// Adelantado desde `addRoleSkill` más abajo: ambas funciones validan el mismo
+// enum de nivel, así que comparten la constante.
+const NIVELES_ROL = ["basico", "intermedio", "avanzado"] as const;
+
 /**
- * Agrega un rol a un proyecto. La RLS `project_roles_write_manager` (M3) exige
- * que el usuario gestione el proyecto; aquí se validan los datos del rol.
+ * Agrega un rol a un proyecto, con sus habilidades exigidas de una (S-04/S-XX:
+ * antes había que crear el rol y recién ahí, en una segunda pasada, agregarle
+ * cada habilidad). La RLS `project_roles_write_manager` (M3) exige que el
+ * usuario gestione el proyecto; aquí se validan los datos del rol.
  */
 export async function addRole(
   _prevState: AddRoleState,
@@ -171,9 +207,13 @@ export async function addRole(
   const descripcion = String(formData.get("descripcion") ?? "").trim();
   const cuposRaw = String(formData.get("cupos") ?? "").trim();
   const horasRaw = String(formData.get("horas_semanales") ?? "").trim();
+  const skills = parseSkillsInput(String(formData.get("skills") ?? ""));
 
   if (!projectId) return { error: "Falta el proyecto." };
   if (!nombre) return { error: "El rol necesita un nombre." };
+  if (skills === null) {
+    return { error: "Revisa las habilidades: algo no quedó bien formado." };
+  }
 
   // Cupos: entero ≥ 1 (la tabla tiene CHECK cupos > 0). Por defecto 1.
   const cupos = cuposRaw ? Number(cuposRaw) : 1;
@@ -192,17 +232,36 @@ export async function addRole(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("project_roles").insert({
-    project_id: projectId,
-    nombre,
-    descripcion: descripcion || null,
-    cupos,
-    horas_semanales: horasSemanales,
-  });
+  const { data, error } = await supabase
+    .from("project_roles")
+    .insert({
+      project_id: projectId,
+      nombre,
+      descripcion: descripcion || null,
+      cupos,
+      horas_semanales: horasSemanales,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    console.error("[addRole]", error.message);
+  if (error || !data) {
+    console.error("[addRole]", error?.message);
     return { error: "No se pudo agregar el rol. Inténtalo de nuevo." };
+  }
+
+  if (skills.length > 0) {
+    const { error: skillsError } = await supabase.from("project_role_skills").insert(
+      skills.map((s) => ({
+        project_role_id: data.id,
+        skill_id: s.skillId,
+        nivel_minimo: s.nivel as (typeof NIVELES_ROL)[number],
+      })),
+    );
+    // Falla silenciosa: el rol ya se creó, que es lo mínimo pedido. El gestor
+    // puede agregar las habilidades sueltas después si esto no se guardó.
+    if (skillsError) {
+      console.error("[addRole] habilidades", skillsError.message);
+    }
   }
 
   revalidatePath(`/mis-proyectos/${projectId}`);
@@ -307,6 +366,7 @@ export async function submitProjectForReview(
   formData: FormData,
 ): Promise<PublishState> {
   const projectId = String(formData.get("projectId") ?? "");
+  const respuesta = String(formData.get("respuesta") ?? "").trim();
   if (!projectId) return { error: "Falta el proyecto." };
 
   const supabase = await createClient();
@@ -321,10 +381,28 @@ export async function submitProjectForReview(
     return { error: "Agrega al menos un rol antes de enviarlo a revisión." };
   }
 
+  // Si el proyecto viene de un rechazo (M36/S-07), responder es obligatorio:
+  // es lo único que le queda al moderador para saber qué cambió sin tener que
+  // adivinar a partir del diff del proyecto. Un envío nuevo (sin comentario
+  // previo) no tiene nada que responder, así que no aplica.
+  const { data: actual } = await supabase
+    .from("projects")
+    .select("comentario_moderacion")
+    .eq("id", projectId)
+    .maybeSingle();
+
+  if (actual?.comentario_moderacion && !respuesta) {
+    return { error: "Responde al moderador antes de reenviar." };
+  }
+
+  // El comentario del moderador y las observaciones (M36) NO se limpian acá:
+  // quedan visibles mientras el proyecto está de nuevo en revisión, para que
+  // el moderador tenga el contexto de qué se le pidió y qué respondió el
+  // gestor. Recién se limpian cuando el moderador toma la próxima decisión
+  // (`approveProject`/`rejectProject`).
   const { error } = await supabase
     .from("projects")
-    // Limpia un motivo de rechazo anterior: esta es una revisión nueva.
-    .update({ status: "en_revision", comentario_moderacion: null })
+    .update({ status: "en_revision", respuesta_patrocinador: respuesta || null })
     .eq("id", projectId);
 
   if (error) {
@@ -333,6 +411,7 @@ export async function submitProjectForReview(
   }
 
   revalidatePath(`/mis-proyectos/${projectId}`);
+  revalidatePath(`/mis-proyectos/${projectId}/observaciones`);
   revalidatePath("/moderacion");
   return {};
 }
@@ -396,9 +475,10 @@ export async function approveProject(
     .update({
       status: "publicado",
       revisado_at: new Date().toISOString(),
-      // Limpia un motivo de rechazo previo: ya se resolvió, no debe seguir
-      // apareciendo en la página del proyecto.
+      // Limpia un motivo de rechazo previo y la respuesta del gestor: ya se
+      // resolvió, no debe seguir apareciendo en la página del proyecto.
       comentario_moderacion: null,
+      respuesta_patrocinador: null,
     })
     .eq("id", projectId)
     .eq("status", "en_revision")
@@ -412,8 +492,19 @@ export async function approveProject(
     return { error: "No se pudo aprobar (¿ya no está en revisión?)." };
   }
 
+  // Las observaciones (M36) ya cumplieron su ciclo. Falla silenciosa: el
+  // proyecto ya quedó aprobado, no vale la pena revertir por esto.
+  const { error: obsError } = await supabase
+    .from("project_observations")
+    .delete()
+    .eq("project_id", projectId);
+  if (obsError) {
+    console.error("[approveProject] observaciones", obsError.message);
+  }
+
   revalidatePath("/moderacion");
   revalidatePath("/proyectos");
+  revalidatePath(`/mis-proyectos/${projectId}/observaciones`);
   return {};
 }
 
@@ -423,12 +514,42 @@ export async function approveProject(
  * el gestor va a ver en su proyecto para saber qué corregir (M21). Mismas
  * garantías de rol que aprobar.
  */
+// Observación puntual (M36): categoría corta + qué corregir. El moderador las
+// arma en el cliente y las manda como un JSON en un campo oculto — más simple
+// que inputs indexados para una lista de largo variable.
+type ObservacionInput = { categoria: string; texto: string };
+
+function parseObservaciones(raw: string): ObservacionInput[] | null {
+  if (!raw) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(parsed)) return null;
+
+  const limpias: ObservacionInput[] = [];
+  for (const item of parsed) {
+    if (typeof item !== "object" || item === null) return null;
+    const categoria = String((item as Record<string, unknown>).categoria ?? "").trim();
+    const texto = String((item as Record<string, unknown>).texto ?? "").trim();
+    if (!categoria || !texto) continue; // fila vacía, se ignora
+    if (categoria.length > 40 || texto.length > 300) return null;
+    limpias.push({ categoria, texto });
+  }
+  return limpias;
+}
+
 export async function rejectProject(
   _prevState: ModerationState,
   formData: FormData,
 ): Promise<ModerationState> {
   const projectId = String(formData.get("projectId") ?? "");
   const comentario = String(formData.get("comentario") ?? "").trim();
+  const observaciones = parseObservaciones(
+    String(formData.get("observaciones") ?? ""),
+  );
   if (!projectId) return { error: "Falta el proyecto." };
   if (!comentario) {
     return { error: "Deja un motivo: es lo que verá la organización." };
@@ -436,11 +557,19 @@ export async function rejectProject(
   if (comentario.length > 1000) {
     return { error: "El motivo es demasiado largo (máximo 1000 caracteres)." };
   }
+  if (observaciones === null) {
+    return { error: "Revisa las observaciones: algo no quedó bien formado." };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("projects")
-    .update({ status: "borrador", comentario_moderacion: comentario })
+    .update({
+      status: "borrador",
+      comentario_moderacion: comentario,
+      // Nueva ronda de revisión: la respuesta anterior del gestor ya no aplica.
+      respuesta_patrocinador: null,
+    })
     .eq("id", projectId)
     .eq("status", "en_revision")
     .select("id");
@@ -453,9 +582,57 @@ export async function rejectProject(
     return { error: "No se pudo rechazar (¿ya no está en revisión?)." };
   }
 
+  // Reemplaza las observaciones de la ronda anterior por las nuevas. Falla
+  // silenciosa (igual que en `approveProject`): el motivo general ya quedó
+  // guardado, que es lo mínimo que necesita el gestor para saber qué pasó.
+  const { error: deleteError } = await supabase
+    .from("project_observations")
+    .delete()
+    .eq("project_id", projectId);
+  if (deleteError) {
+    console.error("[rejectProject] borrar observaciones", deleteError.message);
+  } else if (observaciones.length > 0) {
+    const { error: insertError } = await supabase.from("project_observations").insert(
+      observaciones.map((o) => ({
+        project_id: projectId,
+        categoria: o.categoria,
+        texto: o.texto,
+      })),
+    );
+    if (insertError) {
+      console.error("[rejectProject] crear observaciones", insertError.message);
+    }
+  }
+
   revalidatePath("/moderacion");
   revalidatePath(`/mis-proyectos/${projectId}`);
+  revalidatePath(`/mis-proyectos/${projectId}/observaciones`);
   return {};
+}
+
+/**
+ * Marca/desmarca una observación como resuelta (S-07). Es la propia
+ * declaración del gestor de que ya la atendió — no la verifica el moderador
+ * hasta la próxima revisión — así que no hace falta un estado de error visible;
+ * si falla, el checkbox vuelve a su valor real al revalidar.
+ */
+export async function toggleObservationResuelta(formData: FormData): Promise<void> {
+  const observationId = String(formData.get("observationId") ?? "");
+  const projectId = String(formData.get("projectId") ?? "");
+  const resuelta = formData.get("resuelta") === "on";
+  if (!observationId || !projectId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("project_observations")
+    .update({ resuelta })
+    .eq("id", observationId);
+
+  if (error) {
+    console.error("[toggleObservationResuelta]", error.message);
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}/observaciones`);
 }
 
 export type CloseProjectState = { error?: string };

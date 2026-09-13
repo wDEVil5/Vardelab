@@ -36,16 +36,12 @@ export function PublishControls({
         : status === "activo"
           ? "El proyecto ya no se publica ni se retira: está activo, con el equipo trabajando."
           : "El proyecto ya no se publica ni se retira: quedó completado.";
-    return (
-      <div className="rounded-lg border border-border bg-surface/50 p-5">
-        <p className="text-sm text-ink">{texto}</p>
-      </div>
-    );
+    return <p className="text-sm text-muted">{texto}</p>;
   }
 
   if (status === "publicado") {
     return (
-      <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface/50 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3">
         <p className="text-sm text-ink">
           Este proyecto está <span className="font-medium">publicado</span> y
           visible en el catálogo.
@@ -65,7 +61,7 @@ export function PublishControls({
 
   if (status === "en_revision") {
     return (
-      <div className="flex flex-col gap-2 rounded-lg border border-electric/20 bg-electric/5 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3">
         <p className="text-sm text-ink">
           En <span className="font-medium">revisión</span>. Un moderador la
           revisará antes de publicarla en el catálogo.
@@ -84,25 +80,20 @@ export function PublishControls({
   }
 
   return (
-    <form
-      action={formAction}
-      className="flex flex-col gap-2 rounded-lg border border-border bg-white p-5"
-    >
-      <input type="hidden" name="projectId" value={projectId} />
+    <form action={formAction} className="flex flex-col gap-3">
       <p className="text-sm text-ink">
         Cuando el proyecto esté listo, envíalo a revisión. Un moderador lo
         aprobará para que aparezca en el catálogo y reciba postulaciones.
       </p>
+      <input type="hidden" name="projectId" value={projectId} />
       {state.error && (
         <p role="alert" className="text-sm text-coral">
           {state.error}
         </p>
       )}
-      <div>
-        <Button type="submit" size="sm">
-          Enviar a revisión
-        </Button>
-      </div>
+      <Button type="submit" className="w-full">
+        Enviar a revisión
+      </Button>
     </form>
   );
 }

@@ -528,6 +528,41 @@ export type Database = {
           },
         ]
       }
+      project_observations: {
+        Row: {
+          categoria: string
+          created_at: string
+          id: string
+          project_id: string
+          resuelta: boolean
+          texto: string
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          id?: string
+          project_id: string
+          resuelta?: boolean
+          texto: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          resuelta?: boolean
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_observations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_role_skills: {
         Row: {
           created_at: string
@@ -625,6 +660,7 @@ export type Database = {
           modalidad: Database["public"]["Enums"]["project_modality"] | null
           org_id: string
           problema: string | null
+          respuesta_patrocinador: string | null
           resumen: string | null
           revisado_at: string | null
           status: Database["public"]["Enums"]["project_status"]
@@ -647,6 +683,7 @@ export type Database = {
           modalidad?: Database["public"]["Enums"]["project_modality"] | null
           org_id: string
           problema?: string | null
+          respuesta_patrocinador?: string | null
           resumen?: string | null
           revisado_at?: string | null
           status?: Database["public"]["Enums"]["project_status"]
@@ -669,6 +706,7 @@ export type Database = {
           modalidad?: Database["public"]["Enums"]["project_modality"] | null
           org_id?: string
           problema?: string | null
+          respuesta_patrocinador?: string | null
           resumen?: string | null
           revisado_at?: string | null
           status?: Database["public"]["Enums"]["project_status"]
