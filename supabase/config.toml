@@ -255,6 +255,10 @@ otp_expiry = 3600
 subject = "Confirma tu cuenta en CampusLab"
 content_path = "./supabase/templates/confirmation.html"
 
+[auth.email.template.recovery]
+subject = "Restablece tu contraseña en CampusLab"
+content_path = "./supabase/templates/recovery.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"
