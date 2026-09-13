@@ -96,3 +96,46 @@ export async function getPublicOrganization(id: string) {
 export type PublicOrganization = NonNullable<
   Awaited<ReturnType<typeof getPublicOrganization>>
 >;
+
+/**
+ * Miembros e invitaciones pendientes de una organización propia (M37). Sin
+ * pantalla propia todavía — es la pieza de datos para cuando exista la UI de
+ * gestión de miembros. `perfil` va `null` mientras la invitación está
+ * pendiente (nadie con ese `user_id` todavía).
+ */
+export async function getOrganizationMembers(orgId: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("organization_members")
+    .select("id, invited_email, status, user_id, created_at")
+    .eq("org_id", orgId)
+    .order("created_at");
+
+  if (error) {
+    console.error("[getOrganizationMembers]", error.message);
+    throw error;
+  }
+
+  const userIds = (data ?? [])
+    .map((m) => m.user_id)
+    .filter((id): id is string => Boolean(id));
+
+  const perfiles = new Map<string, string | null>();
+  if (userIds.length > 0) {
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, nombre")
+      .in("id", userIds);
+    for (const p of profs ?? []) perfiles.set(p.id, p.nombre);
+  }
+
+  return (data ?? []).map((m) => ({
+    ...m,
+    nombre: m.user_id ? (perfiles.get(m.user_id) ?? null) : null,
+  }));
+}
+
+export type OrganizationMember = Awaited<
+  ReturnType<typeof getOrganizationMembers>
+>[number];
