@@ -22,6 +22,7 @@ import { getMyPortfolioItems } from "@/features/portfolio/queries";
 import { getMyTeams } from "@/features/teams/queries";
 import { EditProfileDialog } from "@/features/profile/components/edit-profile-dialog";
 import { EditPatrocinadorProfileDialog } from "@/features/profile/components/edit-patrocinador-profile-dialog";
+import { ChangePasswordDialog } from "@/features/auth/components/change-password-dialog";
 import { ProfileSkillsEditor } from "@/features/profile/components/profile-skills-editor";
 import { PortfolioEditor } from "@/features/portfolio/components/portfolio-editor";
 
@@ -96,8 +97,11 @@ function SectionTitle({
   );
 }
 
+type PageProps = { searchParams: Promise<{ guardado?: string }> };
+
 /** Edición del perfil propio, distribuida en tarjetas. Requiere sesión. */
-export default async function PerfilPage() {
+export default async function PerfilPage({ searchParams }: PageProps) {
+  const { guardado } = await searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/ingresar?next=/perfil");
 
@@ -113,6 +117,7 @@ export default async function PerfilPage() {
         email={user.email}
         avatarUrl={user.avatarUrl}
         avatarPresets={avatarPresets}
+        contrasenaActualizada={guardado === "contrasena"}
       />
     );
   }
@@ -336,11 +341,13 @@ function PerfilPatrocinador({
   email,
   avatarUrl,
   avatarPresets,
+  contrasenaActualizada,
 }: {
   nombre: string;
   email: string;
   avatarUrl: string | null;
   avatarPresets: AvatarPreset[];
+  contrasenaActualizada: boolean;
 }) {
   return (
     <div className="mx-auto w-full max-w-2xl px-6 py-8 lg:py-10">
@@ -351,7 +358,13 @@ function PerfilPatrocinador({
         <p className="text-sm text-muted">Tu información de cuenta en CampusLab.</p>
       </header>
 
-      <section className="mt-6 rounded-2xl border border-border bg-white p-6">
+      {contrasenaActualizada && (
+        <div className="mt-6 rounded-lg border border-sprout/30 bg-sprout/10 px-4 py-3 text-sm text-ink">
+          Contraseña actualizada.
+        </div>
+      )}
+
+      <section className="mt-6 rounded-2xl border border-border bg-white p-7">
         <div className="flex flex-wrap items-center gap-4">
           <AvatarPicker
             avatarUrl={avatarUrl}
@@ -368,20 +381,63 @@ function PerfilPatrocinador({
         </div>
       </section>
 
-      <section className="mt-4 rounded-2xl border border-border bg-white p-6">
-        <h2 className="text-lg font-semibold text-ink">Tu organización</h2>
-        <p className="mt-1 text-sm text-muted">
-          El nombre, la descripción y los datos de contacto que ven los
-          estudiantes al revisar tus proyectos se administran desde tu
-          organización, no desde acá.
-        </p>
-        <Link
-          href="/mis-organizaciones"
-          className={cn(buttonClasses({ variant: "outline", size: "sm" }), "mt-4")}
-        >
-          Ir a mis organizaciones
-        </Link>
-      </section>
+      <div className="mt-5 flex flex-col gap-4">
+        <section className="rounded-2xl border border-border bg-white p-7 transition-all hover:border-electric/30 hover:shadow-sm">
+          <div className="flex items-start gap-4">
+            <span className="mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-electric/10 text-electric">
+              <IconBuilding className="size-5" />
+            </span>
+            <div>
+              <h2 className="text-lg font-semibold text-ink">Tu organización</h2>
+              <p className="mt-1 text-sm text-muted">
+                El nombre, la descripción y los datos de contacto que ven los
+                estudiantes al revisar tus proyectos se administran desde tu
+                organización, no desde acá.
+              </p>
+              <Link
+                href="/mis-organizaciones"
+                className={cn(buttonClasses({ variant: "outline", size: "sm" }), "mt-4")}
+              >
+                Ir a mis organizaciones
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-white p-7 transition-all hover:border-electric/30 hover:shadow-sm">
+          <div className="flex items-start gap-4">
+            <span className="mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-electric/10 text-electric">
+              <IconCandado className="size-5" />
+            </span>
+            <div>
+              <h2 className="text-lg font-semibold text-ink">Seguridad</h2>
+              <p className="mt-1 text-sm text-muted">
+                Cambia la contraseña con la que ingresas a tu cuenta.
+              </p>
+              <ChangePasswordDialog />
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
+  );
+}
+
+function IconBuilding({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M5 21V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v16" />
+      <path d="M13 21V9a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v12" />
+      <path d="M9 8h.01M9 12h.01M9 16h.01" />
+    </svg>
+  );
+}
+
+function IconCandado({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
   );
 }
