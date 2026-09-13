@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getMyOrgIds } from "@/features/organizations/queries";
 
 /**
  * Hitos de un proyecto, ordenados por `orden` y luego por fecha de creación. La
@@ -45,13 +46,10 @@ export type UpcomingMilestone = {
 export async function getUpcomingMilestonesForSponsor(
   limit: number,
 ): Promise<UpcomingMilestone[]> {
+  const orgIds = await getMyOrgIds();
+  if (orgIds.length === 0) return [];
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
   const { data, error } = await supabase
     .from("milestones")
     .select(
@@ -60,10 +58,10 @@ export async function getUpcomingMilestonesForSponsor(
       titulo,
       fecha_limite,
       estado,
-      project:projects!inner ( id, titulo, created_by )
+      project:projects!inner ( id, titulo, org_id )
     `,
     )
-    .eq("project.created_by", user.id)
+    .in("project.org_id", orgIds)
     .not("fecha_limite", "is", null)
     .in("estado", ["pendiente", "en_progreso"])
     .order("fecha_limite", { ascending: true })

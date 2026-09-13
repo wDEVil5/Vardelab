@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getMyOrgIds } from "@/features/organizations/queries";
 
 /**
  * Capa de datos de postulaciones (lado del estudiante).
@@ -119,23 +120,21 @@ export type SponsorPendingApplication = {
 };
 
 /**
- * Postulaciones `enviada` (pendientes de revisar) en cualquier proyecto propio
- * del patrocinador, de la más reciente a la más antigua. Es la bandeja de
- * entrada agregada que faltaba en el sidebar (S-04): antes solo se veían
- * postulaciones entrando a cada proyecto por separado. El filtro por
- * `role.project.created_by` hace de barrera de alcance (solo lo propio); la RLS
- * `applications_select_own_or_manager` es la que realmente lo garantiza.
+ * Postulaciones `enviada` (pendientes de revisar) en cualquier proyecto de las
+ * organizaciones que el usuario gestiona (dueño o miembro, M38), de la más
+ * reciente a la más antigua. Es la bandeja de entrada agregada que faltaba en
+ * el sidebar (S-04): antes solo se veían postulaciones entrando a cada
+ * proyecto por separado. El filtro por `role.project.org_id` hace de barrera
+ * de alcance; la RLS `applications_select_own_or_manager` es la que realmente
+ * lo garantiza.
  */
 export async function getPendingApplicationsForSponsor(): Promise<
   SponsorPendingApplication[]
 > {
+  const orgIds = await getMyOrgIds();
+  if (orgIds.length === 0) return [];
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
   const { data, error } = await supabase
     .from("applications")
     .select(
@@ -147,12 +146,12 @@ export async function getPendingApplicationsForSponsor(): Promise<
       role:project_roles!inner (
         id,
         nombre,
-        project:projects!inner ( id, titulo, created_by )
+        project:projects!inner ( id, titulo, org_id )
       )
     `,
     )
     .eq("status", "enviada")
-    .eq("role.project.created_by", user.id)
+    .in("role.project.org_id", orgIds)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -184,21 +183,19 @@ export async function getPendingApplicationsForSponsor(): Promise<
 }
 
 /**
- * Las postulaciones más recientes (cualquier estado) en cualquier proyecto
- * propio del patrocinador — a diferencia de `getPendingApplicationsForSponsor`
- * (solo `enviada`), esta es para un vistazo de actividad reciente en el
- * inicio, no una bandeja de pendientes.
+ * Las postulaciones más recientes (cualquier estado) en cualquier proyecto de
+ * las organizaciones que el usuario gestiona (dueño o miembro, M38) — a
+ * diferencia de `getPendingApplicationsForSponsor` (solo `enviada`), esta es
+ * para un vistazo de actividad reciente en el inicio, no una bandeja de
+ * pendientes.
  */
 export async function getRecentApplicationsForSponsor(
   limit: number,
 ): Promise<SponsorPendingApplication[]> {
+  const orgIds = await getMyOrgIds();
+  if (orgIds.length === 0) return [];
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
   const { data, error } = await supabase
     .from("applications")
     .select(
@@ -210,11 +207,11 @@ export async function getRecentApplicationsForSponsor(
       role:project_roles!inner (
         id,
         nombre,
-        project:projects!inner ( id, titulo, created_by )
+        project:projects!inner ( id, titulo, org_id )
       )
     `,
     )
-    .eq("role.project.created_by", user.id)
+    .in("role.project.org_id", orgIds)
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -273,12 +270,10 @@ export type TeamMember = {
 };
 
 export async function getProjectApplications(projectId: string) {
-  const supabase = await createClient();
+  const orgIds = await getMyOrgIds();
+  if (orgIds.length === 0) return null;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+  const supabase = await createClient();
 
   // 1) Proyecto + roles + postulaciones + habilidades exigidas por rol. No se
   // embebe el perfil del postulante aquí porque applications.applicant_id
@@ -311,7 +306,7 @@ export async function getProjectApplications(projectId: string) {
     `,
     )
     .eq("id", projectId)
-    .eq("created_by", user.id)
+    .in("org_id", orgIds)
     .maybeSingle();
 
   if (error) {
