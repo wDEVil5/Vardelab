@@ -1,7 +1,15 @@
 // Íconos mínimos en línea (trazo), mismo criterio que
 // `features/profile/components/profile-icons.tsx`: un ícono por campo para
 // identificarlo de un vistazo, sin depender solo del placeholder.
-export type PortafolioIcon = "titulo" | "descripcion" | "enlace" | "proyecto" | "ojo" | "ojo_tachado" | "papelera";
+export type PortafolioIcon =
+  | "titulo"
+  | "descripcion"
+  | "enlace"
+  | "proyecto"
+  | "ojo"
+  | "ojo_tachado"
+  | "papelera"
+  | "agregar";
 
 const PATHS: Record<PortafolioIcon, string> = {
   titulo: "M4 6h16M4 12h10M4 18h7",
@@ -13,6 +21,7 @@ const PATHS: Record<PortafolioIcon, string> = {
   ojo_tachado:
     "M3 3l18 18M10.6 10.6a3 3 0 004 4M9.4 5.5A9.6 9.6 0 0112 5c6.5 0 10 7 10 7a15.6 15.6 0 01-3.2 4.1M6.6 6.6C4 8.3 2 12 2 12s3.5 7 10 7c1.4 0 2.6-.3 3.7-.8",
   papelera: "M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0v12a1 1 0 001 1h6a1 1 0 001-1V7",
+  agregar: "M12 5v14M5 12h14",
 };
 
 export function PortafolioIconSvg({
