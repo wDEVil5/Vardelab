@@ -95,7 +95,7 @@ export async function evaluateMember(
     const titulo = proyecto?.titulo ?? "un proyecto";
     await sendEmailToUser(
       evaluateeId,
-      "Recibiste una evaluación",
+      "evaluacion_nueva",
       `Recibiste una evaluación en "${titulo}".`,
       `/proyecto/${projectId}`,
     );

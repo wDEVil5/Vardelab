@@ -106,7 +106,7 @@ export async function applyToRole(
     const link = `/mis-proyectos/${roleInfo.project.id}/postulaciones`;
     await Promise.all(
       (destinatarios ?? []).map((id) =>
-        sendEmailToUser(id, "Nueva postulación recibida", texto, link),
+        sendEmailToUser(id, "postulacion_recibida", texto, link),
       ),
     );
   }
@@ -188,7 +188,7 @@ async function resolveApplication(
     const titulo = solicitud.role?.project?.titulo ?? "un proyecto";
     await sendEmailToUser(
       solicitud.applicant_id,
-      "Actualización sobre tu postulación",
+      "postulacion_rechazada",
       `Tu postulación a "${titulo}" fue rechazada.`,
       "/mis-postulaciones",
     );
@@ -310,7 +310,7 @@ export async function acceptApplication(formData: FormData): Promise<void> {
           .maybeSingle();
         await sendEmailToUser(
           app.applicant_id,
-          "Tu postulación fue aceptada",
+          "postulacion_aceptada",
           `Tu postulación a "${proyecto?.titulo ?? "un proyecto"}" fue aceptada.`,
           "/mis-postulaciones",
         );
