@@ -23,6 +23,7 @@ import { getMyTeams } from "@/features/teams/queries";
 import { EditProfileDialog } from "@/features/profile/components/edit-profile-dialog";
 import { EditPatrocinadorProfileDialog } from "@/features/profile/components/edit-patrocinador-profile-dialog";
 import { ChangePasswordDialog } from "@/features/auth/components/change-password-dialog";
+import { ChangeEmailDialog } from "@/features/auth/components/change-email-dialog";
 import { ProfileSkillsEditor } from "@/features/profile/components/profile-skills-editor";
 import { PortfolioEditor } from "@/features/portfolio/components/portfolio-editor";
 
@@ -323,6 +324,18 @@ export default async function PerfilPage({ searchParams }: PageProps) {
               <PortfolioEditor items={portfolio} projects={projectOptions} />
             </div>
           </section>
+
+          <section className="rounded-2xl border border-border bg-white p-6">
+            <SectionTitle
+              icon="seguridad"
+              titulo="Seguridad"
+              descripcion="Cambia la contraseña o el correo con el que ingresas a tu cuenta."
+            />
+            <div className="mt-4 flex flex-wrap gap-2">
+              <ChangePasswordDialog />
+              <ChangeEmailDialog currentEmail={user.email} />
+            </div>
+          </section>
         </div>
       </div>
     </div>
@@ -412,9 +425,12 @@ function PerfilPatrocinador({
             <div>
               <h2 className="text-lg font-semibold text-ink">Seguridad</h2>
               <p className="mt-1 text-sm text-muted">
-                Cambia la contraseña con la que ingresas a tu cuenta.
+                Cambia la contraseña o el correo con el que ingresas a tu cuenta.
               </p>
-              <ChangePasswordDialog />
+              <div className="flex flex-wrap gap-2">
+                <ChangePasswordDialog />
+                <ChangeEmailDialog currentEmail={email} />
+              </div>
             </div>
           </div>
         </section>
