@@ -129,51 +129,66 @@ async function proyectosAbiertos(
   });
   if (abiertas.length === 0) return [];
 
-  const conDatos = await Promise.all(
-    abiertas.map(async (m) => {
-      const teamId = m.team!.id;
-      const proj = m.team!.project!;
+  // Antes se pedían los hitos y el tamaño del equipo proyecto por proyecto
+  // (2N queries para N proyectos abiertos, aunque en paralelo). Con un
+  // estudiante en varios equipos a la vez, dos consultas con `.in()` y
+  // agrupar en memoria hacen el mismo trabajo con una sola ida y vuelta cada
+  // una, sin importar cuántos proyectos tenga abiertos.
+  const projectIds = abiertas.map((m) => m.team!.project!.id);
+  const teamIds = abiertas.map((m) => m.team!.id);
 
-      const [{ data: hitosRaw }, { count: equipo }] = await Promise.all([
-        supabase
-          .from("milestones")
-          .select("id, titulo, estado, fecha_limite, orden")
-          .eq("project_id", proj.id)
-          .order("orden", { ascending: true }),
-        supabase
-          .from("team_members")
-          .select("user_id", { count: "exact", head: true })
-          .eq("team_id", teamId),
-      ]);
+  const [{ data: hitosRaw }, { data: teamMembersRaw }] = await Promise.all([
+    supabase
+      .from("milestones")
+      .select("id, titulo, estado, fecha_limite, orden, project_id")
+      .in("project_id", projectIds)
+      .order("orden", { ascending: true }),
+    supabase.from("team_members").select("team_id").in("team_id", teamIds),
+  ]);
 
-      const hitos: HitoResumen[] = (hitosRaw ?? []).map((h) => ({
-        id: h.id,
-        titulo: h.titulo,
-        estado: h.estado,
-        fechaLimite: h.fecha_limite,
-      }));
-      const total = hitos.length;
-      const aprobados = hitos.filter((h) => h.estado === "aprobado").length;
-      const conAvance = hitos.filter((h) => h.estado !== "pendiente").length;
-      const siguiente = hitos.find((h) => h.estado !== "aprobado") ?? null;
+  const hitosPorProyecto = new Map<string, HitoResumen[]>();
+  for (const h of hitosRaw ?? []) {
+    const lista = hitosPorProyecto.get(h.project_id) ?? [];
+    lista.push({
+      id: h.id,
+      titulo: h.titulo,
+      estado: h.estado,
+      fechaLimite: h.fecha_limite,
+    });
+    hitosPorProyecto.set(h.project_id, lista);
+  }
 
-      const proyecto: ProyectoAbierto = {
-        id: proj.id,
-        titulo: proj.titulo,
-        equipoTamano: equipo ?? 0,
-        progreso: total > 0 ? Math.round((aprobados / total) * 100) : 0,
-        hitosAprobados: aprobados,
-        hitosTotal: total,
-        proximoHito: siguiente?.titulo ?? null,
-        proximaFecha: siguiente?.fechaLimite ?? null,
-        hitos,
-        accionesPendientes: hitos.filter(
-          (h) => h.estado === "pendiente" || h.estado === "en_progreso",
-        ).length,
-      };
-      return { proyecto, avance: conAvance };
-    }),
-  );
+  const equipoPorTeam = new Map<string, number>();
+  for (const tm of teamMembersRaw ?? []) {
+    equipoPorTeam.set(tm.team_id, (equipoPorTeam.get(tm.team_id) ?? 0) + 1);
+  }
+
+  const conDatos = abiertas.map((m) => {
+    const teamId = m.team!.id;
+    const proj = m.team!.project!;
+    const hitos = hitosPorProyecto.get(proj.id) ?? [];
+
+    const total = hitos.length;
+    const aprobados = hitos.filter((h) => h.estado === "aprobado").length;
+    const conAvance = hitos.filter((h) => h.estado !== "pendiente").length;
+    const siguiente = hitos.find((h) => h.estado !== "aprobado") ?? null;
+
+    const proyecto: ProyectoAbierto = {
+      id: proj.id,
+      titulo: proj.titulo,
+      equipoTamano: equipoPorTeam.get(teamId) ?? 0,
+      progreso: total > 0 ? Math.round((aprobados / total) * 100) : 0,
+      hitosAprobados: aprobados,
+      hitosTotal: total,
+      proximoHito: siguiente?.titulo ?? null,
+      proximaFecha: siguiente?.fechaLimite ?? null,
+      hitos,
+      accionesPendientes: hitos.filter(
+        (h) => h.estado === "pendiente" || h.estado === "en_progreso",
+      ).length,
+    };
+    return { proyecto, avance: conAvance };
+  });
 
   // Sort estable: entre empates conserva el orden por fecha de ingreso
   // (la consulta ya vino ordenada por `created_at` descendente).
