@@ -7,6 +7,8 @@ import {
   getMyNotifications,
   getUnreadNotificationCount,
 } from "@/features/notifications/queries";
+import { NotificationsProvider } from "@/features/notifications/notifications-context";
+import { NotificationToasts } from "@/features/notifications/components/notification-toasts";
 
 /**
  * Layout del área autenticada (dashboard por rol). Route group `(app)`: shell con
@@ -70,24 +72,28 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   ];
 
   return (
-    <div className="min-h-screen bg-surface lg:flex">
-      <SkipLink />
-      <AppSidebar
-        user={{
-          nombre: user.nombre,
-          initials: iniciales(user.nombre),
-          avatarUrl: user.avatarUrl,
-          roleLabel,
-        }}
-        items={items}
-        exploreItem={{ href: "/proyectos", label: "Explorar catálogo", icon: "explorar" }}
-        notifications={notifications}
-        unreadCount={unreadCount}
-      />
-      <main id="contenido-principal" tabIndex={-1} className="min-w-0 flex-1">
-        {children}
-      </main>
-    </div>
+    <NotificationsProvider
+      initialNotifications={notifications}
+      initialUnreadCount={unreadCount}
+    >
+      <div className="min-h-screen bg-surface lg:flex">
+        <SkipLink />
+        <AppSidebar
+          user={{
+            nombre: user.nombre,
+            initials: iniciales(user.nombre),
+            avatarUrl: user.avatarUrl,
+            roleLabel,
+          }}
+          items={items}
+          exploreItem={{ href: "/proyectos", label: "Explorar catálogo", icon: "explorar" }}
+        />
+        <main id="contenido-principal" tabIndex={-1} className="min-w-0 flex-1">
+          {children}
+        </main>
+      </div>
+      <NotificationToasts />
+    </NotificationsProvider>
   );
 }
 

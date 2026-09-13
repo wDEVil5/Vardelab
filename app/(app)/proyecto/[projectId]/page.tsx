@@ -8,6 +8,8 @@ import { getMyTeams } from "@/features/teams/queries";
 import { getProjectMilestones } from "@/features/milestones/queries";
 import { getProjectMessages } from "@/features/messages/queries";
 import { MessageThread } from "@/features/messages/components/message-thread";
+import { getMyEvaluationsByProject } from "@/features/evaluations/queries";
+import { EvaluationSummary } from "@/features/evaluations/components/evaluation-summary";
 
 export const metadata: Metadata = {
   title: "Mi proyecto · CampusLab",
@@ -65,10 +67,12 @@ export default async function ProyectoWorkspacePage({ params }: PageProps) {
   const equipo = misProyectos.find((t) => t.projectId === projectId);
   if (!equipo) notFound();
 
-  const [hitos, mensajes] = await Promise.all([
+  const [hitos, mensajes, evaluaciones] = await Promise.all([
     getProjectMilestones(projectId),
     getProjectMessages(projectId),
+    getMyEvaluationsByProject(),
   ]);
+  const miEvaluacion = evaluaciones.get(projectId) ?? null;
   const total = hitos.length;
   const aprobados = hitos.filter((h) => h.estado === "aprobado").length;
   const progreso = total > 0 ? Math.round((aprobados / total) * 100) : 0;
@@ -193,6 +197,14 @@ export default async function ProyectoWorkspacePage({ params }: PageProps) {
             Registrar avance
           </Link>
         </div>
+      )}
+
+      {/* Evaluación del gestor (S-06/M39): solo aparece si ya te evaluaron. */}
+      {miEvaluacion && (
+        <section className="mt-4 rounded-2xl border border-border bg-white p-6">
+          <h2 className="mb-3 text-lg font-semibold text-ink">Tu evaluación</h2>
+          <EvaluationSummary evaluation={miEvaluacion} />
+        </section>
       )}
 
       {/* Mensajes con la organización (M30). */}

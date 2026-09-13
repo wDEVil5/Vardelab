@@ -121,7 +121,11 @@ export async function getTeamForEvaluation(
  * Un proyecto tiene a lo sumo una (un gestor por proyecto), así que se devuelve
  * un Map project_id → { puntaje, comentario } para cruzar con los equipos.
  */
-export type MyEvaluation = { puntaje: number | null; comentario: string | null };
+export type MyEvaluation = {
+  puntaje: number | null;
+  criterios: EvaluationCriteria | null;
+  comentario: string | null;
+};
 
 export async function getMyEvaluationsByProject(): Promise<Map<string, MyEvaluation>> {
   const supabase = await createClient();
@@ -133,7 +137,7 @@ export async function getMyEvaluationsByProject(): Promise<Map<string, MyEvaluat
 
   const { data, error } = await supabase
     .from("evaluations")
-    .select("project_id, puntaje, comentario")
+    .select("project_id, puntaje, criterios, comentario")
     .eq("evaluatee_id", user.id);
 
   if (error) {
@@ -143,7 +147,11 @@ export async function getMyEvaluationsByProject(): Promise<Map<string, MyEvaluat
 
   const map = new Map<string, MyEvaluation>();
   for (const e of data ?? []) {
-    map.set(e.project_id, { puntaje: e.puntaje, comentario: e.comentario });
+    map.set(e.project_id, {
+      puntaje: e.puntaje,
+      criterios: parseCriterios(e.criterios),
+      comentario: e.comentario,
+    });
   }
   return map;
 }
