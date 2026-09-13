@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
+import { getMyOrgIds } from "@/features/organizations/queries";
 
 /**
  * Capa de datos del catálogo público de proyectos.
@@ -310,20 +311,16 @@ export type RoleForApplication = NonNullable<
 >;
 
 /**
- * Proyectos creados por el usuario actual (lado del patrocinador), de más
- * reciente a más antiguo, con su organización y el conteo de roles. Incluye
- * borradores. La RLS (`projects_select_published_or_manager`) ya deja al gestor
- * ver los propios aunque no estén publicados.
+ * Proyectos de las organizaciones que el usuario actual gestiona (dueño o
+ * miembro, M38), de más reciente a más antiguo, con su organización y el
+ * conteo de roles. Incluye borradores. La RLS (`projects_select_published_or_manager`)
+ * ya deja al gestor ver los propios aunque no estén publicados.
  */
 export async function getMyProjects() {
+  const orgIds = await getMyOrgIds();
+  if (orgIds.length === 0) return [];
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return [];
-
   const { data, error } = await supabase
     .from("projects")
     .select(
@@ -340,7 +337,7 @@ export async function getMyProjects() {
       team:teams ( team_members ( id ) )
     `,
     )
-    .eq("created_by", user.id)
+    .in("org_id", orgIds)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -367,17 +364,15 @@ export type MyProject = Awaited<ReturnType<typeof getMyProjects>>[number];
  * Proyecto para su gestión por el patrocinador (borrador incluido), con sus
  * roles y las habilidades de cada rol. Devuelve `null` si no existe o el usuario
  * no puede gestionarlo — la RLS `projects_select_published_or_manager` deja al
- * gestor ver los propios; además se filtra por `created_by` para acotar a los
- * suyos y no exponer proyectos publicados de terceros por esta vía.
+ * gestor ver los propios; además se filtra por organización (dueño o miembro,
+ * M38) para acotar a las suyas y no exponer proyectos publicados de terceros
+ * por esta vía.
  */
 export async function getManagedProject(id: string) {
+  const orgIds = await getMyOrgIds();
+  if (orgIds.length === 0) return null;
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
   const { data, error } = await supabase
     .from("projects")
     .select(
@@ -403,7 +398,7 @@ export async function getManagedProject(id: string) {
     `,
     )
     .eq("id", id)
-    .eq("created_by", user.id)
+    .in("org_id", orgIds)
     .maybeSingle();
 
   if (error) {
@@ -417,17 +412,14 @@ export async function getManagedProject(id: string) {
 /**
  * Proyecto para la pantalla de observaciones del moderador (S-07): estado,
  * comentario general, respuesta ya escrita (si la había) y el detalle de cada
- * observación. `null` si no existe o no es del usuario (se filtra por
- * `created_by`, igual que `getManagedProject`) → la página muestra 404.
+ * observación. `null` si no existe o el usuario no gestiona su organización
+ * (dueño o miembro, igual que `getManagedProject`) → la página muestra 404.
  */
 export async function getProjectObservations(id: string) {
+  const orgIds = await getMyOrgIds();
+  if (orgIds.length === 0) return null;
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
   const { data, error } = await supabase
     .from("projects")
     .select(
@@ -441,7 +433,7 @@ export async function getProjectObservations(id: string) {
     `,
     )
     .eq("id", id)
-    .eq("created_by", user.id)
+    .in("org_id", orgIds)
     .maybeSingle();
 
   if (error) {
@@ -462,25 +454,22 @@ export type ManagedProject = NonNullable<
 
 /**
  * Campos editables de la plantilla de un proyecto propio, para el formulario de
- * edición. `null` si no existe o no es del usuario (filtro por `created_by`) →
- * 404. No incluye `org_id` (la organización no se cambia tras crear) ni
- * `status` (se gestiona con los controles de publicación).
+ * edición. `null` si no existe o el usuario no gestiona su organización (dueño
+ * o miembro, M38) → 404. No incluye `org_id` (la organización no se cambia
+ * tras crear) ni `status` (se gestiona con los controles de publicación).
  */
 export async function getEditableProject(id: string) {
+  const orgIds = await getMyOrgIds();
+  if (orgIds.length === 0) return null;
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
   const { data, error } = await supabase
     .from("projects")
     .select(
       "id, titulo, resumen, problema, alcance, entregable, expectativas, modalidad, duracion_semanas, dedicacion_semanal",
     )
     .eq("id", id)
-    .eq("created_by", user.id)
+    .in("org_id", orgIds)
     .maybeSingle();
 
   if (error) {
