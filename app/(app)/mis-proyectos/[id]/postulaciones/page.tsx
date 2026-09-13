@@ -162,9 +162,18 @@ export default async function PostulacionesProyectoPage({ params }: PageProps) {
                     {iniciales(m.nombre)}
                   </span>
                   <div className="flex min-w-0 flex-col leading-tight">
-                    <span className="truncate text-sm font-medium text-ink">
-                      {m.nombre ?? "Estudiante"}
-                    </span>
+                    {m.perfilPublico ? (
+                      <Link
+                        href={`/u/${m.userId}`}
+                        className="truncate text-sm font-medium text-ink hover:text-electric hover:underline"
+                      >
+                        {m.nombre ?? "Estudiante"}
+                      </Link>
+                    ) : (
+                      <span className="truncate text-sm font-medium text-ink">
+                        {m.nombre ?? "Estudiante"}
+                      </span>
+                    )}
                     {m.roleNombre && (
                       <span className="truncate text-xs text-muted">
                         {m.roleNombre}
@@ -256,9 +265,18 @@ function RoleApplications({
                   </span>
                   <div className="flex flex-col gap-0.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-ink">
-                        {app.applicant?.nombre ?? "Postulante"}
-                      </span>
+                      {app.applicant?.visibility === "publico" ? (
+                        <Link
+                          href={`/u/${app.applicant.id}`}
+                          className="font-medium text-ink hover:text-electric hover:underline"
+                        >
+                          {app.applicant.nombre ?? "Postulante"}
+                        </Link>
+                      ) : (
+                        <span className="font-medium text-ink">
+                          {app.applicant?.nombre ?? "Postulante"}
+                        </span>
+                      )}
                       <Badge tone={badge.tone}>{badge.label}</Badge>
                     </div>
                     {subtitulo && (

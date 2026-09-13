@@ -28,6 +28,7 @@ export type MemberEvaluation = {
   userId: string;
   nombre: string;
   carrera: string | null;
+  perfilPublico: boolean;
   rol: string | null;
   // Evaluación de este integrante por el gestor actual, si ya existe.
   puntaje: number | null;
@@ -82,7 +83,7 @@ export async function getTeamForEvaluation(
 
   // Perfiles (nombre + carrera) y evaluaciones del gestor actual, en paralelo.
   const [{ data: profs }, { data: evals }] = await Promise.all([
-    supabase.from("profiles").select("id, nombre, carrera").in("id", userIds),
+    supabase.from("profiles").select("id, nombre, carrera, visibility").in("id", userIds),
     supabase
       .from("evaluations")
       .select("evaluatee_id, puntaje, criterios, comentario")
@@ -90,7 +91,10 @@ export async function getTeamForEvaluation(
       .eq("evaluator_id", user.id),
   ]);
 
-  const perfiles = new Map<string, { nombre: string | null; carrera: string | null }>();
+  const perfiles = new Map<
+    string,
+    { nombre: string | null; carrera: string | null; visibility: string | null }
+  >();
   for (const p of profs ?? []) perfiles.set(p.id, p);
 
   const evaluaciones = new Map<
@@ -103,6 +107,7 @@ export async function getTeamForEvaluation(
     userId: m.user_id,
     nombre: perfiles.get(m.user_id)?.nombre ?? "Integrante",
     carrera: perfiles.get(m.user_id)?.carrera ?? null,
+    perfilPublico: perfiles.get(m.user_id)?.visibility === "publico",
     rol: m.role?.nombre ?? null,
     puntaje: evaluaciones.get(m.user_id)?.puntaje ?? null,
     criterios: parseCriterios(evaluaciones.get(m.user_id)?.criterios),

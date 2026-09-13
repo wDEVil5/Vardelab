@@ -24,13 +24,8 @@ export function AddMilestoneForm({ projectId }: { projectId: string }) {
   }, [state]);
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      className="flex flex-col gap-3 rounded-lg border border-border bg-white p-5"
-    >
+    <form ref={formRef} action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="projectId" value={projectId} />
-      <p className="text-sm font-medium text-ink">Agregar un hito</p>
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <label className="flex flex-1 flex-col gap-1.5">
