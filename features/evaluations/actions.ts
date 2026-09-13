@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmailToUser } from "@/features/notifications/email";
 
@@ -93,11 +94,13 @@ export async function evaluateMember(
       .eq("id", projectId)
       .maybeSingle();
     const titulo = proyecto?.titulo ?? "un proyecto";
-    await sendEmailToUser(
-      evaluateeId,
-      "evaluacion_nueva",
-      `Recibiste una evaluación en "${titulo}".`,
-      `/proyecto/${projectId}`,
+    after(() =>
+      sendEmailToUser(
+        evaluateeId,
+        "evaluacion_nueva",
+        `Recibiste una evaluación en "${titulo}".`,
+        `/proyecto/${projectId}`,
+      ),
     );
   }
 
