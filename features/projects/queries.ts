@@ -137,8 +137,11 @@ const PROJECT_REVIEW_DETAIL_SELECT = `
   modalidad,
   duracion_semanas,
   created_at,
+  comentario_moderacion,
+  respuesta_patrocinador,
   organization:organizations ( id, nombre, tipo, verificacion ),
-  roles:project_roles ( id, nombre, descripcion, cupos, horas_semanales )
+  roles:project_roles ( id, nombre, descripcion, cupos, horas_semanales ),
+  observaciones:project_observations ( id, categoria, texto, resuelta )
 ` as const;
 
 /**
@@ -386,6 +389,48 @@ export async function getManagedProject(id: string) {
 
   return data;
 }
+
+/**
+ * Proyecto para la pantalla de observaciones del moderador (S-07): estado,
+ * comentario general, respuesta ya escrita (si la había) y el detalle de cada
+ * observación. `null` si no existe o no es del usuario (se filtra por
+ * `created_by`, igual que `getManagedProject`) → la página muestra 404.
+ */
+export async function getProjectObservations(id: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("projects")
+    .select(
+      `
+      id,
+      titulo,
+      status,
+      comentario_moderacion,
+      respuesta_patrocinador,
+      observaciones:project_observations ( id, categoria, texto, resuelta )
+    `,
+    )
+    .eq("id", id)
+    .eq("created_by", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getProjectObservations]", error.message);
+    throw error;
+  }
+
+  return data;
+}
+
+export type ProjectObservations = NonNullable<
+  Awaited<ReturnType<typeof getProjectObservations>>
+>;
 
 export type ManagedProject = NonNullable<
   Awaited<ReturnType<typeof getManagedProject>>
