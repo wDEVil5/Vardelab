@@ -182,6 +182,63 @@ export async function updatePassword(
   redirect(POST_AUTH_REDIRECT);
 }
 
+/**
+ * Cambia la contraseña desde `/perfil`, con sesión ya activa (a diferencia de
+ * `updatePassword`, pensada para el enlace de recuperación) — se queda en la
+ * misma página en vez de saltar a la pantalla de auth de pantalla completa.
+ */
+export async function changePassword(
+  _prevState: UpdatePasswordState,
+  formData: FormData,
+): Promise<UpdatePasswordState> {
+  const currentPassword = String(formData.get("currentPassword") ?? "");
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  if (!currentPassword) {
+    return { error: "Ingresa tu contraseña actual." };
+  }
+  if (!isPasswordValid(password)) {
+    return {
+      error:
+        "La contraseña no cumple los requisitos: 8+ caracteres, mayúscula, minúscula y número.",
+    };
+  }
+  if (password !== confirmPassword) {
+    return { error: "Las contraseñas no coinciden." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/ingresar?next=/perfil");
+  if (!user.email) {
+    return { error: "No se pudo verificar tu cuenta. Inténtalo de nuevo." };
+  }
+
+  // Re-autentica con la contraseña actual antes de cambiarla: la sesión ya
+  // está activa, pero eso no basta para una acción sensible como esta (ej.
+  // alguien que use el equipo desatendido no debería poder cambiarla sin
+  // saber la actual).
+  const { error: authError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (authError) {
+    return { error: "La contraseña actual no es correcta." };
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({ password });
+  if (updateError) {
+    console.error("[changePassword]", updateError.message);
+    return { error: "No se pudo actualizar la contraseña. Inténtalo de nuevo." };
+  }
+
+  revalidatePath("/perfil");
+  redirect("/perfil?guardado=contrasena");
+}
+
 // Traduce los mensajes de Supabase (en inglés) a un texto claro en español.
 // Se mantiene acotado: cualquier otro caso muestra un mensaje genérico para no
 // filtrar detalles internos.

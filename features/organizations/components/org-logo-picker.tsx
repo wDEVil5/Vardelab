@@ -27,7 +27,7 @@ export function OrgLogoPicker({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <form ref={formRef} action={formAction}>
+      <form ref={formRef} action={formAction} className="relative inline-flex w-fit">
         <input type="hidden" name="orgId" value={orgId} />
         <input
           ref={inputRef}
@@ -37,21 +37,18 @@ export function OrgLogoPicker({
           className="hidden"
           onChange={() => formRef.current?.requestSubmit()}
         />
+        <OrgLogo logoUrl={logoUrl} nombre={nombre} size="lg" />
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={pending}
-          aria-label="Cambiar logo"
-          className="group relative disabled:opacity-60"
+          className="absolute inset-x-0 bottom-0 rounded-b-lg bg-ink/60 py-1 text-[10px] font-medium text-white transition-colors hover:bg-ink/70 disabled:opacity-60"
         >
-          <OrgLogo logoUrl={logoUrl} nombre={nombre} size="lg" />
-          <span className="absolute inset-0 hidden items-center justify-center rounded-lg bg-ink/50 text-[10px] font-medium text-white group-hover:flex">
-            {pending ? "Subiendo…" : "Cambiar"}
-          </span>
+          {pending ? "…" : "Cambiar"}
         </button>
       </form>
       {state.error && (
-        <p role="alert" className="max-w-16 text-center text-[10px] text-coral">
+        <p role="alert" className="text-xs text-coral">
           {state.error}
         </p>
       )}
