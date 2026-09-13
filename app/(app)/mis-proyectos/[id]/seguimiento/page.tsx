@@ -219,7 +219,7 @@ function MilestoneCard({
       {entregas.length > 0 && (
         <ul className="flex flex-col gap-2 border-t border-border pt-3">
           {entregas.map((s) => (
-            <li key={s.id} className="rounded-md bg-surface/60 p-3">
+            <li key={s.id} className="flex flex-col gap-1 rounded-md bg-surface/60 p-3">
               {s.url && (
                 <a
                   href={s.url}
@@ -228,6 +228,20 @@ function MilestoneCard({
                   className="text-sm text-electric hover:underline"
                 >
                   {s.url}
+                </a>
+              )}
+              {s.archivo_url && (
+                <a
+                  href={s.archivo_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-sm font-medium text-electric hover:underline"
+                >
+                  <svg viewBox="0 0 24 24" className="size-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                    <path d="M14 2v6h6" />
+                  </svg>
+                  Descargar archivo adjunto
                 </a>
               )}
               {s.nota && <p className="text-xs text-muted">{s.nota}</p>}
