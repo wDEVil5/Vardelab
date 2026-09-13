@@ -239,6 +239,63 @@ export async function changePassword(
   redirect("/perfil?guardado=contrasena");
 }
 
+export type ChangeEmailState = { error?: string; ok?: boolean };
+
+/**
+ * Pide cambiar el correo de la cuenta desde `/perfil`, con sesión ya activa.
+ * `auth.updateUser({ email })` es lo mismo que dispara la plantilla
+ * `email_change.html` (M46): con `double_confirm_changes = true`, Supabase
+ * manda un correo de confirmación tanto al correo actual como al nuevo, y el
+ * cambio recién se aplica cuando los dos se confirman — así una sesión
+ * robada no alcanza para tomar la cuenta por completo. Mismo resguardo que
+ * `changePassword`: re-autentica con la contraseña actual antes de disparar
+ * el cambio.
+ */
+export async function requestEmailChange(
+  _prevState: ChangeEmailState,
+  formData: FormData,
+): Promise<ChangeEmailState> {
+  const currentPassword = String(formData.get("currentPassword") ?? "");
+  const newEmail = String(formData.get("newEmail") ?? "").trim();
+
+  if (!currentPassword) return { error: "Ingresa tu contraseña actual." };
+  if (!newEmail) return { error: "Ingresa el nuevo correo." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/ingresar?next=/perfil");
+  if (!user.email) {
+    return { error: "No se pudo verificar tu cuenta. Inténtalo de nuevo." };
+  }
+  if (newEmail.toLowerCase() === user.email.toLowerCase()) {
+    return { error: "Ese ya es tu correo actual." };
+  }
+
+  const { error: authError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (authError) {
+    return { error: "La contraseña actual no es correcta." };
+  }
+
+  const { error } = await supabase.auth.updateUser(
+    { email: newEmail },
+    { emailRedirectTo: `${SITE_URL}/auth/confirm?next=/perfil` },
+  );
+  if (error) {
+    if (error.message.includes("already registered") || error.message.includes("already exists")) {
+      return { error: "Ya existe una cuenta con ese correo." };
+    }
+    console.error("[requestEmailChange]", error.message);
+    return { error: "No se pudo procesar el cambio. Inténtalo de nuevo." };
+  }
+
+  return { ok: true };
+}
+
 // Traduce los mensajes de Supabase (en inglés) a un texto claro en español.
 // Se mantiene acotado: cualquier otro caso muestra un mensaje genérico para no
 // filtrar detalles internos.

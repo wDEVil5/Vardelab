@@ -9,6 +9,7 @@ export type PerfilIcon =
   | "enlaces"
   | "habilidades"
   | "portafolio"
+  | "seguridad"
   | "github"
   | "linkedin"
   | "sitio";
@@ -20,6 +21,7 @@ const PATHS: Partial<Record<PerfilIcon, string>> = {
   enlaces: "M9 17H7A5 5 0 017 7h2m6 10h2a5 5 0 000-10h-2M8 12h8",
   habilidades: "M4 20V10m8 10V4m8 16v-7",
   portafolio: "M4 7h6l2 2h8v9a2 2 0 01-2 2H4z",
+  seguridad: "M5 11h14v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8zM8 11V7a4 4 0 018 0v4",
   // Mismo trazo circle+meridianos que ya usa la franja de visibilidad, para un
   // enlace "genérico" (sitio web) — no es un logo de marca, como sí lo son
   // github/linkedin.
