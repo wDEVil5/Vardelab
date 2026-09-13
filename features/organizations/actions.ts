@@ -293,7 +293,7 @@ export async function inviteOrganizationMember(
     .maybeSingle();
   await sendEmail(
     email,
-    "Te invitaron a una organización",
+    "invitacion_organizacion",
     `Te invitaron a co-gestionar "${org?.nombre ?? "una organización"}" en CampusLab.`,
     userId ? `/mis-organizaciones/${orgId}/miembros` : "/registro",
   );
