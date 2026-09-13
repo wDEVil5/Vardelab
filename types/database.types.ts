@@ -262,6 +262,7 @@ export type Database = {
       organizations: {
         Row: {
           contacto: string | null
+          contacto_email: string | null
           created_at: string
           descripcion: string | null
           id: string
@@ -275,6 +276,7 @@ export type Database = {
         }
         Insert: {
           contacto?: string | null
+          contacto_email?: string | null
           created_at?: string
           descripcion?: string | null
           id?: string
@@ -288,6 +290,7 @@ export type Database = {
         }
         Update: {
           contacto?: string | null
+          contacto_email?: string | null
           created_at?: string
           descripcion?: string | null
           id?: string
