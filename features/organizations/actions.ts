@@ -221,3 +221,63 @@ export async function uploadOrgLogo(
   revalidatePath("/organizaciones");
   return {};
 }
+
+export type InviteMemberState = { error?: string; ok?: boolean };
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Invita a alguien a una organización por correo (M37): backend únicamente,
+ * sin pantalla propia todavía — se llama desde donde haga falta hasta que
+ * exista la UI de gestión de miembros. Si el correo ya es de un usuario
+ * registrado, la membresía queda 'activa' de una; si no, 'pendiente' hasta
+ * que se registre con ese correo (`handle_new_user` la activa en ese momento).
+ *
+ * Ojo: esto solo deja invitar y guardar la membresía — todavía NO le da al
+ * miembro acceso a los proyectos de la organización (eso sigue filtrado por
+ * `created_by`, no por `org_id`); es un paso aparte, pendiente.
+ */
+export async function inviteOrganizationMember(
+  _prevState: InviteMemberState,
+  formData: FormData,
+): Promise<InviteMemberState> {
+  const orgId = String(formData.get("orgId") ?? "");
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+
+  if (!orgId) return { error: "Falta la organización." };
+  if (!EMAIL_RE.test(email)) return { error: "Ingresa un correo válido." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/ingresar");
+
+  const { data: userId, error: lookupError } = await supabase.rpc(
+    "find_user_id_by_email",
+    { _email: email },
+  );
+  if (lookupError) {
+    console.error("[inviteOrganizationMember]", lookupError.message);
+    return { error: "No se pudo procesar la invitación. Inténtalo de nuevo." };
+  }
+
+  const { error } = await supabase.from("organization_members").insert({
+    org_id: orgId,
+    invited_email: email,
+    user_id: userId ?? null,
+    status: userId ? "activo" : "pendiente",
+    invited_by: user.id,
+  });
+
+  if (error) {
+    if (error.code === "23505") {
+      return { error: "Ese correo ya está invitado a esta organización." };
+    }
+    console.error("[inviteOrganizationMember]", error.message);
+    return { error: "No se pudo enviar la invitación. Inténtalo de nuevo." };
+  }
+
+  revalidatePath("/mis-organizaciones");
+  return { ok: true };
+}

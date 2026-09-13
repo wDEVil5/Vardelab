@@ -259,6 +259,44 @@ export type Database = {
           },
         ]
       }
+      organization_members: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string
+          invited_email: string
+          org_id: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by: string
+          invited_email: string
+          org_id: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string
+          invited_email?: string
+          org_id?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           contacto: string | null
@@ -936,6 +974,7 @@ export type Database = {
       can_manage_project: { Args: { _project_id: string }; Returns: boolean }
       can_manage_role: { Args: { _role_id: string }; Returns: boolean }
       can_manage_team: { Args: { _team_id: string }; Returns: boolean }
+      find_user_id_by_email: { Args: { _email: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -943,6 +982,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_project_member: { Args: { _project_id: string }; Returns: boolean }
       is_team_member: { Args: { _team_id: string }; Returns: boolean }
       manages_applicant: { Args: { _applicant_id: string }; Returns: boolean }
