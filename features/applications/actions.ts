@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { sendEmailToUser } from "@/features/notifications/email";
 
 /**
  * Acciones de postulación (Server Actions).
@@ -82,6 +83,34 @@ export async function applyToRole(
     return { error: "No se pudo enviar la postulación. Inténtalo de nuevo." };
   }
 
+  // Correo a quien gestiona la organización (M43). El mismo evento ya generó
+  // una notificación in-app vía el trigger `notify_postulacion_recibida`
+  // (M39) — acá se rearma el mismo texto a mano porque no hay `pg_net` para
+  // disparar el correo desde el propio trigger.
+  const { data: roleInfo } = await supabase
+    .from("project_roles")
+    .select("project:projects ( id, titulo, org_id )")
+    .eq("id", roleId)
+    .maybeSingle();
+
+  if (roleInfo?.project) {
+    const { data: perfil } = await supabase
+      .from("profiles")
+      .select("nombre")
+      .eq("id", user.id)
+      .maybeSingle();
+    const { data: destinatarios } = await supabase.rpc("org_recipient_ids", {
+      _org_id: roleInfo.project.org_id,
+    });
+    const texto = `${perfil?.nombre ?? "Un estudiante"} postuló a "${roleInfo.project.titulo}".`;
+    const link = `/mis-proyectos/${roleInfo.project.id}/postulaciones`;
+    await Promise.all(
+      (destinatarios ?? []).map((id) =>
+        sendEmailToUser(id, "Nueva postulación recibida", texto, link),
+      ),
+    );
+  }
+
   revalidatePath(`/proyectos/${projectId}`);
   redirect(`/proyectos/${projectId}?postulado=1`);
 }
@@ -120,8 +149,10 @@ export async function withdrawApplication(formData: FormData): Promise<void> {
 }
 
 /**
- * Resuelve una postulación (aceptar/rechazar) desde el lado del gestor. Solo
- * actúa sobre postulaciones `enviada` (no revierte una retirada). La RLS
+ * Resuelve una postulación (hoy, solo el camino de rechazo — ver
+ * `rejectApplication` más abajo; aceptar tiene su propia lógica en
+ * `acceptApplication`, con el chequeo de cupos). Solo actúa sobre
+ * postulaciones `enviada` (no revierte una retirada). La RLS
  * `applications_update_manager` (M12) exige gestionar el rol; el filtro por
  * `status` acota la transición.
  */
@@ -134,6 +165,17 @@ async function resolveApplication(
   if (!applicationId) return;
 
   const supabase = await createClient();
+
+  // Se lee antes del update (no con `.update().select()`, mismo cuidado que
+  // en `addToProjectTeam`): hace falta el nombre del proyecto y a quién
+  // avisar por correo (M43), y solo si la transición realmente ocurre.
+  const { data: solicitud } = await supabase
+    .from("applications")
+    .select("applicant_id, role:project_roles ( project:projects ( titulo ) )")
+    .eq("id", applicationId)
+    .eq("status", "enviada")
+    .maybeSingle();
+
   const { error } = await supabase
     .from("applications")
     .update({ status: nuevoEstado })
@@ -142,6 +184,14 @@ async function resolveApplication(
 
   if (error) {
     console.error("[resolveApplication]", error.message);
+  } else if (solicitud && nuevoEstado === "rechazada") {
+    const titulo = solicitud.role?.project?.titulo ?? "un proyecto";
+    await sendEmailToUser(
+      solicitud.applicant_id,
+      "Actualización sobre tu postulación",
+      `Tu postulación a "${titulo}" fue rechazada.`,
+      "/mis-postulaciones",
+    );
   }
 
   revalidatePath(`/mis-proyectos/${projectId}/postulaciones`);
@@ -250,6 +300,19 @@ export async function acceptApplication(formData: FormData): Promise<void> {
           role.project_id,
           app.applicant_id,
           app.project_role_id,
+        );
+
+        // Correo al estudiante (M43).
+        const { data: proyecto } = await supabase
+          .from("projects")
+          .select("titulo")
+          .eq("id", role.project_id)
+          .maybeSingle();
+        await sendEmailToUser(
+          app.applicant_id,
+          "Tu postulación fue aceptada",
+          `Tu postulación a "${proyecto?.titulo ?? "un proyecto"}" fue aceptada.`,
+          "/mis-postulaciones",
         );
       }
     }

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { sendEmailToUser } from "@/features/notifications/email";
 
 /**
  * Acción de evaluación (lado del gestor). El gestor puntúa a un integrante de su
@@ -53,6 +54,17 @@ export async function evaluateMember(
   } = await supabase.auth.getUser();
   if (!user) redirect("/ingresar");
 
+  // Si ya existía una evaluación para este (proyecto, evaluado, evaluador),
+  // esto es una edición, no un evento nuevo — el trigger de M39 solo notifica
+  // en el insert, así que el correo (M43) sigue el mismo criterio.
+  const { data: yaExistia } = await supabase
+    .from("evaluations")
+    .select("id")
+    .eq("project_id", projectId)
+    .eq("evaluatee_id", evaluateeId)
+    .eq("evaluator_id", user.id)
+    .maybeSingle();
+
   const { error } = await supabase.from("evaluations").upsert(
     {
       project_id: projectId,
@@ -72,6 +84,21 @@ export async function evaluateMember(
   if (error) {
     console.error("[evaluateMember]", error.message);
     return { error: "No se pudo guardar la evaluación. Inténtalo de nuevo." };
+  }
+
+  if (!yaExistia) {
+    const { data: proyecto } = await supabase
+      .from("projects")
+      .select("titulo")
+      .eq("id", projectId)
+      .maybeSingle();
+    const titulo = proyecto?.titulo ?? "un proyecto";
+    await sendEmailToUser(
+      evaluateeId,
+      "Recibiste una evaluación",
+      `Recibiste una evaluación en "${titulo}".`,
+      `/proyecto/${projectId}`,
+    );
   }
 
   // La evaluación se ve en la gestión del proyecto y en el panel del estudiante.
