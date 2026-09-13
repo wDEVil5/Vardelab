@@ -3,6 +3,10 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/queries";
 import { AppSidebar, type AppNavItem } from "@/components/app-sidebar";
 import { SkipLink } from "@/components/skip-link";
+import {
+  getMyNotifications,
+  getUnreadNotificationCount,
+} from "@/features/notifications/queries";
 
 /**
  * Layout del área autenticada (dashboard por rol). Route group `(app)`: shell con
@@ -12,6 +16,11 @@ import { SkipLink } from "@/components/skip-link";
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
   if (!user) redirect("/ingresar");
+
+  const [notifications, unreadCount] = await Promise.all([
+    getMyNotifications(),
+    getUnreadNotificationCount(),
+  ]);
 
   const roleLabel = user.esAdmin
     ? "Administrador"
@@ -72,6 +81,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         }}
         items={items}
         exploreItem={{ href: "/proyectos", label: "Explorar catálogo", icon: "explorar" }}
+        notifications={notifications}
+        unreadCount={unreadCount}
       />
       <main id="contenido-principal" tabIndex={-1} className="min-w-0 flex-1">
         {children}

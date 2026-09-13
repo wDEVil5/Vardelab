@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/features/auth/actions";
+import { NotificationBell } from "@/features/notifications/components/notification-bell";
+import type { Notification } from "@/features/notifications/queries";
 
 export type AppNavItem = { href: string; label: string; icon: IconName };
 
@@ -134,6 +136,8 @@ export function AppSidebar({
   user,
   items,
   exploreItem,
+  notifications,
+  unreadCount,
 }: {
   user: {
     nombre: string;
@@ -149,6 +153,8 @@ export function AppSidebar({
    * "mundo" queda explícito en vez de sentirse como perder el panel.
    */
   exploreItem?: AppNavItem;
+  notifications: Notification[];
+  unreadCount: number;
 }) {
   const [open, setOpen] = useState(false); // drawer móvil
   const [colapsado, setColapsado] = useState(false); // riel desktop
@@ -204,14 +210,17 @@ export function AppSidebar({
   )[0]?.href;
 
   // Contenido del sidebar. `compact` = riel plegado (solo íconos); el drawer
-  // móvil siempre va desplegado.
-  const contenido = (compact: boolean) => (
+  // móvil siempre va desplegado. `conCampana` evita duplicar la campanita: el
+  // drawer móvil comparte este mismo contenido, pero la campanita ya está en
+  // la barra superior sticky (fuera del drawer) — mostrarla dos veces
+  // arrastraría dos estados locales que se podrían desincronizar entre sí.
+  const contenido = (compact: boolean, conCampana = true) => (
     <div className="flex h-full flex-col gap-4 p-3">
       {/* Cabecera: marca + botón de plegado (solo desktop). */}
       <div
         className={cn(
           "flex items-center gap-2 px-1 pt-1",
-          compact ? "justify-center" : "justify-between",
+          compact ? "flex-col" : "justify-between",
         )}
       >
         {!compact && (
@@ -219,17 +228,22 @@ export function AppSidebar({
             CampusLab
           </Link>
         )}
-        <button
-          type="button"
-          onClick={alternarColapso}
-          aria-label={compact ? "Desplegar menú" : "Plegar menú"}
-          aria-expanded={!compact}
-          className="hidden size-9 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface hover:text-ink lg:flex"
-        >
-          <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+        <div className={cn("flex items-center gap-1", compact && "flex-col")}>
+          {conCampana && (
+            <NotificationBell notifications={notifications} unreadCount={unreadCount} />
+          )}
+          <button
+            type="button"
+            onClick={alternarColapso}
+            aria-label={compact ? "Desplegar menú" : "Plegar menú"}
+            aria-expanded={!compact}
+            className="hidden size-9 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface hover:text-ink lg:flex"
+          >
+            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {!compact && (
@@ -404,16 +418,19 @@ export function AppSidebar({
         <Link href="/" className="font-bold text-ink">
           CampusLab
         </Link>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Abrir menú"
-          className="flex size-9 items-center justify-center rounded-md text-ink hover:bg-surface"
-        >
-          <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
-            <path d="M4 7h16M4 12h16M4 17h16" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-1">
+          <NotificationBell notifications={notifications} unreadCount={unreadCount} />
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Abrir menú"
+            className="flex size-9 items-center justify-center rounded-md text-ink hover:bg-surface"
+          >
+            <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
+        </div>
       </header>
 
       {/* Drawer (móvil). */}
@@ -426,7 +443,7 @@ export function AppSidebar({
             className="fixed inset-0 z-40 cursor-default bg-ink/40 lg:hidden"
           />
           <div className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85%] overflow-y-auto bg-white shadow-xl lg:hidden">
-            {contenido(false)}
+            {contenido(false, false)}
           </div>
         </>
       )}
