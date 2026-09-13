@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { SubmitButton } from "@/features/auth/components/submit-button";
 import type { EditableOrganization } from "@/features/organizations/queries";
@@ -41,27 +42,36 @@ export function OrgForm({
   const [state, formAction] = useActionState(action, INITIAL);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-5">
       {org && <input type="hidden" name="orgId" value={org.id} />}
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink">Nombre</span>
-        <Input
-          name="nombre"
-          required
-          defaultValue={org?.nombre ?? ""}
-          placeholder="Nombre de la organización"
-        />
-      </label>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-ink">Nombre público</span>
+          <Input
+            name="nombre"
+            required
+            defaultValue={org?.nombre ?? ""}
+            placeholder="Nombre de la organización"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-ink">
+            Sitio web <span className="text-muted">(opcional)</span>
+          </span>
+          <Input
+            type="url"
+            name="sitio_web"
+            defaultValue={org?.sitio_web ?? ""}
+            placeholder="https://tuorganizacion.cl"
+          />
+        </label>
+      </div>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink">Tipo</span>
-        <select
-          name="tipo"
-          required
-          defaultValue={org?.tipo ?? ""}
-          className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm text-ink focus-visible:border-electric focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-electric/30"
-        >
+        <span className="text-sm font-medium text-ink">Tipo de organización</span>
+        <Select name="tipo" required defaultValue={org?.tipo ?? ""}>
           <option value="" disabled>
             Selecciona un tipo
           </option>
@@ -70,12 +80,12 @@ export function OrgForm({
               {t.label}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
 
       <label className="flex flex-col gap-1.5">
         <span className="text-sm font-medium text-ink">
-          Descripción <span className="text-muted">(opcional)</span>
+          Descripción breve <span className="text-muted">(opcional)</span>
         </span>
         <Textarea
           name="descripcion"
@@ -85,28 +95,30 @@ export function OrgForm({
         />
       </label>
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink">
-          Sitio web <span className="text-muted">(opcional)</span>
-        </span>
-        <Input
-          type="url"
-          name="sitio_web"
-          defaultValue={org?.sitio_web ?? ""}
-          placeholder="https://tuorganizacion.cl"
-        />
-      </label>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-ink">
+            Persona de contacto <span className="text-muted">(opcional)</span>
+          </span>
+          <Input
+            name="contacto"
+            defaultValue={org?.contacto ?? ""}
+            placeholder="Nombre de referencia"
+          />
+        </label>
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink">
-          Contacto <span className="text-muted">(opcional)</span>
-        </span>
-        <Input
-          name="contacto"
-          defaultValue={org?.contacto ?? ""}
-          placeholder="Persona o correo de referencia"
-        />
-      </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-ink">
+            Correo de contacto <span className="text-muted">(opcional)</span>
+          </span>
+          <Input
+            type="email"
+            name="contacto_email"
+            defaultValue={org?.contacto_email ?? ""}
+            placeholder="contacto@organizacion.cl"
+          />
+        </label>
+      </div>
 
       {state.error && (
         <p role="alert" className="text-sm text-coral">

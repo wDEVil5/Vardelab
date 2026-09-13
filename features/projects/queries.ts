@@ -26,6 +26,7 @@ const PROJECT_CARD_SELECT = `
     id,
     nombre,
     tipo,
+    logo_url,
     verificacion
   ),
   roles:project_roles (
@@ -189,6 +190,7 @@ const PROJECT_DETAIL_SELECT = `
     tipo,
     descripcion,
     sitio_web,
+    logo_url,
     verificacion
   ),
   roles:project_roles (

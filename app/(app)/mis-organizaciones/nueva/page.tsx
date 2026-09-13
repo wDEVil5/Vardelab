@@ -16,7 +16,7 @@ export default async function NuevaOrganizacionPage() {
   if (!user.esPatrocinador) redirect("/proyectos");
 
   return (
-    <div className="mx-auto w-full max-w-xl px-6 py-8 lg:py-10">
+    <div className="mx-auto w-full max-w-2xl px-6 py-8 lg:py-10">
       <Link
         href="/mis-organizaciones"
         className="text-sm text-muted transition-colors hover:text-electric"
