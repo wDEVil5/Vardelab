@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/features/auth/actions";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
-import type { Notification } from "@/features/notifications/queries";
 
 export type AppNavItem = { href: string; label: string; icon: IconName };
 
@@ -136,8 +135,6 @@ export function AppSidebar({
   user,
   items,
   exploreItem,
-  notifications,
-  unreadCount,
 }: {
   user: {
     nombre: string;
@@ -153,8 +150,6 @@ export function AppSidebar({
    * "mundo" queda explícito en vez de sentirse como perder el panel.
    */
   exploreItem?: AppNavItem;
-  notifications: Notification[];
-  unreadCount: number;
 }) {
   const [open, setOpen] = useState(false); // drawer móvil
   const [colapsado, setColapsado] = useState(false); // riel desktop
@@ -230,7 +225,7 @@ export function AppSidebar({
         )}
         <div className={cn("flex items-center gap-1", compact && "flex-col")}>
           {conCampana && (
-            <NotificationBell notifications={notifications} unreadCount={unreadCount} />
+            <NotificationBell />
           )}
           <button
             type="button"
@@ -419,7 +414,7 @@ export function AppSidebar({
           CampusLab
         </Link>
         <div className="flex items-center gap-1">
-          <NotificationBell notifications={notifications} unreadCount={unreadCount} />
+          <NotificationBell />
           <button
             type="button"
             onClick={() => setOpen(true)}

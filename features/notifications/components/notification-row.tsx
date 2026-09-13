@@ -20,9 +20,12 @@ export function haceCuanto(iso: string): string {
 export function NotificationRow({
   notification,
   onRead,
+  onNavigate,
 }: {
   notification: Notification;
   onRead: () => void;
+  /** Además de marcar como leída, cierra el panel que la contiene (solo aplica cuando hay link). */
+  onNavigate?: () => void;
 }) {
   const contenido = (
     <div className="flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-surface">
@@ -51,7 +54,10 @@ export function NotificationRow({
       <Link
         href={notification.link}
         role="menuitem"
-        onClick={onRead}
+        onClick={() => {
+          onRead();
+          onNavigate?.();
+        }}
         className="block"
       >
         {contenido}
