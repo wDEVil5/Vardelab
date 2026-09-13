@@ -72,13 +72,16 @@ export function ProjectCard({ project }: { project: ProjectCardData }) {
 
       {/* Organización + verificación */}
       {org?.nombre && (
-        <div className="-mt-1 flex items-center gap-2">
+        <Link
+          href={`/organizaciones/${org.id}`}
+          className="group -mt-1 flex w-fit items-center gap-2"
+        >
           <OrgLogo logoUrl={org.logo_url} nombre={org.nombre} size="sm" />
-          <span className="flex items-center gap-1.5 text-sm text-muted">
+          <span className="flex items-center gap-1.5 text-sm text-muted group-hover:text-electric">
             {org.nombre}
             {org.verificacion === "verificado" && <VerifiedBadge />}
           </span>
-        </div>
+        </Link>
       )}
 
       {/* Habilidades exigidas (máx. 3) */}

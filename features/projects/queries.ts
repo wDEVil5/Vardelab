@@ -81,6 +81,29 @@ export type ProjectCard = Awaited<
   ReturnType<typeof getPublishedProjects>
 >[number];
 
+/**
+ * Proyectos publicados de una organización puntual, para su perfil público.
+ * Sin cachear (a diferencia de `getPublishedProjects`): es una vista de bajo
+ * tráfico y evita tener que derivar una clave de caché por organización.
+ */
+export async function getPublishedProjectsByOrg(orgId: string) {
+  const supabase = createPublicClient();
+
+  const { data, error } = await supabase
+    .from("projects")
+    .select(PROJECT_CARD_SELECT)
+    .eq("org_id", orgId)
+    .in("status", ["publicado", "seleccion"])
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[getPublishedProjectsByOrg]", error.message);
+    throw error;
+  }
+
+  return data ?? [];
+}
+
 // Cola de moderación (M18): proyectos en `en_revision`, esperando aprobación.
 // Solo un moderador/admin los ve (RLS `projects_select_moderator`). Incluye el
 // alcance (problema/alcance/entregable) para poder revisar antes de aprobar.

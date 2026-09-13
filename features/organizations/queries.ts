@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 /**
  * Organizaciones de las que el usuario actual es dueño. Vacío si no hay sesión.
@@ -64,4 +65,34 @@ export async function getMyOrganization(id: string) {
 
 export type EditableOrganization = NonNullable<
   Awaited<ReturnType<typeof getMyOrganization>>
+>;
+
+/**
+ * Perfil público de una organización (análogo a `getPublicProfile` del
+ * estudiante). A diferencia de `profiles`, `organizations` no tiene una
+ * columna de visibilidad: la RLS `organizations_select_all` ya permite leerla
+ * a cualquier visitante, así que basta con buscarla por id. `null` si no
+ * existe → la página hace 404.
+ */
+export async function getPublicOrganization(id: string) {
+  const supabase = createPublicClient();
+
+  const { data, error } = await supabase
+    .from("organizations")
+    .select(
+      "id, nombre, tipo, descripcion, sitio_web, contacto, contacto_email, logo_url, verificacion",
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getPublicOrganization]", error.message);
+    throw error;
+  }
+
+  return data;
+}
+
+export type PublicOrganization = NonNullable<
+  Awaited<ReturnType<typeof getPublicOrganization>>
 >;

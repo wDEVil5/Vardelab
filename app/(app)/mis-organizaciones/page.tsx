@@ -98,7 +98,7 @@ export default async function MisOrganizacionesPage() {
                     "w-full",
                   )}
                 >
-                  Ver perfil
+                  Editar perfil
                 </Link>
               </li>
             );

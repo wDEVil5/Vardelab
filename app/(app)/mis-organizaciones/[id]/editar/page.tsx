@@ -107,6 +107,13 @@ export default async function EditarOrganizacionPage({
           <Badge tone="success" className="w-fit">
             Perfil público
           </Badge>
+          <Link
+            href={`/organizaciones/${org.id}`}
+            target="_blank"
+            className="text-sm font-medium text-electric hover:underline"
+          >
+            Ver perfil público →
+          </Link>
         </div>
       </div>
 
