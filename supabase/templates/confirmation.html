@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#f3f5f8">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f5f8">
+    <tr>
+      <td align="center" style="padding:56px 24px">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;font-family:-apple-system,BlinkMacSystemFont,'Inter',Helvetica,Arial,sans-serif;text-align:center">
+          <tr>
+            <td style="padding:0 0 40px;font-size:22px;font-weight:800;letter-spacing:-.01em;color:#0d253b">CampusLab</td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 24px;font-size:26px;line-height:1.3;font-weight:800;letter-spacing:-.01em;color:#3867ff">Confirma tu cuenta</td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 40px;font-size:16px;line-height:1.7;color:#0d253b">Gracias por registrarte en CampusLab. Confirma tu correo para empezar a usar tu cuenta.</td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 8px">
+              <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#3867ff;color:#ffffff;font-size:15px;font-weight:700;padding:15px 36px;border-radius:8px;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Inter',Helvetica,Arial,sans-serif">Confirmar cuenta</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-top:56px">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="border-top:1px solid #e3e8ee;font-size:0;line-height:0">&nbsp;</td></tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 0 0;font-size:12px;line-height:1.7;color:#607086">
+              CampusLab · Microproyectos reales entre estudiantes y organizaciones<br>
+              Este correo se envió a {{ .Email }}.<br>
+              Si no creaste esta cuenta, puedes ignorar este correo.
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 0 0;font-size:12px;line-height:1.6;color:#607086">
+              ¿No conoces CampusLab? Más información en
+              <a href="{{ .SiteURL }}" style="color:#607086;text-decoration:underline">nuestro sitio</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 0 0;font-size:12px;font-weight:700;color:#607086">CampusLab</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
