@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { INVITACIONES_HABILITADAS } from "@/features/organizations/config";
 
 /**
  * Acciones de organizaciones (lado del patrocinador).
@@ -237,6 +238,10 @@ export async function inviteOrganizationMember(
   _prevState: InviteMemberState,
   formData: FormData,
 ): Promise<InviteMemberState> {
+  if (!INVITACIONES_HABILITADAS) {
+    return { error: "Esta función todavía no está disponible." };
+  }
+
   const orgId = String(formData.get("orgId") ?? "");
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
 
