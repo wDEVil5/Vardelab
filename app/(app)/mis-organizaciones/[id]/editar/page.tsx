@@ -99,21 +99,35 @@ export default async function EditarOrganizacionPage({
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-white p-6">
-          <span className="font-semibold text-ink">Visibilidad</span>
-          <p className="text-sm text-muted">
-            Los estudiantes verán esta información al revisar tus proyectos.
-          </p>
-          <Badge tone="success" className="w-fit">
-            Perfil público
-          </Badge>
-          <Link
-            href={`/organizaciones/${org.id}`}
-            target="_blank"
-            className="text-sm font-medium text-electric hover:underline"
-          >
-            Ver perfil público →
-          </Link>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 rounded-2xl border border-border bg-white p-6">
+            <span className="font-semibold text-ink">Visibilidad</span>
+            <p className="text-sm text-muted">
+              Los estudiantes verán esta información al revisar tus proyectos.
+            </p>
+            <Badge tone="success" className="w-fit">
+              Perfil público
+            </Badge>
+            <Link
+              href={`/organizaciones/${org.id}`}
+              target="_blank"
+              className="text-sm font-medium text-electric hover:underline"
+            >
+              Ver perfil público →
+            </Link>
+          </div>
+
+          {/* Miembros: la pantalla ya funciona (/miembros), pero todavía no se
+              enlaza — se muestra como "Próximamente" hasta que se anuncie. */}
+          <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-border bg-surface/40 p-6">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-muted">Miembros</span>
+              <Badge tone="neutral">Próximamente</Badge>
+            </div>
+            <p className="text-sm text-muted">
+              Vas a poder invitar a alguien más a co-gestionar esta organización.
+            </p>
+          </div>
         </div>
       </div>
 
