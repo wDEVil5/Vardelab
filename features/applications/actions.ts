@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmailToUser } from "@/features/notifications/email";
 
@@ -104,9 +105,15 @@ export async function applyToRole(
     });
     const texto = `${perfil?.nombre ?? "Un estudiante"} postuló a "${roleInfo.project.titulo}".`;
     const link = `/mis-proyectos/${roleInfo.project.id}/postulaciones`;
-    await Promise.all(
-      (destinatarios ?? []).map((id) =>
-        sendEmailToUser(id, "postulacion_recibida", texto, link),
+    // `after` deja que la respuesta al estudiante salga sin esperar el
+    // roundtrip a Brevo (y a la API de admin de Supabase por cada
+    // destinatario) — el correo ya tolera fallar en silencio, así que no hay
+    // razón para bloquear la redirección por eso.
+    after(() =>
+      Promise.all(
+        (destinatarios ?? []).map((id) =>
+          sendEmailToUser(id, "postulacion_recibida", texto, link),
+        ),
       ),
     );
   }
@@ -186,11 +193,13 @@ async function resolveApplication(
     console.error("[resolveApplication]", error.message);
   } else if (solicitud && nuevoEstado === "rechazada") {
     const titulo = solicitud.role?.project?.titulo ?? "un proyecto";
-    await sendEmailToUser(
-      solicitud.applicant_id,
-      "postulacion_rechazada",
-      `Tu postulación a "${titulo}" fue rechazada.`,
-      "/mis-postulaciones",
+    after(() =>
+      sendEmailToUser(
+        solicitud.applicant_id,
+        "postulacion_rechazada",
+        `Tu postulación a "${titulo}" fue rechazada.`,
+        "/mis-postulaciones",
+      ),
     );
   }
 
@@ -308,11 +317,13 @@ export async function acceptApplication(formData: FormData): Promise<void> {
           .select("titulo")
           .eq("id", role.project_id)
           .maybeSingle();
-        await sendEmailToUser(
-          app.applicant_id,
-          "postulacion_aceptada",
-          `Tu postulación a "${proyecto?.titulo ?? "un proyecto"}" fue aceptada.`,
-          "/mis-postulaciones",
+        after(() =>
+          sendEmailToUser(
+            app.applicant_id,
+            "postulacion_aceptada",
+            `Tu postulación a "${proyecto?.titulo ?? "un proyecto"}" fue aceptada.`,
+            "/mis-postulaciones",
+          ),
         );
       }
     }

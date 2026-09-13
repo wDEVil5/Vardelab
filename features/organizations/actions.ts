@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { INVITACIONES_HABILITADAS } from "@/features/organizations/config";
 import { sendEmail } from "@/features/notifications/email";
@@ -291,11 +292,13 @@ export async function inviteOrganizationMember(
     .select("nombre")
     .eq("id", orgId)
     .maybeSingle();
-  await sendEmail(
-    email,
-    "invitacion_organizacion",
-    `Te invitaron a co-gestionar "${org?.nombre ?? "una organización"}" en CampusLab.`,
-    userId ? `/mis-organizaciones/${orgId}/miembros` : "/registro",
+  after(() =>
+    sendEmail(
+      email,
+      "invitacion_organizacion",
+      `Te invitaron a co-gestionar "${org?.nombre ?? "una organización"}" en CampusLab.`,
+      userId ? `/mis-organizaciones/${orgId}/miembros` : "/registro",
+    ),
   );
 
   revalidatePath(`/mis-organizaciones/${orgId}/miembros`);

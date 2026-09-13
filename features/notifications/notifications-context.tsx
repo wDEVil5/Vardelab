@@ -40,7 +40,10 @@ const NotificationsContext = createContext<NotificationsContextValue | null>(nul
  * proyecto todavía — ver nota de "próximo paso" en BACKEND.md) comparando
  * contra la marca de tiempo de la notificación más nueva vista hasta ahora;
  * arranca en el momento en que se monta el shell, así que no dispara toasts
- * de notificaciones que ya existían al cargar la página.
+ * de notificaciones que ya existían al cargar la página. El sondeo se salta
+ * mientras la pestaña está en segundo plano (evita llamadas inútiles con
+ * varias pestañas abiertas) y se dispara una vez de inmediato al volver a
+ * primer plano, en vez de esperar hasta el próximo tick del intervalo.
  */
 export function NotificationsProvider({
   initialNotifications,
@@ -61,9 +64,12 @@ export function NotificationsProvider({
   );
 
   useEffect(() => {
-    const id = setInterval(async () => {
+    let cancelado = false;
+
+    const sondear = async () => {
+      if (document.visibilityState !== "visible") return;
       const nuevas = await checkForNewNotifications(ultimaVistaRef.current);
-      if (nuevas.length === 0) return;
+      if (cancelado || nuevas.length === 0) return;
 
       ultimaVistaRef.current = nuevas[nuevas.length - 1].created_at;
       setNotifications((prev) => [...nuevas].reverse().concat(prev));
@@ -72,9 +78,20 @@ export function NotificationsProvider({
         ...prev,
         ...nuevas.map((n) => ({ toastId: `${n.id}-${Date.now()}`, notification: n })),
       ]);
-    }, INTERVALO_SONDEO_MS);
+    };
 
-    return () => clearInterval(id);
+    const alVolverVisible = () => {
+      if (document.visibilityState === "visible") sondear();
+    };
+
+    const id = setInterval(sondear, INTERVALO_SONDEO_MS);
+    document.addEventListener("visibilitychange", alVolverVisible);
+
+    return () => {
+      cancelado = true;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", alVolverVisible);
+    };
   }, []);
 
   // El auto-cierre y la animación de salida viven en `ToastCard` (cada toast
