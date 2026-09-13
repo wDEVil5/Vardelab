@@ -102,6 +102,52 @@ export default async function RevisarProyectoPage({ params }: PageProps) {
             )}
           </div>
 
+          {/* Contexto de una ronda anterior (M36): solo aparece si el gestor ya
+              había recibido observaciones y reenvió — ayuda a revisar sin
+              tener que recordar qué se pidió la vez pasada. */}
+          {project.comentario_moderacion && (
+            <div className="mt-6 flex flex-col gap-4 rounded-xl border border-electric/20 bg-electric/5 p-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-electric">
+                  Ronda anterior · lo que se pidió
+                </p>
+                <p className="mt-1.5 text-sm text-ink">
+                  {project.comentario_moderacion}
+                </p>
+              </div>
+
+              {project.observaciones && project.observaciones.length > 0 && (
+                <ul className="flex flex-col gap-2">
+                  {project.observaciones.map((o) => (
+                    <li
+                      key={o.id}
+                      className="flex items-start gap-2.5 rounded-lg bg-white p-3 text-sm"
+                    >
+                      <Badge tone={o.resuelta ? "success" : "neutral"} className="shrink-0">
+                        {o.categoria}
+                      </Badge>
+                      <span className="text-ink">{o.texto}</span>
+                      <span className="ml-auto shrink-0 text-xs text-muted">
+                        {o.resuelta ? "Marcada resuelta" : "Sin marcar"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {project.respuesta_patrocinador && (
+                <div className="border-t border-electric/20 pt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-electric">
+                    Respuesta del gestor
+                  </p>
+                  <p className="mt-1.5 text-sm text-ink">
+                    {project.respuesta_patrocinador}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* El brief, en su propio bloque para separarlo del encabezado. */}
           <dl className="mt-7 flex flex-col gap-6 rounded-xl bg-surface p-5">
             <div>

@@ -1,15 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
-import {
-  addRoleSkill,
-  deleteRoleSkill,
-  type AddRoleSkillState,
-} from "@/features/projects/actions";
+import { deleteRoleSkill } from "@/features/projects/actions";
+import { AddRoleSkillModal } from "@/features/projects/components/add-role-skill-modal";
 import type { Skill } from "@/features/skills/queries";
 import type { ManagedProject } from "@/features/projects/queries";
-
-const INITIAL: AddRoleSkillState = {};
 
 const NIVEL_LABEL: Record<string, string> = {
   basico: "Básico",
@@ -20,9 +14,10 @@ const NIVEL_LABEL: Record<string, string> = {
 type RoleSkill = ManagedProject["roles"][number]["skills"][number];
 
 /**
- * Edita las habilidades exigidas de un rol: muestra las actuales como chips con
- * botón de quitar, y un formulario para agregar (habilidad del catálogo +
- * nivel). Filtra del selector las habilidades ya asignadas.
+ * Habilidades exigidas de un rol ya creado: los chips con botón de quitar, y
+ * un botón "+" chico que abre el alta en un modal — la tarjeta se mantiene
+ * limpia en reposo (elegir las habilidades es lo normal al crear el rol, con
+ * `NewRoleSkillsPicker`); esto es para el caso ocasional de sumar una después.
  */
 export function RoleSkillsEditor({
   projectId,
@@ -35,26 +30,30 @@ export function RoleSkillsEditor({
   skills: RoleSkill[];
   catalog: Skill[];
 }) {
-  const [state, formAction] = useActionState(addRoleSkill, INITIAL);
-
   const usados = new Set(
     skills.map((s) => s.skill?.id).filter((id): id is string => Boolean(id)),
   );
   const disponibles = catalog.filter((s) => !usados.has(s.id));
 
   return (
-    <div className="mt-1 flex flex-col gap-2">
-      {/* Habilidades actuales */}
-      {skills.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+    <div className="mt-6 flex flex-col gap-4 border-t border-border pt-6">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+          Habilidades requeridas
+        </span>
+        <AddRoleSkillModal projectId={projectId} roleId={roleId} disponibles={disponibles} />
+      </div>
+
+      {skills.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
           {skills.map((s) => (
             <span
               key={s.skill?.id ?? s.nivel_minimo}
-              className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs text-muted"
+              className="inline-flex items-center gap-1 rounded-full bg-electric/10 px-2.5 py-1 text-xs font-medium text-electric"
             >
               {s.skill?.nombre}
               {s.nivel_minimo && (
-                <span className="text-muted/70">
+                <span className="font-normal text-electric/70">
                   · {NIVEL_LABEL[s.nivel_minimo] ?? s.nivel_minimo}
                 </span>
               )}
@@ -65,7 +64,7 @@ export function RoleSkillsEditor({
                 <button
                   type="submit"
                   aria-label={`Quitar ${s.skill?.nombre}`}
-                  className="ml-0.5 text-muted/60 hover:text-coral"
+                  className="ml-0.5 text-electric/60 hover:text-coral"
                 >
                   ×
                 </button>
@@ -73,49 +72,8 @@ export function RoleSkillsEditor({
             </span>
           ))}
         </div>
-      )}
-
-      {/* Agregar habilidad */}
-      {disponibles.length > 0 && (
-        <form action={formAction} className="flex flex-wrap items-center gap-2">
-          <input type="hidden" name="projectId" value={projectId} />
-          <input type="hidden" name="roleId" value={roleId} />
-          <select
-            name="skillId"
-            required
-            defaultValue=""
-            className="h-8 rounded-md border border-border bg-white px-2 text-xs text-ink focus-visible:border-electric focus-visible:outline-none"
-          >
-            <option value="" disabled>
-              Habilidad…
-            </option>
-            {disponibles.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nombre}
-              </option>
-            ))}
-          </select>
-          <select
-            name="nivel"
-            defaultValue="basico"
-            className="h-8 rounded-md border border-border bg-white px-2 text-xs text-ink focus-visible:border-electric focus-visible:outline-none"
-          >
-            <option value="basico">Básico</option>
-            <option value="intermedio">Intermedio</option>
-            <option value="avanzado">Avanzado</option>
-          </select>
-          <button
-            type="submit"
-            className="h-8 rounded-md px-2 text-xs font-medium text-electric hover:bg-electric/10"
-          >
-            + Agregar
-          </button>
-          {state.error && (
-            <span role="alert" className="text-xs text-coral">
-              {state.error}
-            </span>
-          )}
-        </form>
+      ) : (
+        <p className="text-sm text-muted">No se pidieron habilidades para este rol.</p>
       )}
     </div>
   );
