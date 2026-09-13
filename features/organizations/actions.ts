@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { INVITACIONES_HABILITADAS } from "@/features/organizations/config";
+import { sendEmail } from "@/features/notifications/email";
 
 /**
  * Acciones de organizaciones (lado del patrocinador).
@@ -278,6 +279,24 @@ export async function inviteOrganizationMember(
     console.error("[inviteOrganizationMember]", error.message);
     return { error: "No se pudo enviar la invitación. Inténtalo de nuevo." };
   }
+
+  // Correo a la dirección tal cual se escribió en el formulario (M43): sirve
+  // para los dos casos (ya tiene cuenta o no), a diferencia de
+  // `sendEmailToUser` que necesita un `user_id` que acá puede no existir
+  // todavía. Si la persona no tiene cuenta, el link manda a /registro — el
+  // trigger `handle_new_user` (M37) activa la invitación pendiente en cuanto
+  // se registre con este mismo correo.
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("nombre")
+    .eq("id", orgId)
+    .maybeSingle();
+  await sendEmail(
+    email,
+    "Te invitaron a una organización",
+    `Te invitaron a co-gestionar "${org?.nombre ?? "una organización"}" en CampusLab.`,
+    userId ? `/mis-organizaciones/${orgId}/miembros` : "/registro",
+  );
 
   revalidatePath(`/mis-organizaciones/${orgId}/miembros`);
   return { ok: true };
