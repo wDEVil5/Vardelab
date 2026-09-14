@@ -38,7 +38,21 @@ export default async function Home() {
     <>
       <main className="relative z-10 md:mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-white md:shadow-[0_8px_24px_-16px_rgba(13,37,59,0.12)]">
       {/* 1 · HERO */}
-      <section className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-24">
+      <section className="relative mx-auto w-full max-w-5xl px-6 py-16 sm:py-24">
+        {/* En mobile/tablet, el `HeroShapes` interactivo con etiquetas no tiene
+            dónde ir (cae apilado bajo los CTA, se ve como un diagrama suelto) —
+            se reemplaza por un halo ambiental sin texto que sangra hacia arriba,
+            detrás del header translúcido (mismo idioma que el halo de "Proponer
+            un desafío" más abajo). Desde `lg:` hay espacio real para el visual
+            con propósito completo, así que se muestra ese en su lugar. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 -top-28 -z-10 flex justify-center lg:hidden"
+        >
+          <div className="animate-breathe size-64 rounded-full bg-electric/28 blur-xl" />
+          <div className="-ml-16 size-56 rounded-full bg-sprout/24 blur-xl" />
+        </div>
+
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
             <div className="flex animate-rise flex-col items-start gap-6">
               <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
@@ -49,12 +63,12 @@ export default async function Home() {
                 microproyectos claros, con objetivos, acompañamiento y evidencia
                 de resultado.
               </p>
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
                 <Link
                   href="/proyectos"
                   className={cn(
                     buttonClasses({ variant: "primary" }),
-                    "h-11 px-6 text-base",
+                    "h-11 justify-center px-6 text-base",
                   )}
                 >
                   Explorar proyectos
@@ -63,7 +77,7 @@ export default async function Home() {
                   href="/organizaciones"
                   className={cn(
                     buttonClasses({ variant: "outline" }),
-                    "group h-11 px-6 text-base",
+                    "group h-11 justify-center px-6 text-base",
                   )}
                 >
                   Para organizaciones
@@ -75,9 +89,10 @@ export default async function Home() {
             </div>
 
             {/* Visual con propósito: Estudiantes + Organizaciones + Proyectos,
-                que se encuentran (superposición), interactivo con el cursor. */}
+                que se encuentran (superposición), interactivo con el cursor.
+                Solo desde `lg:` — en pantallas chicas queda el halo de arriba. */}
             <div
-              className="animate-rise"
+              className="hidden animate-rise lg:block"
               style={{ animationDelay: "150ms" }}
             >
               <HeroShapes />

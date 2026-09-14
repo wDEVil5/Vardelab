@@ -16,23 +16,30 @@ const MOTIVOS = [
   "Otro",
 ];
 
+const TARGET_LABEL: Record<"proyecto" | "perfil" | "organizacion", string> = {
+  proyecto: "proyecto",
+  perfil: "perfil",
+  organizacion: "organización",
+};
+
 /**
- * Botón discreto para reportar un proyecto o un perfil (M7 + M22). Abre un
- * modal con motivo (fijo) + descripción opcional; requiere sesión (la Server
- * Action redirige a ingresar si no hay). Queda en manos de moderador/admin,
- * que lo gestionan desde `/moderacion/reportes`.
+ * Botón discreto para reportar un proyecto, un perfil o una organización
+ * (M7 + M22). Abre un modal con motivo (fijo) + descripción opcional;
+ * requiere sesión (la Server Action redirige a ingresar si no hay). Queda en
+ * manos de moderador/admin, que lo gestionan desde `/moderacion/reportes`.
  */
 export function ReportButton({
   targetType,
   targetId,
 }: {
-  targetType: "proyecto" | "perfil";
+  targetType: "proyecto" | "perfil" | "organizacion";
   targetId: string;
 }) {
   const [open, setOpen] = useState(false);
   const [state, formAction] = useActionState(submitReport, INITIAL);
 
-  const titulo = targetType === "proyecto" ? "Reportar proyecto" : "Reportar perfil";
+  const etiqueta = TARGET_LABEL[targetType];
+  const titulo = `Reportar ${etiqueta}`;
 
   return (
     <>
@@ -41,7 +48,7 @@ export function ReportButton({
         onClick={() => setOpen(true)}
         className="text-xs text-muted underline-offset-2 transition-colors hover:text-coral hover:underline"
       >
-        {targetType === "proyecto" ? "Reportar este proyecto" : "Reportar este perfil"}
+        Reportar este {etiqueta}
       </button>
 
       <Modal open={open} onClose={() => setOpen(false)} title={titulo}>

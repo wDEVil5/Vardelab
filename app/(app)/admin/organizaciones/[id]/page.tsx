@@ -6,6 +6,7 @@ import { VerifiedInfoBadge } from "@/components/ui/verified-info-popover";
 import { getCurrentUser } from "@/features/auth/queries";
 import { getOrganizationDetailForAdmin } from "@/features/admin/queries";
 import { OrgVerificationActions } from "@/features/admin/components/org-verification-actions";
+import { externalUrl } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Detalle de la organización · CampusLab",
@@ -91,7 +92,7 @@ export default async function AdminOrganizacionDetallePage({ params }: PageProps
         <dl className="mt-6 grid grid-cols-2 gap-5 border-t border-border pt-5 sm:grid-cols-3">
           <Campo label="Sitio web">
             {org.sitio_web ? (
-              <a href={org.sitio_web} target="_blank" rel="noopener noreferrer" className="text-electric hover:underline">
+              <a href={externalUrl(org.sitio_web)} target="_blank" rel="noopener noreferrer" className="text-electric hover:underline">
                 {org.sitio_web}
               </a>
             ) : (
