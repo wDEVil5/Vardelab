@@ -52,7 +52,7 @@ export async function getPublicProfile(profileId: string) {
   const { data: profile, error } = await supabase
     .from("profiles")
     .select(
-      "id, nombre, carrera, semestre, bio, intereses, enlaces, avatar_url",
+      "id, nombre, carrera, semestre, bio, intereses, enlaces, avatar_url, created_at",
     )
     .eq("id", profileId)
     .eq("visibility", "publico")
@@ -67,7 +67,7 @@ export async function getPublicProfile(profileId: string) {
   // Evidencias públicas del perfil (la RLS ya limita a las públicas; el filtro
   // explícito lo deja claro y excluye las privadas del propio dueño si mira su
   // página pública).
-  const [{ data: items }, { data: skills }] = await Promise.all([
+  const [{ data: items }, { data: skills }, { data: completados }] = await Promise.all([
     supabase
       .from("portfolio_items")
       .select("id, titulo, descripcion, url, project:projects ( id, titulo )")
@@ -81,9 +81,18 @@ export async function getPublicProfile(profileId: string) {
       .from("profile_skills")
       .select("skill_id, nivel, skill:skills ( id, nombre )")
       .eq("profile_id", profileId),
+    // Proyectos completados (M54): un valor de resumen para quien visita el
+    // perfil, no la lista de proyectos en sí — la RLS de `projects` no deja
+    // leer proyectos ya cerrados desde fuera, por eso es una función aparte.
+    supabase.rpc("completed_projects_count", { _profile_id: profileId }),
   ]);
 
-  return { profile, items: items ?? [], skills: skills ?? [] };
+  return {
+    profile,
+    items: items ?? [],
+    skills: skills ?? [],
+    proyectosCompletados: completados ?? 0,
+  };
 }
 
 export type PublicProfile = NonNullable<
