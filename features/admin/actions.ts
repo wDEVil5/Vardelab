@@ -28,6 +28,10 @@ const SUSPENSION_LARGA = "876000h";
  * nadie tiene más de uno hoy — se simplifica la pantalla a "un rol por
  * usuario" en vez de un editor de conjuntos, coherente con cómo se asigna el
  * rol al registrarse (M11). Deja rastro en `audit_logs` (RF-17).
+ *
+ * El borrado + inserción ocurre dentro de `set_user_role` (M56), una función
+ * de Postgres — una sola transacción, no dos llamadas sueltas desde aquí. Así
+ * un fallo a mitad de camino no deja a nadie sin rol.
  */
 export async function changeUserRole(
   _prevState: AdminUsersState,
@@ -47,20 +51,12 @@ export async function changeUserRole(
 
   const supabase = await createClient();
 
-  const { error: deleteError } = await supabase
-    .from("user_roles")
-    .delete()
-    .eq("user_id", userId);
-  if (deleteError) {
-    console.error("[changeUserRole:delete]", deleteError.message);
-    return { error: "No se pudo actualizar el rol." };
-  }
-
-  const { error: insertError } = await supabase
-    .from("user_roles")
-    .insert({ user_id: userId, role: rol });
-  if (insertError) {
-    console.error("[changeUserRole:insert]", insertError.message);
+  const { error: rpcError } = await supabase.rpc("set_user_role", {
+    _user_id: userId,
+    _role: rol,
+  });
+  if (rpcError) {
+    console.error("[changeUserRole]", rpcError.message);
     return { error: "No se pudo actualizar el rol." };
   }
 
