@@ -105,7 +105,7 @@ export async function getPublicOrganization(id: string) {
   const { data, error } = await supabase
     .from("organizations")
     .select(
-      "id, nombre, tipo, descripcion, sitio_web, contacto, contacto_email, logo_url, verificacion",
+      "id, nombre, tipo, descripcion, sitio_web, contacto, contacto_email, logo_url, verificacion, created_at",
     )
     .eq("id", id)
     .maybeSingle();

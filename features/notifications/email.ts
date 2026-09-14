@@ -67,6 +67,23 @@ const CATALOGO: Record<
     instruccion: "Respóndele desde el proyecto para no perder el hilo.",
     cta: "Ver mensaje",
   },
+  // Sin caller todavía (M60 genera la notificación in-app desde un trigger de
+  // Postgres, no desde una Server Action) — mismo caso que `mensaje_nuevo`.
+  proyecto_cancelado: {
+    asunto: "Un proyecto fue cancelado",
+    instruccion: "Puedes revisar el detalle o seguir explorando otros proyectos.",
+    cta: "Ver proyecto",
+  },
+  organizacion_verificada: {
+    asunto: "Tu organización fue verificada",
+    instruccion: "El sello de verificada ya es visible en tu perfil público y tus proyectos.",
+    cta: "Ver mi organización",
+  },
+  organizacion_no_verificada: {
+    asunto: "Tu solicitud de verificación no fue aprobada",
+    instruccion: "Puedes revisar los datos de tu organización y volver a solicitarla.",
+    cta: "Ver mi organización",
+  },
 };
 
 // Documento completo (no solo un fragmento): así entran los <meta> de

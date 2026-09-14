@@ -16,9 +16,10 @@ const INITIAL: PublishState = {};
  *   · borrador     → "Enviar a revisión" (un moderador debe aprobarlo).
  *   · en_revision  → aviso de espera + opción de retirarlo de la cola.
  *   · publicado    → aviso de visible + opción de volver a borrador.
- *   · seleccion/activo/completado → solo informativo: ya pasó la etapa de
- *     publicación, así que no hay ninguna acción que ofrecer acá (el enviar a
- *     revisión de vuelta no es una transición válida desde estos estados).
+ *   · seleccion/activo/completado/cancelado → solo informativo: ya pasó la
+ *     etapa de publicación (o el proyecto se cerró), así que no hay ninguna
+ *     acción que ofrecer acá (el enviar a revisión de vuelta no es una
+ *     transición válida desde estos estados).
  */
 export function PublishControls({
   projectId,
@@ -29,13 +30,20 @@ export function PublishControls({
 }) {
   const [state, formAction] = useActionState(submitProjectForReview, INITIAL);
 
-  if (status === "seleccion" || status === "activo" || status === "completado") {
+  if (
+    status === "seleccion" ||
+    status === "activo" ||
+    status === "completado" ||
+    status === "cancelado"
+  ) {
     const texto =
       status === "seleccion"
         ? "El proyecto ya no se publica ni se retira: está en selección de equipo."
         : status === "activo"
           ? "El proyecto ya no se publica ni se retira: está activo, con el equipo trabajando."
-          : "El proyecto ya no se publica ni se retira: quedó completado.";
+          : status === "completado"
+            ? "El proyecto ya no se publica ni se retira: quedó completado."
+            : "El proyecto ya no se publica ni se retira: fue cancelado.";
     return <p className="text-sm text-muted">{texto}</p>;
   }
 
