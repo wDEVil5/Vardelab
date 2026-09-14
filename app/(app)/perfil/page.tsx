@@ -21,7 +21,7 @@ import { getActiveSkills } from "@/features/skills/queries";
 import { getMyPortfolioItems } from "@/features/portfolio/queries";
 import { getMyTeams } from "@/features/teams/queries";
 import { EditProfileDialog } from "@/features/profile/components/edit-profile-dialog";
-import { EditPatrocinadorProfileDialog } from "@/features/profile/components/edit-patrocinador-profile-dialog";
+import { EditAccountNameDialog } from "@/features/profile/components/edit-account-name-dialog";
 import { ChangePasswordDialog } from "@/features/auth/components/change-password-dialog";
 import { ChangeEmailDialog } from "@/features/auth/components/change-email-dialog";
 import { ProfileSkillsEditor } from "@/features/profile/components/profile-skills-editor";
@@ -106,17 +106,36 @@ export default async function PerfilPage({ searchParams }: PageProps) {
   const user = await getCurrentUser();
   if (!user) redirect("/ingresar?next=/perfil");
 
-  // Un patrocinador puro no tiene carrera, habilidades ni portafolio — antes
-  // veía el editor de estudiante completo (con el "% de perfil completo"
-  // pidiéndole Carrera/Semestre/Habilidades), que no le servía de nada. Su
-  // identidad pública real la administra en su organización (S-01 del Figma).
-  if (user.esPatrocinador && !user.esEstudiante) {
+  // Ninguna cuenta sin rol de estudiante tiene carrera, habilidades ni
+  // portafolio — antes todas (patrocinador, y también admin/moderador/mentor)
+  // caían en el editor de estudiante completo, con el "% de perfil completo"
+  // pidiéndoles Carrera/Semestre/Habilidades que no les servían de nada.
+  if (!user.esEstudiante) {
     const avatarPresets = await getAvatarPresets();
+
+    // El patrocinador tiene una identidad pública real, pero la administra en
+    // su organización (S-01 del Figma), no acá.
+    if (user.esPatrocinador) {
+      return (
+        <PerfilPatrocinador
+          nombre={user.nombre}
+          email={user.email}
+          avatarUrl={user.avatarUrl}
+          avatarPresets={avatarPresets}
+          contrasenaActualizada={guardado === "contrasena"}
+        />
+      );
+    }
+
+    // Admin, moderador, mentor (o una cuenta sin rol todavía): cuenta
+    // operativa sin identidad pública ni organización propia — solo nombre,
+    // rol y seguridad.
     return (
-      <PerfilPatrocinador
+      <PerfilOperativo
         nombre={user.nombre}
         email={user.email}
         avatarUrl={user.avatarUrl}
+        roles={user.roles}
         avatarPresets={avatarPresets}
         contrasenaActualizada={guardado === "contrasena"}
       />
@@ -387,7 +406,7 @@ function PerfilPatrocinador({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <p className="truncate text-xl font-bold text-ink">{nombre}</p>
-              <EditPatrocinadorProfileDialog nombre={nombre} />
+              <EditAccountNameDialog nombre={nombre} />
             </div>
             <p className="mt-1 text-sm text-muted">{email}</p>
           </div>
@@ -417,6 +436,108 @@ function PerfilPatrocinador({
           </div>
         </section>
 
+        <section className="rounded-2xl border border-border bg-white p-7 transition-all hover:border-electric/30 hover:shadow-sm">
+          <div className="flex items-start gap-4">
+            <span className="mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-electric/10 text-electric">
+              <IconCandado className="size-5" />
+            </span>
+            <div>
+              <h2 className="text-lg font-semibold text-ink">Seguridad</h2>
+              <p className="mt-1 text-sm text-muted">
+                Cambia la contraseña o el correo con el que ingresas a tu cuenta.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <ChangePasswordDialog />
+                <ChangeEmailDialog currentEmail={email} />
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+const ROL_LABEL_OPERATIVO: Record<string, string> = {
+  admin: "Administrador",
+  moderador: "Moderador",
+  mentor: "Mentor",
+};
+
+const ROL_TONE_OPERATIVO: Record<string, "danger" | "success" | "brand"> = {
+  admin: "danger",
+  moderador: "success",
+  mentor: "brand",
+};
+
+/** El rol "más alto" de la lista, para mostrar uno solo junto al nombre. */
+function rolPrincipalOperativo(roles: string[]): { label: string; tone: "danger" | "success" | "brand" | "neutral" } {
+  for (const r of ["admin", "moderador", "mentor"] as const) {
+    if (roles.includes(r)) return { label: ROL_LABEL_OPERATIVO[r], tone: ROL_TONE_OPERATIVO[r] };
+  }
+  return { label: "Sin rol asignado", tone: "neutral" };
+}
+
+/**
+ * Versión mínima del perfil para admin, moderador o mentor: igual que
+ * `PerfilPatrocinador` (identidad + seguridad, sin carrera/habilidades/
+ * portafolio), pero sin la tarjeta "Tu organización" — ninguno de estos roles
+ * administra una organización. Sin identidad pública tampoco: a diferencia
+ * del estudiante o el patrocinador, nadie externo necesita ver este perfil.
+ */
+function PerfilOperativo({
+  nombre,
+  email,
+  avatarUrl,
+  roles,
+  avatarPresets,
+  contrasenaActualizada,
+}: {
+  nombre: string;
+  email: string;
+  avatarUrl: string | null;
+  roles: string[];
+  avatarPresets: AvatarPreset[];
+  contrasenaActualizada: boolean;
+}) {
+  const rol = rolPrincipalOperativo(roles);
+
+  return (
+    <div className="mx-auto w-full max-w-2xl px-6 py-8 lg:py-10">
+      <header className="flex flex-col gap-2">
+        <h1 className="text-2xl font-bold text-ink">
+          Hola, {nombre.split(/\s+/)[0] || "usuario"}.
+        </h1>
+        <p className="text-sm text-muted">Tu información de cuenta en CampusLab.</p>
+      </header>
+
+      {contrasenaActualizada && (
+        <div className="mt-6 rounded-lg border border-sprout/30 bg-sprout/10 px-4 py-3 text-sm text-ink">
+          Contraseña actualizada.
+        </div>
+      )}
+
+      <section className="mt-6 rounded-2xl border border-border bg-white p-7">
+        <div className="flex flex-wrap items-center gap-4">
+          <AvatarPicker
+            avatarUrl={avatarUrl}
+            iniciales={iniciales(nombre)}
+            presets={avatarPresets}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="truncate text-xl font-bold text-ink">{nombre}</p>
+              <EditAccountNameDialog nombre={nombre} />
+            </div>
+            <p className="mt-1 text-sm text-muted">{email}</p>
+            <div className="mt-2">
+              <Badge tone={rol.tone}>{rol.label}</Badge>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="mt-5 flex flex-col gap-4">
         <section className="rounded-2xl border border-border bg-white p-7 transition-all hover:border-electric/30 hover:shadow-sm">
           <div className="flex items-start gap-4">
             <span className="mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-electric/10 text-electric">
