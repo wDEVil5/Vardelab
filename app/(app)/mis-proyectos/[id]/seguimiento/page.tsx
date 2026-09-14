@@ -18,7 +18,7 @@ import {
   deleteMilestone,
 } from "@/features/milestones/actions";
 import { AddMilestoneModal } from "@/features/milestones/components/add-milestone-modal";
-import { getProjectMessages } from "@/features/messages/queries";
+import { getProjectMessages, getProjectParticipantNames } from "@/features/messages/queries";
 import { MessageThread } from "@/features/messages/components/message-thread";
 
 export const metadata: Metadata = {
@@ -70,11 +70,12 @@ export default async function SeguimientoProyectoPage({ params }: PageProps) {
   const project = await getManagedProject(id);
   if (!project) notFound();
 
-  const [equipo, hitos, actividad, mensajes] = await Promise.all([
+  const [equipo, hitos, actividad, mensajes, participantes] = await Promise.all([
     getTeamForEvaluation(project.id),
     getMilestonesWithSubmissions(project.id),
     getRecentProjectActivity(project.id),
     getProjectMessages(project.id),
+    getProjectParticipantNames(project.id),
   ]);
 
   const totalHitos = hitos.length;
@@ -152,9 +153,17 @@ export default async function SeguimientoProyectoPage({ params }: PageProps) {
             )}
           </div>
 
+          {/* Mensajes con el equipo (M30), en el lado derecho junto a la
+              actividad reciente. */}
           <div className="rounded-2xl border border-border bg-white p-6">
             <h2 className="mb-3 text-sm font-semibold text-ink">Mensajes</h2>
-            <MessageThread projectId={project.id} redirectPath={redirectPath} messages={mensajes} />
+            <MessageThread
+              projectId={project.id}
+              redirectPath={redirectPath}
+              messages={mensajes}
+              currentUserId={user.id}
+              participantNames={participantes}
+            />
           </div>
         </div>
       </div>

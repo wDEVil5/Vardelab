@@ -42,6 +42,9 @@ const TRAZOS: Record<Notification["tipo"], ReactNode> = {
       <path d="M8 3v4M16 3v4M3 10h18" />
     </>
   ),
+  mensaje_nuevo: (
+    <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
+  ),
 };
 
 const TONO: Record<Notification["tipo"], string> = {
@@ -51,6 +54,7 @@ const TONO: Record<Notification["tipo"], string> = {
   invitacion_organizacion: "bg-electric/10 text-electric",
   evaluacion_nueva: "bg-electric/10 text-electric",
   hito_por_vencer: "bg-coral/15 text-coral",
+  mensaje_nuevo: "bg-electric/10 text-electric",
 };
 
 export function NotificationIcon({ tipo }: { tipo: Notification["tipo"] }) {
