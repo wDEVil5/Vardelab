@@ -204,10 +204,17 @@ export async function getAuditLog() {
   ] as string[];
 
   // `entidad_id` no siempre es una persona: las acciones de catálogo
-  // (`catalogo_editado`) apuntan a una fila de `skills`. Se resuelven aparte
-  // (los ids no se pisan entre tablas) y se suman al mismo mapa de nombres.
+  // (`catalogo_editado`) apuntan a una fila de `skills`, y las de verificación
+  // (`organizacion_verificada`/`organizacion_rechazada`, M62) a una fila de
+  // `organizations`. Se resuelven aparte (los ids no se pisan entre tablas) y
+  // se suman al mismo mapa de nombres.
   const skillIds = [
     ...new Set((eventos ?? []).filter((e) => e.entidad === "skills").map((e) => e.entidad_id)),
+  ].filter(Boolean) as string[];
+  const orgIds = [
+    ...new Set(
+      (eventos ?? []).filter((e) => e.entidad === "organizations").map((e) => e.entidad_id),
+    ),
   ].filter(Boolean) as string[];
 
   const nombrePorId = new Map<string, string>();
@@ -235,6 +242,12 @@ export async function getAuditLog() {
     const { data: skills } = await supabase.from("skills").select("id, nombre").in("id", skillIds);
     for (const s of skills ?? []) {
       nombrePorId.set(s.id, `Habilidad: ${s.nombre}`);
+    }
+  }
+  if (orgIds.length > 0) {
+    const { data: orgs } = await supabase.from("organizations").select("id, nombre").in("id", orgIds);
+    for (const o of orgs ?? []) {
+      nombrePorId.set(o.id, o.nombre);
     }
   }
 
@@ -280,7 +293,7 @@ export async function getSkillsCatalog() {
 
 export type SkillCatalogRow = Awaited<ReturnType<typeof getSkillsCatalog>>[number];
 
-const MODALIDAD_LABEL: Record<string, string> = {
+export const MODALIDAD_LABEL: Record<string, string> = {
   presencial: "Presencial",
   remoto: "Remoto",
   hibrido: "Híbrido",
@@ -318,9 +331,7 @@ export type ModalidadUsage = Awaited<ReturnType<typeof getModalidadUsage>>[numbe
 
 /**
  * Configuración del piloto (D-05, deseable). Fila única (`id = true`, M24).
- * Usa el cliente normal: la RLS ya deja pasar a un admin. `updated_by` se
- * resuelve a un nombre igual que en `getAuditLog`, para el bloque "Último
- * cambio" de la tarjeta de gobernanza.
+ * Usa el cliente normal: la RLS ya deja pasar a un admin.
  */
 export async function getPilotConfig() {
   const supabase = await createClient();
@@ -336,27 +347,298 @@ export async function getPilotConfig() {
     return null;
   }
 
-  let actualizadoPor: string | null = null;
-  if (data.updated_by) {
-    const { data: perfil } = await supabase
-      .from("profiles")
-      .select("nombre")
-      .eq("id", data.updated_by)
-      .maybeSingle();
-    actualizadoPor = perfil?.nombre ?? "(usuario eliminado)";
-  }
-
-  return { ...data, actualizadoPor };
+  return data;
 }
 
 export type PilotConfig = NonNullable<Awaited<ReturnType<typeof getPilotConfig>>>;
 
+/**
+ * Últimos cambios de configuración, para la tarjeta "Gobernanza y
+ * trazabilidad" de `/admin/configuracion`. En vez de guardar el historial en
+ * `pilot_config` misma (que solo tiene espacio para un `updated_by`/
+ * `updated_at`), se lee de `audit_logs` — que ya registra cada guardado con
+ * actor y campos modificados (`updatePilotConfig`) — con un `limit` para que
+ * la tarjeta no crezca sin control a medida que se acumulan meses de cambios;
+ * `masDisponibles` le dice a la UI si hace falta un link a "ver todo" en
+ * `/admin/auditoria` en vez de listar cientos de filas ahí mismo.
+ */
+export async function getConfigChangeHistory(limit = 3) {
+  const supabase = await createClient();
+
+  const { data: eventos, error } = await supabase
+    .from("audit_logs")
+    .select("id, actor_id, metadata, created_at")
+    .eq("accion", "configuracion_actualizada")
+    .order("created_at", { ascending: false })
+    .limit(limit + 1);
+
+  if (error) {
+    console.error("[getConfigChangeHistory]", error.message);
+    return { cambios: [], masDisponibles: false };
+  }
+
+  const actorIds = [...new Set((eventos ?? []).map((e) => e.actor_id).filter(Boolean))] as string[];
+  const nombrePorId = new Map<string, string>();
+  if (actorIds.length > 0) {
+    const { data: perfiles } = await supabase
+      .from("profiles")
+      .select("id, nombre")
+      .in("id", actorIds);
+    for (const p of perfiles ?? []) {
+      if (p.nombre) nombrePorId.set(p.id, p.nombre);
+    }
+  }
+
+  const masDisponibles = (eventos ?? []).length > limit;
+  const cambios = (eventos ?? []).slice(0, limit).map((e) => ({
+    id: e.id,
+    actorNombre: e.actor_id ? (nombrePorId.get(e.actor_id) ?? "(usuario eliminado)") : "(sistema)",
+    campos: Array.isArray((e.metadata as { campos?: unknown })?.campos)
+      ? ((e.metadata as { campos: string[] }).campos)
+      : [],
+    createdAt: e.created_at,
+  }));
+
+  return { cambios, masDisponibles };
+}
+
+export type ConfigChangeHistory = Awaited<ReturnType<typeof getConfigChangeHistory>>;
+
+/**
+ * Todos los proyectos del piloto, para `/admin/proyectos`. Hallazgo de la
+ * revisión de métricas: ninguna pantalla de admin listaba proyectos, aunque
+ * la RLS ya le daba acceso completo — `projects_select_published_or_manager`
+ * incluye `has_role(auth.uid(), 'admin')` desde M3. Cliente normal: no hace
+ * falta `service_role`, la RLS ya alcanza.
+ */
+export async function getProjectsForAdmin() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("projects")
+    .select("id, titulo, status, created_at, org:organizations ( nombre )")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[getProjectsForAdmin]", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((p) => ({
+    id: p.id,
+    titulo: p.titulo,
+    status: p.status,
+    etiquetaEstado:
+      ETIQUETA_ESTADO[p.status as (typeof ESTADOS_PROYECTO)[number]] ?? p.status,
+    orgNombre: p.org?.nombre ?? "(sin organización)",
+    createdAt: p.created_at,
+  }));
+}
+
+export type AdminProjectRow = Awaited<ReturnType<typeof getProjectsForAdmin>>[number];
+
+/**
+ * Detalle de un proyecto para `/admin/proyectos/[id]`: solo lectura + acceso
+ * a cancelarlo. A diferencia de `getManagedProject` (features/projects/queries.ts),
+ * no filtra primero por las organizaciones propias de quien consulta — un
+ * admin no gestiona ninguna organización, así que ese filtro devolvería
+ * `null` siempre. Acá se confía por completo en la RLS, que ya lo permite.
+ *
+ * Trae el proyecto completo (no el subconjunto que usa `getManagedProject`
+ * para su propio panel): el admin necesita ver todo lo que el gestor cargó
+ * (problema/alcance/entregable/expectativas, dedicación, comentario de
+ * moderación) para poder decidir con contexto real, no solo un resumen.
+ * `fecha_inicio`/`fecha_fin`/`descripcion` están en el esquema pero ningún
+ * formulario de la app los escribe todavía — se traen igual para no ocultar
+ * nada, y quedan en "—" en la práctica.
+ */
+export async function getProjectDetailForAdmin(id: string) {
+  const supabase = await createClient();
+
+  const { data: project, error } = await supabase
+    .from("projects")
+    .select(
+      `
+      id, titulo, resumen, descripcion, problema, alcance, entregable, expectativas,
+      status, modalidad, duracion_semanas, dedicacion_semanal,
+      fecha_inicio, fecha_fin, comentario_moderacion, respuesta_patrocinador,
+      created_at, revisado_at, created_by,
+      org:organizations ( id, nombre ),
+      roles:project_roles (
+        id, nombre, descripcion, cupos, horas_semanales,
+        skills:project_role_skills (
+          nivel_minimo,
+          skill:skills ( id, nombre )
+        )
+      )
+    `,
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getProjectDetailForAdmin]", error.message);
+    return null;
+  }
+  if (!project) return null;
+
+  const { data: team } = await supabase
+    .from("teams")
+    .select("id")
+    .eq("project_id", id)
+    .maybeSingle();
+
+  let integrantes: { id: string; nombre: string; rol: string | null; avatarUrl: string | null }[] = [];
+  if (team) {
+    const { data: members } = await supabase
+      .from("team_members")
+      .select("user_id, rol:project_roles ( nombre )")
+      .eq("team_id", team.id);
+    const userIds = (members ?? []).map((m) => m.user_id);
+    const perfilPorId = new Map<string, { nombre: string | null; avatar_url: string | null }>();
+    if (userIds.length > 0) {
+      const { data: perfiles } = await supabase
+        .from("profiles")
+        .select("id, nombre, avatar_url")
+        .in("id", userIds);
+      for (const p of perfiles ?? []) {
+        perfilPorId.set(p.id, { nombre: p.nombre, avatar_url: p.avatar_url });
+      }
+    }
+    integrantes = (members ?? []).map((m) => ({
+      id: m.user_id,
+      nombre: perfilPorId.get(m.user_id)?.nombre ?? "(sin nombre)",
+      rol: m.rol?.nombre ?? null,
+      avatarUrl: perfilPorId.get(m.user_id)?.avatar_url ?? null,
+    }));
+  }
+
+  // Quién creó el proyecto ("a cargo"): la organización puede tener varios
+  // gestores (M37/M38), así que el nombre de la org sola no dice quién lo
+  // cargó — esto sí lo dice.
+  let creadoPorNombre: string | null = null;
+  if (project.created_by) {
+    const { data: creador } = await supabase
+      .from("profiles")
+      .select("nombre")
+      .eq("id", project.created_by)
+      .maybeSingle();
+    creadoPorNombre = creador?.nombre ?? "(usuario eliminado)";
+  }
+
+  return {
+    ...project,
+    etiquetaEstado:
+      ETIQUETA_ESTADO[project.status as (typeof ESTADOS_PROYECTO)[number]] ?? project.status,
+    integrantes,
+    creadoPorNombre,
+  };
+}
+
+export type AdminProjectDetail = NonNullable<
+  Awaited<ReturnType<typeof getProjectDetailForAdmin>>
+>;
+
+export const ORG_TIPO_LABEL: Record<string, string> = {
+  academica: "Académica",
+  social: "Social",
+  emprendimiento: "Emprendimiento",
+  empresa: "Empresa",
+  interna: "Interna",
+};
+
+export const VERIFICACION_LABEL: Record<string, string> = {
+  verificado: "Verificada",
+  en_revision: "En revisión",
+  sin_verificar: "Sin verificar",
+};
+
+/**
+ * Todas las organizaciones del piloto, para `/admin/organizaciones`. Mismo
+ * hallazgo que con proyectos: la RLS `organizations_select_all` ya deja ver
+ * cualquier organización a cualquiera (son datos públicos), pero no había
+ * ninguna pantalla de admin que las listara — mucho menos una forma de
+ * aprobar o rechazar una solicitud de verificación (M62).
+ */
+export async function getOrganizationsForAdmin() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("organizations")
+    .select("id, nombre, tipo, verificacion, created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[getOrganizationsForAdmin]", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((o) => ({
+    id: o.id,
+    nombre: o.nombre,
+    tipo: o.tipo,
+    etiquetaTipo: ORG_TIPO_LABEL[o.tipo] ?? o.tipo,
+    verificacion: o.verificacion,
+    etiquetaVerificacion: VERIFICACION_LABEL[o.verificacion] ?? o.verificacion,
+    createdAt: o.created_at,
+  }));
+}
+
+export type AdminOrgRow = Awaited<ReturnType<typeof getOrganizationsForAdmin>>[number];
+
+/**
+ * Detalle de una organización para `/admin/organizaciones/[id]`: solo
+ * lectura + acceso a aprobar/rechazar su verificación. Incluye sus
+ * proyectos (título y estado, no el detalle completo de cada uno — desde
+ * acá se puede saltar a `/admin/proyectos/[id]` si hace falta más) para que
+ * el admin tenga contexto real antes de verificar: cuántos proyectos tiene,
+ * en qué estado.
+ */
+export async function getOrganizationDetailForAdmin(id: string) {
+  const supabase = await createClient();
+
+  const { data: org, error } = await supabase
+    .from("organizations")
+    .select(
+      "id, nombre, tipo, descripcion, sitio_web, contacto, contacto_email, logo_url, verificacion, created_at",
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getOrganizationDetailForAdmin]", error.message);
+    return null;
+  }
+  if (!org) return null;
+
+  const { data: proyectos } = await supabase
+    .from("projects")
+    .select("id, titulo, status, modalidad, created_at, roles:project_roles(cupos)")
+    .eq("org_id", id)
+    .order("created_at", { ascending: false });
+
+  return {
+    ...org,
+    etiquetaTipo: ORG_TIPO_LABEL[org.tipo] ?? org.tipo,
+    etiquetaVerificacion: VERIFICACION_LABEL[org.verificacion] ?? org.verificacion,
+    proyectos: (proyectos ?? []).map((p) => ({
+      id: p.id,
+      titulo: p.titulo,
+      status: p.status,
+      etiquetaEstado: ETIQUETA_ESTADO[p.status as (typeof ESTADOS_PROYECTO)[number]] ?? p.status,
+      etiquetaModalidad: (p.modalidad ? MODALIDAD_LABEL[p.modalidad] : null) ?? "—",
+      createdAt: p.created_at,
+      cupos: (p.roles ?? []).reduce((total, r) => total + r.cupos, 0),
+    })),
+  };
+}
+
+export type AdminOrgDetail = NonNullable<
+  Awaited<ReturnType<typeof getOrganizationDetailForAdmin>>
+>;
+
 /** Etiquetas legibles de los campos de `pilot_config`, para el detalle de auditoría. */
 export const CONFIG_CAMPO_LABEL: Record<string, string> = {
-  max_proyectos_activos: "Máximo de proyectos activos",
-  max_estudiantes: "Máximo de estudiantes",
-  duracion_min_semanas: "Duración permitida",
-  duracion_max_semanas: "Duración permitida",
   registro_abierto: "Registro de nuevas cuentas",
   moderacion_previa_obligatoria: "Moderación previa obligatoria",
   patrocinadores_externos: "Patrocinadores externos",

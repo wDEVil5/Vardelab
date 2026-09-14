@@ -37,3 +37,48 @@ export function VerifiedBadge({ className }: { className?: string }) {
     </span>
   );
 }
+
+/**
+ * Marcador de "todavía no verificada" (M62): un círculo punteado, sin color
+ * ni relleno, en el mismo lugar donde iría el sello azul una vez aprobada —
+ * al estilo de la insignia vacía que Instagram muestra junto al nombre de una
+ * cuenta profesional antes de verificarla. Va solo en el perfil de la propia
+ * organización (`/mis-organizaciones/[id]/editar`), nunca en la ficha pública:
+ * es una señal para quien gestiona la organización, no para quien la visita.
+ */
+export function PendingVerificationBadge({
+  className,
+  estado,
+}: {
+  className?: string;
+  estado: "sin_verificar" | "en_revision";
+}) {
+  const label = estado === "en_revision" ? "Verificación en revisión" : "Sin verificar";
+
+  return (
+    <span className="group/pending relative inline-flex shrink-0" tabIndex={0}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        role="img"
+        aria-label={label}
+        className={cn("size-4 shrink-0 text-muted", className)}
+      >
+        <path
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeDasharray="2 2.1"
+          d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"
+        />
+      </svg>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-md bg-ink px-2 py-1 text-xs font-medium text-white opacity-0 shadow-sm transition-all duration-150 group-hover/pending:translate-y-0 group-hover/pending:opacity-100 group-focus-visible/pending:translate-y-0 group-focus-visible/pending:opacity-100"
+      >
+        {label}
+      </span>
+    </span>
+  );
+}
