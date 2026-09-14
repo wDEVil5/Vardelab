@@ -28,8 +28,13 @@ export default async function AdminUsuariosPage() {
   const suspendidas = usuarios.filter((u) => u.suspendido).length;
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-10 lg:py-12">
-      <header>
+    // Mismo patrón que `/admin/auditoria`: en desktop la página ocupa el
+    // viewport completo (`lg:h-dvh`) y la tabla de usuarios scrollea dentro
+    // de su propia caja — "Acciones protegidas" queda fija abajo, siempre
+    // visible, en vez de quedar lejos del final de una tabla larga. En mobile
+    // se deja el flujo normal (la página entera scrollea).
+    <div className="mx-auto flex w-full max-w-6xl flex-col px-6 py-8 lg:h-dvh lg:py-10">
+      <header className="shrink-0">
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
           Usuarios y permisos
         </h1>
@@ -38,18 +43,18 @@ export default async function AdminUsuariosPage() {
         </p>
       </header>
 
-      <div className="mt-9 grid grid-cols-2 gap-5 lg:grid-cols-4">
+      <div className="mt-6 grid shrink-0 grid-cols-2 gap-5 lg:grid-cols-4">
         <Kpi value={totales} label="Usuarios totales" />
         <Kpi value={estudiantes} label="Estudiantes" />
         <Kpi value={patrocinadores} label="Patrocinadores" />
         <Kpi value={suspendidas} label="Cuentas suspendidas" tone="danger" />
       </div>
 
-      <div className="mt-9">
+      <div className="mt-6 flex min-h-0 flex-1 flex-col">
         <UsersTable users={usuarios} currentUserId={user.id} />
       </div>
 
-      <div className="mt-7 flex flex-col items-start justify-between gap-4 rounded-2xl border border-electric/20 bg-electric/5 p-7 sm:flex-row sm:items-center">
+      <div className="mt-5 flex shrink-0 flex-col items-start justify-between gap-4 rounded-2xl border border-electric/20 bg-electric/5 p-7 sm:flex-row sm:items-center">
         <div>
           <p className="font-semibold text-ink">Acciones protegidas</p>
           <p className="mt-1 text-sm text-muted">
