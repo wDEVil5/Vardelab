@@ -765,3 +765,45 @@ export async function deleteProject(
   revalidatePath("/mis-proyectos");
   redirect("/mis-proyectos?eliminado=1");
 }
+
+export type CancelProjectState = { error?: string };
+
+/**
+ * Cancela un proyecto (M60): el gestor puede hacerlo desde cualquier estado
+ * salvo uno ya completado (terminal, no tiene sentido cancelarlo) o ya
+ * cancelado. La RLS y el trigger `projects_guard_status` son la barrera real
+ * de quién puede y desde qué estado — acá solo se filtra en la propia query
+ * para poder dar un mensaje claro si ya no aplica, y un trigger aparte
+ * (`notify_proyecto_cancelado`) avisa al equipo y a la organización.
+ */
+export async function cancelProject(
+  _prevState: CancelProjectState,
+  formData: FormData,
+): Promise<CancelProjectState> {
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!projectId) return { error: "Falta el proyecto." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("projects")
+    .update({ status: "cancelado" })
+    .eq("id", projectId)
+    .neq("status", "completado")
+    .neq("status", "cancelado")
+    .select("id");
+
+  if (error) {
+    console.error("[cancelProject]", error.message);
+    return { error: "No se pudo cancelar el proyecto." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "No se pudo cancelar (¿ya está completado o cancelado?)." };
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}`);
+  revalidatePath("/mis-proyectos");
+  revalidatePath("/proyectos");
+  revalidatePath(`/admin/proyectos/${projectId}`);
+  revalidatePath("/admin/proyectos");
+  return {};
+}

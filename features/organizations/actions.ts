@@ -119,6 +119,53 @@ export async function updateOrganization(
   redirect(`/mis-organizaciones/${id}/editar?guardado=1`);
 }
 
+/**
+ * Solicita la verificación de una organización propia (`sin_verificar →
+ * en_revision`). El trigger `organizations_guard_verificacion` (M62) es la
+ * barrera real de quién puede y desde qué estado — acá solo se da feedback
+ * si la query no afecta filas (¿ya no está sin_verificar?). No genera
+ * notificación (igual que enviar un proyecto a revisión no le avisa al
+ * moderador): el admin la ve en la cola de `/admin/organizaciones`.
+ */
+export async function requestOrgVerification(formData: FormData): Promise<void> {
+  const id = String(formData.get("orgId") ?? "");
+  if (!id) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("organizations")
+    .update({ verificacion: "en_revision" })
+    .eq("id", id)
+    .eq("verificacion", "sin_verificar");
+
+  if (error) {
+    console.error("[requestOrgVerification]", error.message);
+  }
+
+  revalidatePath(`/mis-organizaciones/${id}/editar`);
+  revalidatePath("/mis-organizaciones");
+}
+
+/** Retracta una solicitud de verificación propia (`en_revision → sin_verificar`). */
+export async function withdrawOrgVerificationRequest(formData: FormData): Promise<void> {
+  const id = String(formData.get("orgId") ?? "");
+  if (!id) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("organizations")
+    .update({ verificacion: "sin_verificar" })
+    .eq("id", id)
+    .eq("verificacion", "en_revision");
+
+  if (error) {
+    console.error("[withdrawOrgVerificationRequest]", error.message);
+  }
+
+  revalidatePath(`/mis-organizaciones/${id}/editar`);
+  revalidatePath("/mis-organizaciones");
+}
+
 export type DeleteOrgState = { error?: string };
 
 /**

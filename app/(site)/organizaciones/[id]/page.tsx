@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { OrgLogo } from "@/components/ui/org-logo";
-import { VerifiedBadge } from "@/components/ui/verified-badge";
+import { VerifiedInfoBadge } from "@/components/ui/verified-info-popover";
 import { OrgProjectsGrid } from "@/features/organizations/components/org-projects-grid";
 import { getPublicOrganization } from "@/features/organizations/queries";
 import { getPublishedProjectsByOrg } from "@/features/projects/queries";
@@ -57,6 +57,41 @@ function IconSobre({ className }: { className?: string }) {
   );
 }
 
+function IconProyecto({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="7" width="18" height="13" rx="2" />
+      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </svg>
+  );
+}
+
+function IconEquipo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="9" cy="8" r="3.25" />
+      <path d="M2.5 19c1.1-3.2 3.6-4.8 6.5-4.8s5.4 1.6 6.5 4.8" />
+      <path d="M15.5 4.3a3.25 3.25 0 0 1 0 6.4" />
+      <path d="M17.5 14.4c2.2.5 3.7 2 4.5 4.6" />
+    </svg>
+  );
+}
+
+function IconCalendario({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M8 3v4M16 3v4M3 10h18" />
+    </svg>
+  );
+}
+
+// "Mes y año" en español, para "En CampusLab desde…" — mismo criterio que
+// usa `/u/[id]` para el estudiante.
+function mesYAnio(iso: string): string {
+  return new Date(iso).toLocaleDateString("es-CL", { month: "long", year: "numeric" });
+}
+
 /**
  * Perfil público de una organización: lo que un estudiante ve antes de
  * postular a uno de sus proyectos (identidad, verificación, contacto y sus
@@ -72,9 +107,14 @@ export default async function PerfilOrganizacionPage({ params }: PageProps) {
   ]);
   if (!org) notFound();
 
+  const cuposAbiertos = proyectos.reduce(
+    (total, p) => total + p.roles.reduce((sub, r) => sub + r.cupos, 0),
+    0,
+  );
+
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
-      <header className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-border bg-white">
+    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
+      <header className="overflow-hidden rounded-2xl border border-border bg-white">
         {/* Banda de marca: le da a la ficha un punto focal de color antes del
             contenido en blanco y negro, sin depender de que la organización
             tenga una foto de portada (no existe ese campo). */}
@@ -87,13 +127,38 @@ export default async function PerfilOrganizacionPage({ params }: PageProps) {
 
           <h1 className="mt-4 flex flex-wrap items-center justify-center gap-1.5 text-2xl font-bold text-ink">
             {org.nombre}
-            {org.verificacion === "verificado" && <VerifiedBadge />}
+            {org.verificacion === "verificado" && <VerifiedInfoBadge tipo={org.tipo} />}
           </h1>
           <p className="text-sm text-muted">{TIPO_LABEL[org.tipo] ?? org.tipo}</p>
 
           {org.descripcion && (
             <p className="mt-4 max-w-md text-muted">{org.descripcion}</p>
           )}
+
+          {/* Resumen rápido, mismo patrón que usa `/u/[id]` para el estudiante:
+              tres celdas con ícono separadas por líneas — lo primero que
+              necesita ver un estudiante antes de leer el resto de la ficha. */}
+          <div className="mt-6 flex w-full divide-x divide-border rounded-xl border border-border bg-surface/50">
+            <div className="flex flex-1 flex-col items-center gap-1 px-3 py-3.5">
+              <IconProyecto className="size-4 text-electric" />
+              <span className="text-lg font-bold text-ink">{proyectos.length}</span>
+              <span className="text-xs text-muted">
+                {proyectos.length === 1 ? "proyecto publicado" : "proyectos publicados"}
+              </span>
+            </div>
+            <div className="flex flex-1 flex-col items-center gap-1 px-3 py-3.5">
+              <IconEquipo className="size-4 text-electric" />
+              <span className="text-lg font-bold text-ink">{cuposAbiertos}</span>
+              <span className="text-xs text-muted">
+                {cuposAbiertos === 1 ? "cupo abierto" : "cupos abiertos"}
+              </span>
+            </div>
+            <div className="flex flex-1 flex-col items-center gap-1 px-3 py-3.5">
+              <IconCalendario className="size-4 text-electric" />
+              <span className="text-xs font-semibold text-ink">{mesYAnio(org.created_at)}</span>
+              <span className="text-xs text-muted">En CampusLab desde</span>
+            </div>
+          </div>
 
           {(org.sitio_web || org.contacto || org.contacto_email) && (
             <div className="mt-6 flex flex-col items-center gap-2 border-t border-border pt-6 text-sm">

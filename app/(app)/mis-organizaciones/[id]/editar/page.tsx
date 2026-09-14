@@ -2,10 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { VerifiedBadge } from "@/components/ui/verified-badge";
+import { VerifiedBadge, PendingVerificationBadge } from "@/components/ui/verified-badge";
 import { getCurrentUser } from "@/features/auth/queries";
 import { getMyOrganization } from "@/features/organizations/queries";
-import { updateOrganization } from "@/features/organizations/actions";
+import {
+  updateOrganization,
+  requestOrgVerification,
+  withdrawOrgVerificationRequest,
+} from "@/features/organizations/actions";
+import { buttonClasses } from "@/components/ui/button";
 import { OrgForm } from "@/features/organizations/components/org-form";
 import { OrgLogoPicker } from "@/features/organizations/components/org-logo-picker";
 import { DeleteOrgButton } from "@/features/organizations/components/delete-org-button";
@@ -69,7 +74,11 @@ export default async function EditarOrganizacionPage({
         <div className="flex flex-col gap-1.5">
           <span className="flex items-center gap-1.5 text-lg font-bold text-ink">
             {org.nombre}
-            {org.verificacion === "verificado" && <VerifiedBadge />}
+            {org.verificacion === "verificado" ? (
+              <VerifiedBadge />
+            ) : (
+              <PendingVerificationBadge estado={org.verificacion} />
+            )}
           </span>
           <span className="text-sm text-muted">
             {TIPO_LABEL[org.tipo] ?? org.tipo}
@@ -82,6 +91,26 @@ export default async function EditarOrganizacionPage({
             </span>
           )}
         </div>
+
+        {/* Solicitar/retractar verificación (M62): sin verificar → un botón
+            para pedirla; en revisión → esperando al admin, con opción de
+            retractar. Verificada → nada que hacer acá, ya está el sello. */}
+        {org.verificacion === "sin_verificar" && (
+          <form action={requestOrgVerification} className="ml-auto">
+            <input type="hidden" name="orgId" value={org.id} />
+            <button type="submit" className={buttonClasses({ variant: "outline", size: "sm" })}>
+              Solicitar verificación
+            </button>
+          </form>
+        )}
+        {org.verificacion === "en_revision" && (
+          <form action={withdrawOrgVerificationRequest} className="ml-auto">
+            <input type="hidden" name="orgId" value={org.id} />
+            <button type="submit" className={buttonClasses({ variant: "ghost", size: "sm" })}>
+              Retirar solicitud
+            </button>
+          </form>
+        )}
       </div>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px] lg:items-start">

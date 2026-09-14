@@ -13,6 +13,8 @@ const ACCION_LABEL: Record<string, string> = {
   cuenta_reactivada: "Cuenta reactivada",
   catalogo_editado: "Catálogo editado",
   configuracion_actualizada: "Configuración actualizada",
+  organizacion_verificada: "Organización verificada",
+  organizacion_rechazada: "Verificación rechazada",
 };
 
 const ACCION_TONE: Record<string, BadgeTone> = {
@@ -21,6 +23,8 @@ const ACCION_TONE: Record<string, BadgeTone> = {
   cuenta_reactivada: "success",
   catalogo_editado: "outline",
   configuracion_actualizada: "brand",
+  organizacion_verificada: "success",
+  organizacion_rechazada: "danger",
 };
 
 const ROL_LABEL: Record<string, string> = {
@@ -90,6 +94,10 @@ function describirEvento(e: AuditLogEntry): string {
       }
       return `${e.actorNombre} actualizó la configuración del piloto.`;
     }
+    case "organizacion_verificada":
+      return `${e.actorNombre} verificó la organización "${entidad}".`;
+    case "organizacion_rechazada":
+      return `${e.actorNombre} rechazó la solicitud de verificación de "${entidad}".`;
     default:
       return `${e.actorNombre} registró "${etiquetaAccion(e.accion)}" sobre ${entidad}.`;
   }
