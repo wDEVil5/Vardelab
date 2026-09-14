@@ -130,9 +130,15 @@ function exportarCsv(eventos: AuditLogEntry[]) {
 /**
  * Tabla del registro de auditoría (D-04). Mismo patrón de filtros en memoria
  * que el resto del panel admin — a escala de piloto (cientos de eventos, no
- * miles) alcanza y sobra. Al hacer clic en "Ver" de una fila se abre, debajo
- * de la tabla, un resumen legible del evento (sin exponer IP ni metadata
- * cruda salvo que se pida explícitamente).
+ * miles) alcanza y sobra.
+ *
+ * La tabla scrollea dentro de su propia caja (`max-h`, encabezado `sticky`)
+ * en vez de estirar la página entera: con muchos eventos, el panel de
+ * detalle quedaba mucho más abajo de lo que alcanzaba a verse tras hacer clic
+ * en "Ver" en una fila de más arriba. El panel de detalle ahora es un espacio
+ * fijo debajo de la tabla (siempre presente, con un placeholder cuando nada
+ * está seleccionado) en vez de aparecer/desaparecer y mover el resto del
+ * layout cada vez que se selecciona o deselecciona una fila.
  */
 export function AuditLogTable({ eventos }: { eventos: AuditLogEntry[] }) {
   const [query, setQuery] = useState("");
@@ -176,8 +182,8 @@ export function AuditLogTable({ eventos }: { eventos: AuditLogEntry[] }) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-5 sm:flex-row sm:items-center">
+    <div className="flex min-h-0 flex-1 flex-col gap-5">
+      <div className="flex shrink-0 flex-col gap-3 rounded-2xl border border-border bg-white p-5 sm:flex-row sm:items-center">
         <input
           type="search"
           value={query}
@@ -221,7 +227,7 @@ export function AuditLogTable({ eventos }: { eventos: AuditLogEntry[] }) {
       </div>
 
       {visibles.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-white px-6 py-16 text-center">
+        <div className="shrink-0 rounded-2xl border border-dashed border-border bg-white px-6 py-16 text-center">
           <p className="text-sm text-muted">
             {eventos.length === 0
               ? "Todavía no hay eventos registrados."
@@ -229,9 +235,9 @@ export function AuditLogTable({ eventos }: { eventos: AuditLogEntry[] }) {
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-border bg-white">
+        <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-border bg-white">
           <table className="w-full min-w-180 text-left text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-white">
               <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
                 <th className="px-8 py-5 font-medium">Evento</th>
                 <th className="px-8 py-5 font-medium">Actor</th>
@@ -245,7 +251,7 @@ export function AuditLogTable({ eventos }: { eventos: AuditLogEntry[] }) {
                 <tr
                   key={e.id}
                   className={cn(
-                    "border-b border-border/60 last:border-0",
+                    "border-b border-border/60 transition-colors last:border-0",
                     e.id === seleccionado && "bg-electric/5",
                   )}
                 >
@@ -278,35 +284,58 @@ export function AuditLogTable({ eventos }: { eventos: AuditLogEntry[] }) {
         </div>
       )}
 
-      {eventoSeleccionado && (
-        <div className="flex flex-col gap-4 rounded-2xl border border-electric/20 bg-electric/5 p-7 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <p className="font-semibold text-ink">
-              Evento seleccionado · {etiquetaAccion(eventoSeleccionado.accion)}
-            </p>
-            <p className="mt-1.5 text-sm text-ink">{describirEvento(eventoSeleccionado)}</p>
-            <p className="mt-2.5 text-xs text-muted">IP y datos sensibles protegidos.</p>
-            {verDatosTecnicos && (
-              <pre className="mt-3 max-w-full overflow-x-auto rounded-lg bg-white p-3 text-xs text-muted">
-                {JSON.stringify(
-                  { entidad: eventoSeleccionado.entidad, metadata: eventoSeleccionado.metadata },
-                  null,
-                  2,
+      {/* Alto fijo (no min/max variable): con un alto que dependiera del
+          contenido, el panel crecía al mostrar un evento (respecto al
+          placeholder vacío) y el límite del `flex-1` de la tabla se movía con
+          él — la tabla se achicaba de golpe cada vez que se seleccionaba una
+          fila. Con un alto fijo, la tabla ocupa siempre el mismo espacio; lo
+          que no entra acá adentro (p. ej. el JSON de "datos técnicos") scrollea
+          dentro de este panel, no lo estira. */}
+      <div className="h-64 shrink-0 overflow-y-auto rounded-2xl border border-electric/20 bg-electric/5 p-6">
+        {/* `key` fuerza a React a remontar este bloque en cada cambio de
+            selección — es lo que hace que `animate-fade-in` (fundido +
+            deslizamiento de 4px, ya usado en el carrusel de auth) se repita
+            cada vez, en vez de quedar "pegado" al primer montaje. Sin esto el
+            contenido cambiaba de golpe al hacer clic en "Ver", sin transición. */}
+        <div
+          key={eventoSeleccionado?.id ?? "vacio"}
+          className="animate-fade-in flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+        >
+          {eventoSeleccionado ? (
+            <>
+              <div className="min-w-0">
+                <p className="font-semibold text-ink">
+                  Evento seleccionado · {etiquetaAccion(eventoSeleccionado.accion)}
+                </p>
+                <p className="mt-1.5 text-sm text-ink">{describirEvento(eventoSeleccionado)}</p>
+                <p className="mt-2.5 text-xs text-muted">IP y datos sensibles protegidos.</p>
+                {verDatosTecnicos && (
+                  <pre className="animate-fade-in mt-3 max-h-36 max-w-full overflow-auto rounded-lg bg-white p-3 text-xs text-muted">
+                    {JSON.stringify(
+                      { entidad: eventoSeleccionado.entidad, metadata: eventoSeleccionado.metadata },
+                      null,
+                      2,
+                    )}
+                  </pre>
                 )}
-              </pre>
-            )}
-          </div>
-          {(eventoSeleccionado.metadata || eventoSeleccionado.entidad) && (
-            <button
-              type="button"
-              onClick={() => setVerDatosTecnicos((v) => !v)}
-              className={buttonClasses({ variant: "outline", size: "sm" })}
-            >
-              {verDatosTecnicos ? "Ocultar datos técnicos" : "Ver datos técnicos"}
-            </button>
+              </div>
+              {(eventoSeleccionado.metadata || eventoSeleccionado.entidad) && (
+                <button
+                  type="button"
+                  onClick={() => setVerDatosTecnicos((v) => !v)}
+                  className={cn(buttonClasses({ variant: "outline", size: "sm" }), "shrink-0")}
+                >
+                  {verDatosTecnicos ? "Ocultar datos técnicos" : "Ver datos técnicos"}
+                </button>
+              )}
+            </>
+          ) : (
+            <p className="self-center text-sm text-muted">
+              Haz clic en "Ver" en un evento de la tabla para ver el detalle acá.
+            </p>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
