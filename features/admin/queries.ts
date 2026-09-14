@@ -64,7 +64,17 @@ export async function getPilotMetrics() {
 
   const totalProyectos = proyectos?.length ?? 0;
   const completados = porEstado.completado;
-  const publicados = totalProyectos - porEstado.borrador - porEstado.en_revision;
+  // Lista explícita de estados en vez de "todo lo que no es borrador/en_revisión":
+  // esa resta también contaba `suspendido`/`cancelado` como "publicados", que no
+  // corresponde — un proyecto cancelado no sigue publicado. Hoy es inofensivo
+  // porque nada en la app puede llevar un proyecto a esos dos estados, pero la
+  // lista explícita no depende de que eso siga siendo cierto.
+  const publicados =
+    porEstado.publicado +
+    porEstado.seleccion +
+    porEstado.activo +
+    porEstado.revision_final +
+    porEstado.completado;
 
   const totalAplicaciones = aplicaciones?.length ?? 0;
   const aceptadas = (aplicaciones ?? []).filter((a) => a.status === "aceptada").length;
