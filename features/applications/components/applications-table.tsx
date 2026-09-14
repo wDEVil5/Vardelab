@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { OrgLogo } from "@/components/ui/org-logo";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/utils";
 import { withdrawApplication } from "@/features/applications/actions";
@@ -25,25 +26,28 @@ const FILTROS: { id: FiltroId; label: string }[] = [
   { id: "cerradas", label: "Cerradas" },
 ];
 
+/** Ícono de flecha, para el acceso directo a un proyecto ya aceptado. */
+function IconFlecha({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
 function coincide(status: string, filtro: FiltroId): boolean {
   if (filtro === "todas") return true;
   if (filtro === "cerradas") return status === "rechazada" || status === "retirada";
   return status === filtro;
-}
-
-// Conectores que no aportan a las iniciales del monograma.
-const CONECTORES = new Set([
-  "de", "del", "la", "el", "los", "las", "y", "en", "para", "por", "un", "una",
-]);
-
-// Iniciales del proyecto ignorando conectores: "Dashboard de encuesta" → "DE".
-function monograma(titulo: string | undefined): string {
-  const palabras = (titulo ?? "")
-    .trim()
-    .split(/\s+/)
-    .filter((w) => w && !CONECTORES.has(w.toLowerCase()));
-  const base = palabras.length > 0 ? palabras : [titulo ?? ""];
-  return base.slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("") || "·";
 }
 
 // Fecha de postulación en términos relativos y sin ambigüedad.
@@ -107,6 +111,7 @@ export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
           <span className="w-32 shrink-0">Rol</span>
           <span className="w-36 shrink-0">Estado</span>
           <span className="w-20 shrink-0 text-right">Postulado</span>
+          <span className="w-8 shrink-0" aria-hidden />
         </div>
 
         {visibles.length === 0 ? (
@@ -133,17 +138,26 @@ export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
                 tone: "neutral" as BadgeTone,
               };
               const proyecto = a.role?.project;
-              const org = proyecto?.organization?.nombre;
+              const org = proyecto?.organization;
+              const aceptada = a.status === "aceptada";
               return (
                 <li
                   key={a.id}
-                  className="flex items-center gap-4 border-b border-border px-5 py-4 transition-colors last:border-0 hover:bg-surface/40"
+                  className={cn(
+                    "flex items-center gap-4 border-b border-border px-5 py-4 transition-colors last:border-0 hover:bg-surface/40",
+                    // Resaltado sutil para lo que ya está aceptado — es el
+                    // estado que más importa encontrar de un vistazo, no uno
+                    // más entre los demás.
+                    aceptada && "bg-sprout/5 hover:bg-sprout/10",
+                  )}
                 >
-                  {/* Proyecto: monograma + título + organización */}
+                  {/* Proyecto: logo de la organización + título + nombre */}
                   <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-electric/10 text-sm font-semibold text-electric">
-                      {monograma(proyecto?.titulo)}
-                    </span>
+                    <OrgLogo
+                      logoUrl={org?.logo_url}
+                      nombre={org?.nombre ?? proyecto?.titulo ?? ""}
+                      size="md"
+                    />
                     <div className="min-w-0">
                       <Link
                         href={`/proyectos/${proyecto?.id}`}
@@ -151,8 +165,8 @@ export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
                       >
                         {proyecto?.titulo}
                       </Link>
-                      {org && (
-                        <p className="truncate text-xs text-muted">{org}</p>
+                      {org?.nombre && (
+                        <p className="truncate text-xs text-muted">{org.nombre}</p>
                       )}
                     </div>
                   </div>
@@ -162,8 +176,8 @@ export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
                     {a.role?.nombre}
                   </span>
 
-                  {/* Estado (+ retirar si está en revisión) */}
-                  <div className="flex w-auto shrink-0 items-center gap-2 md:w-36">
+                  {/* Estado (+ retirar si está en revisión). */}
+                  <div className="flex w-auto shrink-0 flex-col items-start gap-1.5 md:w-36">
                     <Badge tone={estado.tone}>{estado.label}</Badge>
                     {a.status === "enviada" && (
                       <form action={withdrawApplication}>
@@ -182,6 +196,22 @@ export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
                   {/* Fecha (desktop) */}
                   <span className="hidden w-20 shrink-0 text-right text-sm text-muted md:block">
                     {haceCuanto(a.created_at)}
+                  </span>
+
+                  {/* Acceso directo al espacio de trabajo, si ya está
+                      aceptada — ícono, no texto: acá compite por espacio con
+                      el resto de la fila, un link de texto se veía suelto. */}
+                  <span className="flex w-8 shrink-0 justify-end">
+                    {aceptada && proyecto?.id && (
+                      <Link
+                        href={`/proyecto/${proyecto.id}`}
+                        aria-label="Ir al proyecto"
+                        title="Ir al proyecto"
+                        className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-electric/10 hover:text-electric"
+                      >
+                        <IconFlecha className="size-4" />
+                      </Link>
+                    )}
                   </span>
                 </li>
               );

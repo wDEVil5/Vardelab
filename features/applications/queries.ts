@@ -33,7 +33,7 @@ export async function getMyApplications() {
         project:projects!inner (
           id,
           titulo,
-          organization:organizations ( nombre )
+          organization:organizations ( nombre, logo_url )
         )
       )
     `,
