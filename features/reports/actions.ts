@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getMyOrgIds } from "@/features/organizations/queries";
 
 /**
  * Acciones de reportes (M7 + M22). Cualquier usuario con sesión puede reportar
@@ -25,7 +26,7 @@ export async function submitReport(
   const motivo = String(formData.get("motivo") ?? "").trim();
   const descripcion = String(formData.get("descripcion") ?? "").trim();
 
-  if (!["proyecto", "perfil"].includes(targetType) || !targetId) {
+  if (!["proyecto", "perfil", "organizacion"].includes(targetType) || !targetId) {
     return { error: "No se pudo procesar el reporte. Recarga e inténtalo de nuevo." };
   }
   if (!motivo) return { error: "Elige un motivo." };
@@ -41,6 +42,29 @@ export async function submitReport(
 
   if (targetType === "perfil" && targetId === user.id) {
     return { error: "No puedes reportar tu propio perfil." };
+  }
+
+  // El botón ya se oculta para lo propio en la UI, pero eso no frena un POST
+  // directo a esta acción — el chequeo real tiene que vivir acá.
+  if (targetType === "organizacion") {
+    const misOrgIds = await getMyOrgIds();
+    if (misOrgIds.includes(targetId)) {
+      return { error: "No puedes reportar tu propia organización." };
+    }
+  }
+
+  if (targetType === "proyecto") {
+    const misOrgIds = await getMyOrgIds();
+    if (misOrgIds.length > 0) {
+      const { data: proyecto } = await supabase
+        .from("projects")
+        .select("org_id")
+        .eq("id", targetId)
+        .maybeSingle();
+      if (proyecto && misOrgIds.includes(proyecto.org_id)) {
+        return { error: "No puedes reportar tu propio proyecto." };
+      }
+    }
   }
 
   const { error } = await supabase.from("reports").insert({

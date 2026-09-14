@@ -15,6 +15,7 @@ import {
 } from "@/features/profile/queries";
 import { setProfileVisibility } from "@/features/profile/actions";
 import { VisibilityToggle } from "@/features/profile/components/visibility-toggle";
+import { ProfileCompletionStatus } from "@/features/profile/components/profile-completion-bar";
 import { AvatarPicker } from "@/features/profile/components/avatar-picker";
 import { PerfilIconSvg, type PerfilIcon } from "@/features/profile/components/profile-icons";
 import { getActiveSkills } from "@/features/skills/queries";
@@ -205,30 +206,7 @@ export default async function PerfilPage({ searchParams }: PageProps) {
                 {profile.semestre != null && `${profile.semestre}° semestre`}
               </p>
             )}
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Badge tone={esPublico ? "success" : "neutral"}>
-                {esPublico ? "Perfil público" : "Perfil privado"}
-              </Badge>
-              {pct < 100 && <Badge tone="brand">{pct}% completo</Badge>}
-            </div>
-
-            {/* Barra de progreso: el número solo ("67% completo") no da una
-                sensación inmediata de cuánto falta; el trazo sí. */}
-            {pct < 100 && (
-              <div
-                role="progressbar"
-                aria-valuenow={pct}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label="Perfil completo"
-                className="mt-2 h-1.5 w-full max-w-56 overflow-hidden rounded-full bg-surface"
-              >
-                <div
-                  className="h-full rounded-full bg-electric transition-[width]"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            )}
+            <ProfileCompletionStatus pct={pct} esPublico={esPublico} />
           </div>
         </div>
 

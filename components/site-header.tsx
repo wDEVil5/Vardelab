@@ -13,7 +13,7 @@ import { SiteAuthStatus } from "@/components/site-auth-status";
 export function SiteHeader() {
   return (
     <SiteHeaderBar>
-      <div className="relative mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-6">
+      <div className="relative flex h-14 w-full items-center justify-between gap-4 px-6">
         {/* En el sitio público la marca lleva siempre a la portada pública. La
             entrada al panel privado es el botón "Ir a mi panel" (ver derecha). */}
         <Link href="/" className="font-bold text-ink">
