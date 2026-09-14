@@ -84,19 +84,33 @@ export function UserRowActions({
               </button>
             </form>
           ) : confirmandoSuspension ? (
-            <form action={suspendAction} className="flex items-center gap-1.5">
-              <input type="hidden" name="userId" value={userId} />
-              <button type="submit" className={buttonClasses({ variant: "danger", size: "sm" })}>
-                Confirmar
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmandoSuspension(false)}
-                className={buttonClasses({ variant: "ghost", size: "sm" })}
-              >
-                Cancelar
-              </button>
-            </form>
+            // El aro parpadea de verdad (`animate-ring-blink`, definido en
+            // globals.css: alterna abrupto entre visible y casi invisible)
+            // en vez de crecer como `animate-ping` o apenas respirar como
+            // `animate-pulse` de Tailwind, que pasaba desapercibido. Mismo
+            // tamaño siempre, pegado a los botones. Va en un `span` aparte,
+            // detrás de los botones: lo que parpadea es el aro, no los
+            // botones mismos (que necesitan quedar legibles y clicables todo
+            // el rato).
+            <div className="relative rounded-lg">
+              <span
+                aria-hidden
+                className="animate-ring-blink pointer-events-none absolute inset-0 rounded-lg ring-[3px] ring-coral"
+              />
+              <form action={suspendAction} className="relative flex items-center gap-1.5 p-1">
+                <input type="hidden" name="userId" value={userId} />
+                <button type="submit" className={buttonClasses({ variant: "danger", size: "sm" })}>
+                  Confirmar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmandoSuspension(false)}
+                  className={buttonClasses({ variant: "ghost", size: "sm" })}
+                >
+                  Cancelar
+                </button>
+              </form>
+            </div>
           ) : (
             <button
               type="button"

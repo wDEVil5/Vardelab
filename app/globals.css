@@ -59,6 +59,25 @@ body {
   animation: fade-in 400ms ease-out both;
 }
 
+/* Parpadeo del aro de "acción pendiente" (p. ej. confirmar/cancelar en
+   /admin/usuarios): a diferencia de `animate-pulse` de Tailwind (fundido
+   suave, lento, poco notorio), esto alterna abrupto entre visible y casi
+   invisible — un parpadeo real, no un respirar. */
+@keyframes ring-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.15;
+  }
+}
+
+.animate-ring-blink {
+  animation: ring-blink 900ms step-end infinite;
+}
+
 /* Parallax del footer "cortina": el pie sube al revelarse. Solo escritorio y con
    movimiento permitido; sin JS, `--footer-rev` cae a 1 → sin desplazamiento. */
 @media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
