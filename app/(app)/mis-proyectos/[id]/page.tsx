@@ -13,6 +13,7 @@ import { AddRoleModal } from "@/features/projects/components/add-role-modal";
 import { RoleSkillsEditor } from "@/features/projects/components/role-skills-editor";
 import { PublishControls } from "@/features/projects/components/publish-controls";
 import { DeleteProjectButton } from "@/features/projects/components/delete-project-button";
+import { CancelProjectButton } from "@/features/projects/components/cancel-project-button";
 import { getActiveSkills, type Skill } from "@/features/skills/queries";
 import { getTeamForEvaluation } from "@/features/evaluations/queries";
 import { MemberEvaluationForm } from "@/features/evaluations/components/member-evaluation-form";
@@ -210,6 +211,14 @@ export default async function GestionarProyectoPage({ params }: PageProps) {
               <PublishControls projectId={project.id} status={project.status} />
             </div>
           </div>
+
+          {/* Cancelar: cualquier estado salvo uno ya terminal
+              (completado/cancelado). Antes de esto no había ninguna forma de
+              cerrar un proyecto que dejó de tener sentido a mitad de camino
+              — quedaba "activo" para siempre. */}
+          {project.status !== "completado" && project.status !== "cancelado" && (
+            <CancelProjectButton projectId={project.id} />
+          )}
 
           {/* Zona de eliminación */}
           <DeleteProjectButton projectId={project.id} />

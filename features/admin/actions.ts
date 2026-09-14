@@ -331,8 +331,6 @@ export async function renameCategoria(
 
 export type PilotConfigState = { error?: string };
 
-const DURACIONES_VALIDAS = new Set(["2-4", "2-8", "4-12"]);
-
 /**
  * Guarda la configuración del piloto (D-05, deseable). Solo compara y
  * persiste los campos que en verdad cambiaron — el metadata de auditoría
@@ -343,8 +341,7 @@ const DURACIONES_VALIDAS = new Set(["2-4", "2-8", "4-12"]);
  * `patrocinadores_externos` y `registro_abierto` además cambian
  * comportamiento real (ver M24): el trigger de estados de `projects`, la
  * policy de creación de organizaciones y `signUp()` los leen directo de la
- * tabla. El resto de los campos (límites de alcance, notificaciones) hoy
- * solo quedan guardados.
+ * tabla. El resto de los campos (notificaciones) hoy solo quedan guardados.
  */
 export async function updatePilotConfig(
   _prevState: PilotConfigState,
@@ -353,25 +350,9 @@ export async function updatePilotConfig(
   const admin = await getCurrentUser();
   if (!admin?.esAdmin) return { error: "No autorizado." };
 
-  const maxProyectos = Number(formData.get("maxProyectosActivos"));
-  const maxEstudiantes = Number(formData.get("maxEstudiantes"));
-  const duracion = String(formData.get("duracion") ?? "");
-  if (!Number.isInteger(maxProyectos) || maxProyectos <= 0) {
-    return { error: "El máximo de proyectos activos debe ser un número positivo." };
-  }
-  if (!Number.isInteger(maxEstudiantes) || maxEstudiantes <= 0) {
-    return { error: "El máximo de estudiantes debe ser un número positivo." };
-  }
-  if (!DURACIONES_VALIDAS.has(duracion)) return { error: "Duración inválida." };
-  const [duracionMin, duracionMax] = duracion.split("-").map(Number);
-
   const boolField = (campo: string) => formData.get(campo) === "true";
 
   const nuevo = {
-    max_proyectos_activos: maxProyectos,
-    max_estudiantes: maxEstudiantes,
-    duracion_min_semanas: duracionMin,
-    duracion_max_semanas: duracionMax,
     registro_abierto: boolField("registroAbierto"),
     moderacion_previa_obligatoria: boolField("moderacionPreviaObligatoria"),
     patrocinadores_externos: boolField("patrocinadoresExternos"),
@@ -419,5 +400,95 @@ export async function updatePilotConfig(
 
   revalidatePath("/admin/configuracion");
   revalidatePath("/admin/auditoria");
+  return {};
+}
+
+export type OrgVerificationState = { error?: string };
+
+/**
+ * Aprueba la verificación de una organización (`en_revision → verificado`).
+ * El trigger `organizations_guard_verificacion` (M62) es la barrera real de
+ * quién puede — acá solo se filtra en la propia query para dar un mensaje
+ * claro si ya no aplica. Deja rastro en `audit_logs`, mismo criterio que
+ * cambiar un rol o suspender una cuenta: es una decisión de confianza sobre
+ * la cuenta de alguien más, no una acción propia.
+ */
+export async function approveOrgVerification(
+  _prevState: OrgVerificationState,
+  formData: FormData,
+): Promise<OrgVerificationState> {
+  const admin = await getCurrentUser();
+  if (!admin?.esAdmin) return { error: "No autorizado." };
+
+  const orgId = String(formData.get("orgId") ?? "");
+  if (!orgId) return { error: "Falta la organización." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("organizations")
+    .update({ verificacion: "verificado" })
+    .eq("id", orgId)
+    .eq("verificacion", "en_revision")
+    .select("id, nombre");
+
+  if (error) {
+    console.error("[approveOrgVerification]", error.message);
+    return { error: "No se pudo aprobar la verificación." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "No se pudo aprobar (¿ya no está en revisión?)." };
+  }
+
+  await supabase.from("audit_logs").insert({
+    actor_id: admin.id,
+    accion: "organizacion_verificada",
+    entidad: "organizations",
+    entidad_id: orgId,
+    metadata: { nombre: data[0].nombre },
+  });
+
+  revalidatePath(`/admin/organizaciones/${orgId}`);
+  revalidatePath("/admin/organizaciones");
+  revalidatePath("/organizaciones");
+  return {};
+}
+
+/** Rechaza la verificación de una organización (`en_revision → sin_verificar`). */
+export async function rejectOrgVerification(
+  _prevState: OrgVerificationState,
+  formData: FormData,
+): Promise<OrgVerificationState> {
+  const admin = await getCurrentUser();
+  if (!admin?.esAdmin) return { error: "No autorizado." };
+
+  const orgId = String(formData.get("orgId") ?? "");
+  if (!orgId) return { error: "Falta la organización." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("organizations")
+    .update({ verificacion: "sin_verificar" })
+    .eq("id", orgId)
+    .eq("verificacion", "en_revision")
+    .select("id, nombre");
+
+  if (error) {
+    console.error("[rejectOrgVerification]", error.message);
+    return { error: "No se pudo rechazar la verificación." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "No se pudo rechazar (¿ya no está en revisión?)." };
+  }
+
+  await supabase.from("audit_logs").insert({
+    actor_id: admin.id,
+    accion: "organizacion_rechazada",
+    entidad: "organizations",
+    entidad_id: orgId,
+    metadata: { nombre: data[0].nombre },
+  });
+
+  revalidatePath(`/admin/organizaciones/${orgId}`);
+  revalidatePath("/admin/organizaciones");
   return {};
 }

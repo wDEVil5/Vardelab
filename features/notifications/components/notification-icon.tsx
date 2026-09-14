@@ -45,6 +45,27 @@ const TRAZOS: Record<Notification["tipo"], ReactNode> = {
   mensaje_nuevo: (
     <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
   ),
+  proyecto_cancelado: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5l5 5M14.5 9.5l-5 5" />
+    </>
+  ),
+  organizacion_verificada: (
+    <path
+      fillRule="evenodd"
+      d="M8.603 3.799A4.49 4.49 0 0 1 12 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 0 1 3.498 1.307 4.491 4.491 0 0 1 1.307 3.497A4.49 4.49 0 0 1 21.75 12a4.49 4.49 0 0 1-1.549 3.397 4.491 4.491 0 0 1-1.307 3.497 4.491 4.491 0 0 1-3.497 1.307A4.49 4.49 0 0 1 12 21.75a4.49 4.49 0 0 1-3.397-1.549 4.49 4.49 0 0 1-3.498-1.306 4.491 4.491 0 0 1-1.307-3.498A4.49 4.49 0 0 1 2.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 0 1 1.307-3.497 4.49 4.49 0 0 1 3.497-1.307Zm7.007 6.387a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
+      clipRule="evenodd"
+      fill="currentColor"
+      stroke="none"
+    />
+  ),
+  organizacion_no_verificada: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5l5 5M14.5 9.5l-5 5" />
+    </>
+  ),
 };
 
 const TONO: Record<Notification["tipo"], string> = {
@@ -55,6 +76,9 @@ const TONO: Record<Notification["tipo"], string> = {
   evaluacion_nueva: "bg-electric/10 text-electric",
   hito_por_vencer: "bg-coral/15 text-coral",
   mensaje_nuevo: "bg-electric/10 text-electric",
+  proyecto_cancelado: "bg-coral/15 text-coral",
+  organizacion_verificada: "bg-sprout/15 text-sprout",
+  organizacion_no_verificada: "bg-coral/15 text-coral",
 };
 
 export function NotificationIcon({ tipo }: { tipo: Notification["tipo"] }) {

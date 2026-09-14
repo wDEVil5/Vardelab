@@ -375,11 +375,7 @@ export type Database = {
       pilot_config: {
         Row: {
           autoaprobacion_proyectos: boolean
-          duracion_max_semanas: number
-          duracion_min_semanas: number
           id: boolean
-          max_estudiantes: number
-          max_proyectos_activos: number
           moderacion_previa_obligatoria: boolean
           notif_hito_proximo_vencer: boolean
           notif_postulacion_recibida: boolean
@@ -392,11 +388,7 @@ export type Database = {
         }
         Insert: {
           autoaprobacion_proyectos?: boolean
-          duracion_max_semanas?: number
-          duracion_min_semanas?: number
           id?: boolean
-          max_estudiantes?: number
-          max_proyectos_activos?: number
           moderacion_previa_obligatoria?: boolean
           notif_hito_proximo_vencer?: boolean
           notif_postulacion_recibida?: boolean
@@ -409,11 +401,7 @@ export type Database = {
         }
         Update: {
           autoaprobacion_proyectos?: boolean
-          duracion_max_semanas?: number
-          duracion_min_semanas?: number
           id?: boolean
-          max_estudiantes?: number
-          max_proyectos_activos?: number
           moderacion_previa_obligatoria?: boolean
           notif_hito_proximo_vencer?: boolean
           notif_postulacion_recibida?: boolean
@@ -1026,6 +1014,13 @@ export type Database = {
       pilot_moderacion_obligatoria: { Args: never; Returns: boolean }
       pilot_permite_patrocinadores_externos: { Args: never; Returns: boolean }
       pilot_registro_abierto: { Args: never; Returns: boolean }
+      set_user_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
       shares_project_with: { Args: { _other: string }; Returns: boolean }
       shares_team_with: { Args: { _other: string }; Returns: boolean }
     }
@@ -1043,6 +1038,9 @@ export type Database = {
         | "evaluacion_nueva"
         | "hito_por_vencer"
         | "mensaje_nuevo"
+        | "proyecto_cancelado"
+        | "organizacion_verificada"
+        | "organizacion_no_verificada"
       org_type:
         | "academica"
         | "social"
@@ -1208,6 +1206,9 @@ export const Constants = {
         "evaluacion_nueva",
         "hito_por_vencer",
         "mensaje_nuevo",
+        "proyecto_cancelado",
+        "organizacion_verificada",
+        "organizacion_no_verificada",
       ],
       org_type: ["academica", "social", "emprendimiento", "empresa", "interna"],
       project_modality: ["presencial", "remoto", "hibrido"],
