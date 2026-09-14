@@ -38,8 +38,18 @@ export default async function AdminAuditoriaPage() {
   ).length;
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-10 lg:py-12">
-      <header>
+    // `lg:h-dvh` + `lg:flex lg:flex-col`: en desktop, la página ocupa el alto
+    // completo del viewport para que la tabla y el panel de detalle de
+    // `AuditLogTable` puedan repartirse ese espacio fijo entre ellos — la
+    // tabla scrollea internamente, el detalle queda siempre visible abajo sin
+    // depender de cuántas filas haya. `h-dvh` (no `calc(100dvh - padding)`):
+    // el padding ya vive dentro de ese alto por `border-box`, restarlo aparte
+    // dejaba ~80px de espacio muerto sin usar debajo de todo el contenido. En
+    // mobile se deja el flujo normal (la página entera scrollea): con la
+    // tabla ya convertida en tarjetas apiladas ahí, no hay un "panel de
+    // detalle lejano" que resolver de la misma forma.
+    <div className="mx-auto flex w-full max-w-6xl flex-col px-6 py-8 lg:h-dvh lg:py-10">
+      <header className="shrink-0">
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
           Registro de auditoría
         </h1>
@@ -48,7 +58,7 @@ export default async function AdminAuditoriaPage() {
         </p>
       </header>
 
-      <div className="mt-9 grid grid-cols-2 gap-5 lg:grid-cols-4">
+      <div className="mt-6 grid shrink-0 grid-cols-2 gap-5 lg:grid-cols-4">
         <Kpi value={eventos.length} label="Eventos registrados" />
         <Kpi value={cambiosDeRol} label="Cambios de rol" tone="brand" />
         <Kpi value={suspensiones} label="Suspensiones" tone="danger" />
@@ -59,7 +69,7 @@ export default async function AdminAuditoriaPage() {
         />
       </div>
 
-      <div className="mt-9">
+      <div className="mt-6 flex min-h-0 flex-1 flex-col">
         <AuditLogTable eventos={eventos} />
       </div>
     </div>
