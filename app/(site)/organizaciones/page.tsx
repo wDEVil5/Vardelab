@@ -7,6 +7,7 @@ import { Faq } from "@/components/faq";
 import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 import { DesafiosExplorer } from "@/components/desafios-explorer";
+import { ProcessStack, type ProcesoPaso } from "@/components/process-stack";
 
 export const metadata: Metadata = {
   title: "Para organizaciones · CampusLab",
@@ -154,38 +155,16 @@ export default function OrganizacionesPage() {
         {/* 4 · CÓMO FUNCIONA */}
         <section id="como-funciona" className="scroll-mt-28 bg-surface">
           <div className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
-            <Reveal>
-              <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-                Un proceso simple para empezar con claridad.
-              </h2>
-            </Reveal>
-
-            {/* Línea de tiempo: nodos numerados conectados. La línea corre por
-                detrás de los nodos y se oculta en móvil (donde se apilan). El
-                anillo `border-surface` deja un corte visual entre línea y nodo. */}
-            <div className="relative mt-12">
-              <div
-                className="absolute inset-x-0 top-7 hidden h-px bg-border lg:block"
-                aria-hidden
-              />
-              <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-                {PASOS.map((paso, i) => (
-                  <Reveal key={paso.titulo} delayMs={i * 100}>
-                    <div className="flex flex-col gap-4">
-                      <span className="relative z-10 flex size-14 items-center justify-center rounded-full border-4 border-surface bg-electric text-xl font-bold text-white">
-                        {i + 1}
-                      </span>
-                      <h3 className="text-lg font-semibold text-ink">
-                        {paso.titulo}
-                      </h3>
-                      <p className="text-sm leading-relaxed text-muted">
-                        {paso.texto}
-                      </p>
-                    </div>
-                  </Reveal>
-                ))}
-              </div>
-            </div>
+            {/* El título vive dentro de `ProcessStack` (no acá aparte): tiene
+                que taparse con la tarjeta 1 y quedarse tapado el resto del
+                scroll, y eso lo controla el mismo JS que anima las tarjetas —
+                separado, dependía del `sticky` nativo de la tarjeta 1, que se
+                libera de su punto fijo antes de que termine el resto de la
+                pila y el título volvía a asomar. */}
+            <ProcessStack
+              titulo="Un proceso simple para empezar con claridad."
+              pasos={PASOS}
+            />
           </div>
         </section>
 
@@ -472,23 +451,27 @@ const EJEMPLOS = [
 ];
 
 // Cómo funciona (cuatro pasos del lado de la organización).
-const PASOS = [
+const PASOS: ProcesoPaso[] = [
   {
     titulo: "Cuéntanos tu necesidad",
     texto: "Describe el problema, contexto y resultado que buscas.",
+    icon: "mensaje",
   },
   {
     titulo: "Define un desafío acotado",
     texto: "Aterriza habilidades, duración, modalidad y entregables.",
+    icon: "objetivo",
   },
   {
     titulo: "Revisa perfiles interesados",
     texto: "Conoce postulaciones y selecciona según tu necesidad.",
+    icon: "personas",
   },
   {
     titulo: "Acompaña y valida",
     texto:
       "Sigue hitos, entrega retroalimentación y revisa el resultado final.",
+    icon: "check",
   },
 ];
 

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { OrgLogo } from "@/components/ui/org-logo";
+import { ReportButton } from "@/features/reports/components/report-button";
+import { externalUrl } from "@/lib/utils";
 import { VerifiedInfoBadge } from "@/components/ui/verified-info-popover";
 import { OrgProjectsGrid } from "@/features/organizations/components/org-projects-grid";
-import { getPublicOrganization } from "@/features/organizations/queries";
+import { getMyOrgIds, getPublicOrganization } from "@/features/organizations/queries";
 import { getPublishedProjectsByOrg } from "@/features/projects/queries";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -101,11 +103,13 @@ function mesYAnio(iso: string): string {
  */
 export default async function PerfilOrganizacionPage({ params }: PageProps) {
   const { id } = await params;
-  const [org, proyectos] = await Promise.all([
+  const [org, proyectos, misOrgIds] = await Promise.all([
     getPublicOrganization(id),
     getPublishedProjectsByOrg(id),
+    getMyOrgIds(),
   ]);
   if (!org) notFound();
+  const esPropia = misOrgIds.includes(id);
 
   const cuposAbiertos = proyectos.reduce(
     (total, p) => total + p.roles.reduce((sub, r) => sub + r.cupos, 0),
@@ -164,7 +168,7 @@ export default async function PerfilOrganizacionPage({ params }: PageProps) {
             <div className="mt-6 flex flex-col items-center gap-2 border-t border-border pt-6 text-sm">
               {org.sitio_web && (
                 <a
-                  href={org.sitio_web}
+                  href={externalUrl(org.sitio_web)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 font-medium text-electric hover:underline"
@@ -210,6 +214,12 @@ export default async function PerfilOrganizacionPage({ params }: PageProps) {
           </div>
         )}
       </section>
+
+      {!esPropia && (
+        <div className="mt-8">
+          <ReportButton targetType="organizacion" targetId={org.id} />
+        </div>
+      )}
     </main>
   );
 }

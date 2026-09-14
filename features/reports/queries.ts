@@ -145,6 +145,16 @@ export async function getReportTarget(
     return { label: data.nombre ?? "Perfil", href: `/u/${targetId}` };
   }
 
+  if (targetType === "organizacion") {
+    const { data } = await supabase
+      .from("organizations")
+      .select("nombre")
+      .eq("id", targetId)
+      .maybeSingle();
+    if (!data) return null;
+    return { label: data.nombre, href: `/organizaciones/${targetId}` };
+  }
+
   return null;
 }
 
