@@ -80,10 +80,51 @@ function IconDocumento({ className }: { className?: string }) {
   );
 }
 
+/** Ícono de "x", para quitar el archivo elegido antes de enviar. */
+function IconX({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M18 6L6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
+/** Ícono de check, para el aviso de hito aprobado. */
+function IconCheck({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
+  );
+}
+
 // Mismos tipos que el bucket `submission-files` (M48), como texto para el
 // atributo `accept` del input.
 const ARCHIVO_ACCEPT =
   "application/pdf,image/png,image/jpeg,image/webp,application/zip,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+function formatearTamano(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 /**
  * Un hito con sus entregas (vista del integrante): lista lo entregado y permite
@@ -103,15 +144,25 @@ export function MilestoneSubmissions({
   const formRef = useRef<HTMLFormElement>(null);
   const archivoInputRef = useRef<HTMLInputElement>(null);
   const enviado = useRef(false);
-  const [archivoElegido, setArchivoElegido] = useState<string | null>(null);
+  // El archivo elegido vive en estado (el objeto File, no solo su nombre) para
+  // poder mostrar nombre + tamaño y permitir quitarlo — antes solo se guardaba
+  // el nombre y no había forma de deshacer la selección antes de enviar.
+  const [archivo, setArchivo] = useState<File | null>(null);
 
   useEffect(() => {
     if (enviado.current && !state.error) {
       formRef.current?.reset();
-      setArchivoElegido(null);
+      setArchivo(null);
     }
     enviado.current = true;
   }, [state]);
+
+  // Limpia también el input nativo, no solo el estado: si no, el archivo
+  // seguiría ahí (el input es quien realmente se envía con el formulario).
+  function quitarArchivo() {
+    setArchivo(null);
+    if (archivoInputRef.current) archivoInputRef.current.value = "";
+  }
 
   const submissions = milestone.submissions ?? [];
   const aprobado = milestone.estado === "aprobado";
@@ -170,7 +221,10 @@ export function MilestoneSubmissions({
                 )}
                 {s.nota && <span className="text-sm text-muted">{s.nota}</span>}
               </div>
-              {s.submitted_by === currentUserId && (
+              {/* No se puede borrar una entrega de un hito ya aprobado —
+                  sería borrar la evidencia de algo que el gestor ya dio por
+                  bueno. */}
+              {!aprobado && s.submitted_by === currentUserId && (
                 <form action={deleteSubmission}>
                   <input type="hidden" name="submissionId" value={s.id} />
                   <input type="hidden" name="projectId" value={projectId} />
@@ -189,11 +243,28 @@ export function MilestoneSubmissions({
         </ul>
       )}
 
-      {/* Aviso de revisión: aprobado o devuelto para correcciones. */}
+      {/* Aviso de revisión: aprobado o devuelto para correcciones. El de
+          aprobado tiene más peso visual (ícono + título) que una línea de
+          texto — sin el checklist al lado (solo aplica mientras hay algo por
+          entregar), esta tarjeta es lo único que queda en pantalla, así que
+          necesita sostenerse sola. */}
       {aprobado && (
-        <p className="mt-5 rounded-lg border border-sprout/30 bg-sprout/10 px-4 py-3 text-sm text-ink">
-          Aprobado por el gestor. No necesitas entregar más.
-        </p>
+        <div className="mt-5 flex items-start gap-3 rounded-xl border border-sprout/30 bg-sprout/10 p-5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sprout text-white">
+            <IconCheck className="size-5" />
+          </span>
+          <div>
+            <p className="font-semibold text-ink">Hito aprobado</p>
+            <p className="mt-0.5 text-sm text-ink/80">
+              El gestor dio por bueno este hito. No necesitas entregar más.
+            </p>
+            {submissions.length === 0 && (
+              <p className="mt-2 text-xs text-ink/60">
+                No quedó evidencia registrada para este hito.
+              </p>
+            )}
+          </div>
+        </div>
       )}
       {pidioCambios && (
         <p className="mt-5 rounded-lg border border-coral/30 bg-coral/10 px-4 py-3 text-sm text-ink">
@@ -228,29 +299,55 @@ export function MilestoneSubmissions({
           {/* Archivo opcional: para lo que no vive en ningún lado más (un PDF,
               una imagen, un documento) — el enlace de arriba sigue siendo lo
               correcto para un repo, un deploy o un Figma. */}
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              ref={archivoInputRef}
-              type="file"
-              name="archivo"
-              accept={ARCHIVO_ACCEPT}
-              className="hidden"
-              onChange={(e) => setArchivoElegido(e.target.files?.[0]?.name ?? null)}
-            />
+          <input
+            ref={archivoInputRef}
+            type="file"
+            name="archivo"
+            accept={ARCHIVO_ACCEPT}
+            className="hidden"
+            onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
+          />
+          {archivo ? (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface/60 p-3">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-electric/10 text-electric">
+                  <IconDocumento className="size-4" />
+                </span>
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate text-sm font-medium text-ink">
+                    {archivo.name}
+                  </span>
+                  <span className="text-xs text-muted">
+                    {formatearTamano(archivo.size)}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={quitarArchivo}
+                aria-label="Quitar archivo"
+                title="Quitar archivo"
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-coral/10 hover:text-coral"
+              >
+                <IconX className="size-4" />
+              </button>
+            </div>
+          ) : (
             <button
               type="button"
               onClick={() => archivoInputRef.current?.click()}
-              className="flex items-center gap-1.5 text-sm font-medium text-electric hover:underline"
+              className="flex items-center gap-2 rounded-lg border border-dashed border-border p-3 text-left text-sm font-medium text-muted transition-colors hover:border-electric/40 hover:text-electric"
             >
-              <IconClip className="size-4" />
-              {archivoElegido ? "Cambiar archivo" : "Adjuntar archivo"}
+              <IconClip className="size-4 shrink-0" />
+              Adjuntar archivo
+              <span className="ml-auto text-xs font-normal text-muted">
+                PDF, Word, imagen o ZIP · máx. 20 MB
+              </span>
             </button>
-            {archivoElegido && (
-              <span className="text-xs text-muted">{archivoElegido}</span>
-            )}
-          </div>
+          )}
           <p className="text-xs text-muted">
-            PDF, Word, imagen o ZIP · máx. 20 MB
+            Por ahora se admite un solo archivo por entrega. Si necesitas
+            enviar varios, comprímelos en un .zip y adjunta ese archivo.
           </p>
 
           {state.error && (
