@@ -26,8 +26,10 @@ const MENSAJE: Record<Rol, { titulo: string; texto: string }> = {
  */
 export function RegistroView({
   initialRol = "estudiante",
+  registroAbierto = true,
 }: {
   initialRol?: Rol;
+  registroAbierto?: boolean;
 }) {
   const [rol, setRol] = useState<Rol>(initialRol);
   const mensaje = MENSAJE[rol];
@@ -80,19 +82,39 @@ export function RegistroView({
           <h2 className="text-center text-2xl font-bold text-ink">
             Crea tu cuenta
           </h2>
-          <p className="mt-1 text-center text-sm text-muted">
-            ¿Ya tienes cuenta?{" "}
-            <Link
-              href="/ingresar"
-              className="font-medium text-electric hover:underline"
-            >
-              Ingresar
-            </Link>
-          </p>
+          {registroAbierto ? (
+            <>
+              <p className="mt-1 text-center text-sm text-muted">
+                ¿Ya tienes cuenta?{" "}
+                <Link
+                  href="/ingresar"
+                  className="font-medium text-electric hover:underline"
+                >
+                  Ingresar
+                </Link>
+              </p>
 
-          <div className="mt-6">
-            <SignupForm rol={rol} onRolChange={setRol} />
-          </div>
+              <div className="mt-6">
+                <SignupForm rol={rol} onRolChange={setRol} />
+              </div>
+            </>
+          ) : (
+            <div className="mt-6 rounded-2xl border border-amber-300 bg-surface p-6 text-center">
+              <p className="font-semibold text-ink">
+                El registro de cuentas nuevas está pausado temporalmente.
+              </p>
+              <p className="mt-2 text-sm text-muted">
+                Reintenta más tarde. Si ya existe una cuenta, se puede{" "}
+                <Link
+                  href="/ingresar"
+                  className="font-medium text-electric hover:underline"
+                >
+                  ingresar aquí
+                </Link>
+                .
+              </p>
+            </div>
+          )}
         </div>
 
         <p className="mt-6 text-xs text-muted">Piloto independiente</p>

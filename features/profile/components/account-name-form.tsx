@@ -8,11 +8,12 @@ import { SubmitButton } from "@/features/auth/components/submit-button";
 const INITIAL: ProfileState = {};
 
 /**
- * Versión mínima de `ProfileForm` para cuentas de patrocinador: solo el
- * nombre. Reusa la misma `updateProfile` — los demás campos (carrera, bio,
- * enlaces…) llegan vacíos y quedan en null, que ya es su estado actual.
+ * Versión mínima de `ProfileForm` para cuentas sin editor de estudiante
+ * (patrocinador, admin, moderador, mentor): solo el nombre. Reusa la misma
+ * `updateProfile` — los demás campos (carrera, bio, enlaces…) llegan vacíos y
+ * quedan en null, que ya es su estado actual.
  */
-export function PatrocinadorProfileForm({ nombre }: { nombre: string }) {
+export function AccountNameForm({ nombre }: { nombre: string }) {
   const [state, formAction] = useActionState(updateProfile, INITIAL);
 
   return (

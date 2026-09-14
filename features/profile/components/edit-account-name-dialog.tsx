@@ -4,16 +4,17 @@ import { useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { PatrocinadorProfileForm } from "./patrocinador-profile-form";
+import { AccountNameForm } from "./account-name-form";
 
 /**
- * Botón "Editar" para el nombre, en la versión mínima del perfil de
- * patrocinador. Mismo comportamiento que `EditProfileDialog` (estudiante): el
- * texto se despliega suave hacia la derecha al pasar el mouse, el ícono queda
- * siempre visible. `style={{ gap: 0 }}` anula el `gap-2` del botón base, que
- * si no dejaría un hueco fijo aunque el texto esté colapsado a ancho 0.
+ * Botón "Editar" para el nombre, en la versión mínima del perfil (cuentas sin
+ * editor de estudiante: patrocinador, admin, moderador, mentor). Mismo
+ * comportamiento que `EditProfileDialog` (estudiante): el texto se despliega
+ * suave hacia la derecha al pasar el mouse, el ícono queda siempre visible.
+ * `style={{ gap: 0 }}` anula el `gap-2` del botón base, que si no dejaría un
+ * hueco fijo aunque el texto esté colapsado a ancho 0.
  */
-export function EditPatrocinadorProfileDialog({ nombre }: { nombre: string }) {
+export function EditAccountNameDialog({ nombre }: { nombre: string }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -42,7 +43,7 @@ export function EditPatrocinadorProfileDialog({ nombre }: { nombre: string }) {
         </span>
       </button>
       <Modal open={open} onClose={() => setOpen(false)} title="Editar nombre">
-        <PatrocinadorProfileForm nombre={nombre} />
+        <AccountNameForm nombre={nombre} />
       </Modal>
     </>
   );
