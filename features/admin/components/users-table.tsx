@@ -30,6 +30,12 @@ type FiltroEstado = "todos" | "activo" | "suspendido";
  * Tabla de usuarios y permisos (D-03). Búsqueda y filtros en memoria — a
  * escala de piloto (decenas de cuentas) no hace falta paginar ni ir al
  * servidor por cada tecla.
+ *
+ * `flex-1 min-h-0` + encabezado `sticky`: mismo patrón que `AuditLogTable`
+ * (auditoría, D-04). El padre (`/admin/usuarios`) le da a este componente el
+ * alto que sobra tras el encabezado y los KPIs; acá la tabla scrollea sola,
+ * dejando "Acciones protegidas" siempre visible abajo en vez de lejos del
+ * final si hubiera muchas cuentas.
  */
 export function UsersTable({
   users,
@@ -59,8 +65,8 @@ export function UsersTable({
   }, [users, query, filtroRol, filtroEstado, currentUserId]);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-5 sm:flex-row sm:items-center">
+    <div className="flex min-h-0 flex-1 flex-col gap-5">
+      <div className="flex shrink-0 flex-col gap-3 rounded-2xl border border-border bg-white p-5 sm:flex-row sm:items-center">
         <input
           type="search"
           value={query}
@@ -95,18 +101,29 @@ export function UsersTable({
       </div>
 
       {visibles.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-white px-6 py-16 text-center">
+        <div className="shrink-0 rounded-2xl border border-dashed border-border bg-white px-6 py-16 text-center">
           <p className="text-sm text-muted">Ningún usuario coincide con la búsqueda.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-border bg-white">
-          <table className="w-full min-w-180 text-left text-sm">
-            <thead>
+        <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-border bg-white">
+          {/* `table-fixed` + un ancho por columna: con layout automático, un
+              `min-width` en "Acciones" no alcanzaba — el navegador igual le
+              robaba espacio a las columnas vecinas cuando "Suspender" pasaba
+              a "Confirmar"/"Cancelar" (más ancho), corriendo toda la tabla.
+              Con anchos fijos, cada columna ocupa siempre el mismo espacio
+              sin importar qué fila esté en modo confirmación. */}
+          <table className="w-full min-w-180 table-fixed text-left text-sm">
+            <thead className="sticky top-0 z-10 bg-white">
               <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
-                <th className="px-8 py-5 font-medium">Usuario</th>
-                <th className="px-8 py-5 font-medium">Rol</th>
-                <th className="px-8 py-5 font-medium">Estado</th>
-                <th className="px-8 py-5 font-medium">Acciones</th>
+                <th className="w-[24%] px-8 py-5 font-medium">Usuario</th>
+                <th className="w-[13%] px-8 py-5 font-medium">Rol</th>
+                <th className="w-[13%] px-8 py-5 font-medium">Estado</th>
+                {/* `text-right`: el contenido de esta columna (select +
+                    botones) está alineado a la derecha (`items-end` en
+                    `UserRowActions`) — con la columna ahora ancha para no
+                    "descuadrar" la tabla, un título a la izquierda quedaba
+                    lejos de donde en verdad está el contenido. */}
+                <th className="w-[50%] px-8 py-5 text-right font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody>
