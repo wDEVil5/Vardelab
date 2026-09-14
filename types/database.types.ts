@@ -1004,6 +1004,10 @@ export type Database = {
       can_manage_project: { Args: { _project_id: string }; Returns: boolean }
       can_manage_role: { Args: { _role_id: string }; Returns: boolean }
       can_manage_team: { Args: { _team_id: string }; Returns: boolean }
+      completed_projects_count: {
+        Args: { _profile_id: string }
+        Returns: number
+      }
       find_user_id_by_email: { Args: { _email: string }; Returns: string }
       has_role: {
         Args: {
