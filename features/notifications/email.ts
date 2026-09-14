@@ -59,6 +59,14 @@ const CATALOGO: Record<
     instruccion: "Revisa el avance del equipo antes de la fecha límite.",
     cta: "Ver hito",
   },
+  // Sin caller todavía (M53 genera la notificación in-app desde un trigger
+  // de Postgres, no desde una Server Action) — mismo caso que
+  // `hito_por_vencer`. Queda completo el catálogo para cuando se conecte.
+  mensaje_nuevo: {
+    asunto: "Tienes un mensaje nuevo",
+    instruccion: "Respóndele desde el proyecto para no perder el hilo.",
+    cta: "Ver mensaje",
+  },
 };
 
 // Documento completo (no solo un fragmento): así entran los <meta> de
