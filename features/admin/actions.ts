@@ -143,7 +143,7 @@ export async function reactivateUser(
   return {};
 }
 
-export type CatalogState = { error?: string };
+export type CatalogState = { error?: string; requiereConfirmacion?: boolean };
 
 const NOMBRE_MAX = 60;
 const CATEGORIA_MAX = 40;
@@ -283,11 +283,31 @@ export async function renameCategoria(
 
   const categoriaActual = String(formData.get("categoriaActual") ?? "").trim();
   const categoriaNueva = String(formData.get("categoriaNueva") ?? "").trim();
+  const confirmarFusion = formData.get("confirmarFusion") === "true";
   if (!categoriaActual || !categoriaNueva) return { error: "Falta el nombre nuevo." };
   if (categoriaNueva.length > CATEGORIA_MAX) return { error: "Nombre demasiado largo." };
   if (categoriaActual === categoriaNueva) return {};
 
   const supabase = await createClient();
+
+  // Si ya existe una categoría con ese nombre (sin distinguir mayúsculas), el
+  // update de abajo no la "renombra": fusiona ambas en una sola, moviendo las
+  // habilidades de `categoriaActual` a la existente. Eso es válido, pero
+  // silencioso — se pide una confirmación explícita antes de hacerlo.
+  if (!confirmarFusion) {
+    const { count } = await supabase
+      .from("skills")
+      .select("id", { count: "exact", head: true })
+      .ilike("categoria", categoriaNueva)
+      .not("categoria", "eq", categoriaActual);
+    if (count && count > 0) {
+      return {
+        error: `Ya existe la categoría "${categoriaNueva}". Confirma para combinarla con "${categoriaActual}".`,
+        requiereConfirmacion: true,
+      };
+    }
+  }
+
   const { error } = await supabase
     .from("skills")
     .update({ categoria: categoriaNueva })
