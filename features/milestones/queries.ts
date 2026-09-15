@@ -64,6 +64,10 @@ export async function getUpcomingMilestonesForSponsor(
     .in("project.org_id", orgIds)
     .not("fecha_limite", "is", null)
     .in("estado", ["pendiente", "en_progreso"])
+    // Cancelar un proyecto (M60) no toca sus hitos — sin este filtro, un hito
+    // `pendiente` de un proyecto ya cancelado (o completado, defensivamente)
+    // seguía apareciendo como "próximo a vencer" para siempre en el inicio.
+    .not("project.status", "in", "(cancelado,completado)")
     .order("fecha_limite", { ascending: true })
     .limit(limit);
 
