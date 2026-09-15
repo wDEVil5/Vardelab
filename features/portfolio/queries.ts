@@ -42,9 +42,21 @@ export type PortfolioItem = Awaited<
 >[number];
 
 /**
- * Perfil público de un estudiante + sus evidencias públicas, para la página
- * `/u/[id]`. `null` si el perfil no es público (la RLS `profiles_select_public_or_own`
- * solo devuelve la fila si `visibility = 'publico'`), lo que la página traduce a 404.
+ * Perfil de un estudiante + sus evidencias, para la página `/u/[id]`. `null`
+ * si quien mira no tiene ningún motivo para verlo → la página traduce eso a
+ * 404.
+ *
+ * No filtra por `visibility = 'publico'` en el código: deja que la RLS
+ * decida, porque "público" no es el único motivo legítimo para ver un perfil.
+ * `profiles_select_public_or_own` (M1) ya cubre público/propio, pero además
+ * están `profiles_select_managed_applicant` (M13, el gestor de un proyecto al
+ * que esa persona postuló), `profiles_select_teammate` (M14, comparte equipo)
+ * y `profiles_select_project_partner` (M50, participa del mismo proyecto).
+ * Filtrar acá por `visibility` de más bloqueaba exactamente a esos tres casos
+ * aunque la RLS ya les daba permiso — mismo error, corregido una vez acá en
+ * vez de sumar una función `getXProfile` distinta por cada motivo de acceso.
+ * `portfolio_items` sigue el mismo criterio (agregado en M71 para el caso del
+ * gestor); `profile_skills` ya lo tenía desde M34.
  */
 export async function getPublicProfile(profileId: string) {
   const supabase = await createClient();
@@ -55,7 +67,6 @@ export async function getPublicProfile(profileId: string) {
       "id, nombre, carrera, semestre, bio, intereses, enlaces, avatar_url, created_at",
     )
     .eq("id", profileId)
-    .eq("visibility", "publico")
     .maybeSingle();
 
   if (error) {
@@ -64,19 +75,12 @@ export async function getPublicProfile(profileId: string) {
   }
   if (!profile) return null;
 
-  // Evidencias públicas del perfil (la RLS ya limita a las públicas; el filtro
-  // explícito lo deja claro y excluye las privadas del propio dueño si mira su
-  // página pública).
   const [{ data: items }, { data: skills }, { data: completados }] = await Promise.all([
     supabase
       .from("portfolio_items")
-      .select("id, titulo, descripcion, url, project:projects ( id, titulo )")
+      .select("id, titulo, descripcion, url, visibility, project:projects ( id, titulo )")
       .eq("profile_id", profileId)
-      .eq("visibility", "publico")
       .order("created_at", { ascending: false }),
-    // Habilidades del perfil: la RLS `profile_skills_select_public_or_own`
-    // (M2) ya las deja ver si el perfil es público, pero la query nunca las
-    // había pedido — el patrocinador no tenía forma de verlas.
     supabase
       .from("profile_skills")
       .select("skill_id, nivel, skill:skills ( id, nombre )")
