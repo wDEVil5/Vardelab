@@ -146,16 +146,17 @@ export default async function EditarOrganizacionPage({
             </Link>
           </div>
 
-          {/* Miembros: la pantalla ya funciona (/miembros), pero todavía no se
-              enlaza — se muestra como "Próximamente" hasta que se anuncie. */}
-          <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-border bg-surface/40 p-6">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-muted">Miembros</span>
-              <Badge tone="neutral">Próximamente</Badge>
-            </div>
+          <div className="flex flex-col gap-4 rounded-2xl border border-border bg-white p-6">
+            <span className="font-semibold text-ink">Miembros</span>
             <p className="text-sm text-muted">
-              Vas a poder invitar a alguien más a co-gestionar esta organización.
+              Invita a alguien más a co-gestionar esta organización.
             </p>
+            <Link
+              href={`/mis-organizaciones/${org.id}/miembros`}
+              className="text-sm font-medium text-electric hover:underline"
+            >
+              Gestionar miembros →
+            </Link>
           </div>
         </div>
       </div>
