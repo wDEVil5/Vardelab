@@ -152,6 +152,11 @@ export async function getPendingApplicationsForSponsor(): Promise<
     )
     .eq("status", "enviada")
     .in("role.project.org_id", orgIds)
+    // Cancelar un proyecto (M60) no transiciona sus postulaciones — sin este
+    // filtro, una postulación `enviada` de un proyecto ya cancelado seguía
+    // pidiendo revisión para siempre en esta bandeja (mismo bug encontrado en
+    // "Próximos hitos" del inicio, arreglado en paralelo).
+    .not("role.project.status", "eq", "cancelado")
     .order("created_at", { ascending: false });
 
   if (error) {
