@@ -67,6 +67,11 @@ export async function applyToRole(
 
   const { error } = await supabase.from("applications").insert({
     project_role_id: roleId,
+    // El trigger `applications_set_project_id` (M66) recalcula esto siempre
+    // desde `project_role_id` — lo que se manda acá es solo para satisfacer
+    // el tipo generado (columna `not null` sin default de columna posible,
+    // porque depende de otra columna de la misma fila).
+    project_id: projectId,
     applicant_id: user.id,
     mensaje,
     // Campos opcionales: se guardan solo si el estudiante los completó.
@@ -75,10 +80,22 @@ export async function applyToRole(
   });
 
   if (error) {
-    // 23505 = violación de unique(project_role_id, applicant_id): ya existe una
-    // postulación de esta persona a este rol.
+    // 23505 = violación de un unique. La consulta de arriba ya cubre el caso
+    // normal (misma pestaña, sin carrera); esto solo se dispara con dos
+    // postulaciones concurrentes que pasaron ese chequeo antes de que la
+    // primera se escribiera. Se distingue por el nombre del índice/constraint
+    // en el mensaje: `applications_un_activa_por_proyecto` es el índice único
+    // parcial de M66 (un rol por proyecto); cualquier otro 23505 acá es el
+    // unique(project_role_id, applicant_id) original (ya postuló a este rol).
     if (error.code === "23505") {
-      return { error: "Ya postulaste a este rol." };
+      const esCarreraPorProyecto = error.message.includes(
+        "applications_un_activa_por_proyecto",
+      );
+      return {
+        error: esCarreraPorProyecto
+          ? "Ya tienes una postulación activa en este proyecto. Solo puedes postular a un rol por proyecto."
+          : "Ya postulaste a este rol.",
+      };
     }
     console.error("[applyToRole]", error.message);
     return { error: "No se pudo enviar la postulación. Inténtalo de nuevo." };
