@@ -161,25 +161,28 @@ export default async function PostulacionesProyectoPage({ params }: PageProps) {
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-electric/10 text-xs font-semibold text-electric">
                     {iniciales(m.nombre)}
                   </span>
-                  <div className="flex min-w-0 flex-col leading-tight">
-                    {m.perfilPublico ? (
-                      <Link
-                        href={`/u/${m.userId}`}
-                        className="truncate text-sm font-medium text-ink hover:text-electric hover:underline"
-                      >
-                        {m.nombre ?? "Estudiante"}
-                      </Link>
-                    ) : (
-                      <span className="truncate text-sm font-medium text-ink">
-                        {m.nombre ?? "Estudiante"}
-                      </span>
-                    )}
-                    {m.roleNombre && (
+                  <div className="flex min-w-0 flex-1 flex-col leading-tight">
+                    <span className="truncate text-sm font-medium text-ink">
+                      {m.nombre ?? "Estudiante"}
+                    </span>
+                    {(m.roleNombre || m.carrera) && (
                       <span className="truncate text-xs text-muted">
-                        {m.roleNombre}
+                        {[m.roleNombre, m.carrera].filter(Boolean).join(" · ")}
                       </span>
                     )}
                   </div>
+                  {/* Todo integrante llegó al equipo aceptando una
+                      postulación a este proyecto, así que el gestor ya
+                      tiene permiso de ver su perfil completo por RLS
+                      (M13) sea público o no. */}
+                  <Link
+                    href={`/u/${m.userId}`}
+                    aria-label="Ver perfil"
+                    title="Ver perfil"
+                    className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-electric/10 hover:text-electric"
+                  >
+                    <IconFlecha className="size-3.5" />
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -206,6 +209,26 @@ export default async function PostulacionesProyectoPage({ params }: PageProps) {
 }
 
 // ---------------------------------------------------------------------------
+
+// Ícono de flecha diagonal, para el acceso directo al perfil de un
+// postulante o integrante (mismo ícono que ya usa `/u/[id]` para un enlace
+// de evidencia — lee como "ver más", no como "seguir a lo siguiente").
+function IconFlecha({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M7 17L17 7M9 7h8v8" />
+    </svg>
+  );
+}
 
 // Iniciales del postulante para el avatar circular: "Wilnes M." → "WM".
 function iniciales(nombre: string | null): string {
@@ -272,17 +295,24 @@ function RoleApplications({
                   </span>
                   <div className="flex flex-col gap-0.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      {app.applicant?.visibility === "publico" ? (
+                      <span className="font-medium text-ink">
+                        {app.applicant?.nombre ?? "Postulante"}
+                      </span>
+                      {app.applicant && (
+                        // Ícono, no el nombre como enlace: quien gestiona
+                        // este rol ya tiene permiso de ver el perfil completo
+                        // por RLS (`profiles_select_managed_applicant`, M13)
+                        // sea público o no, así que siempre lleva a alguna
+                        // parte — pero un nombre-enlace se leía como si fuera
+                        // el título de la tarjeta en vez de una acción aparte.
                         <Link
                           href={`/u/${app.applicant.id}`}
-                          className="font-medium text-ink hover:text-electric hover:underline"
+                          aria-label="Ver perfil"
+                          title="Ver perfil"
+                          className="flex size-6 items-center justify-center rounded-md text-muted transition-colors hover:bg-electric/10 hover:text-electric"
                         >
-                          {app.applicant.nombre ?? "Postulante"}
+                          <IconFlecha className="size-3.5" />
                         </Link>
-                      ) : (
-                        <span className="font-medium text-ink">
-                          {app.applicant?.nombre ?? "Postulante"}
-                        </span>
                       )}
                       <Badge tone={badge.tone}>{badge.label}</Badge>
                     </div>
