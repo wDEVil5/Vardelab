@@ -10,6 +10,21 @@ import {
 import { NotificationsProvider } from "@/features/notifications/notifications-context";
 import { NotificationToasts } from "@/features/notifications/components/notification-toasts";
 
+// Todo lo que vive bajo `(app)` depende 100% de la sesión — nunca debe
+// cachearse ni compartirse entre requests. Sin esto se reprodujo un bug real:
+// justo después de iniciar sesión con una cuenta, `/inicio` alcanzó a mostrar
+// por un instante el contenido de OTRO rol (sidebar y dashboard de
+// "Estudiante" con el nombre correcto de una cuenta que es solo
+// "Patrocinador") — una recarga simple ya mostraba lo correcto, lo que apunta
+// a una respuesta cacheada del lado del servidor filtrándose entre sesiones,
+// no a un dato mal guardado (los roles en la base estaban bien). `dynamic`
+// desactiva el Full Route Cache y `fetchCache` fuerza que ningún `fetch` de
+// esta rama (incluyendo los que hace el cliente de Supabase) se sirva desde
+// el Data Cache. Se declaran acá porque `dynamic`/`fetchCache` son opciones
+// de segmento que se heredan a todas las rutas hijas de este layout.
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
 /**
  * Layout del área autenticada (dashboard por rol). Route group `(app)`: shell con
  * sidebar, separado del `(site)` público (header flotante). Guarda de sesión: sin
