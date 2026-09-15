@@ -4,19 +4,36 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database.types";
+import { sendPlainEmail } from "@/features/notifications/email";
 
 /**
  * Acción de captación (Fase 1). Registra un lead público en la tabla `leads`:
  * "Hablar con CampusLab" (contacto_organizacion) o "Proponer un desafío"
  * (propuesta_desafio). La RLS `leads_insert_public` (M17) permite el insert
  * anónimo forzando `estado = 'nuevo'`; la lectura queda para moderador/admin.
+ *
+ * M65: hasta acá el lead quedaba solo guardado en la base, sin que nadie se
+ * enterara salvo revisando el panel a mano. Al insertar con éxito se manda,
+ * por Brevo (`sendPlainEmail`, sin depender de `notification_tipo`): una
+ * confirmación a quien escribió (para que sepa que su mensaje llegó) y un
+ * aviso interno al correo de CampusLab con el detalle, para no tener que
+ * revisar `/leads` a cada rato. Ninguno de los dos bloquea la respuesta al
+ * usuario si falla (mismo criterio que el resto de los correos del
+ * proyecto): el lead ya quedó guardado, que es lo que importa.
  */
+
+const CONTACTO_CAMPUSLAB = "wilnesdevil9@gmail.com";
 
 type LeadTipo = Database["public"]["Enums"]["lead_tipo"];
 const TIPOS: readonly LeadTipo[] = [
   "contacto_organizacion",
   "propuesta_desafio",
 ];
+
+const TIPO_LABEL: Record<LeadTipo, string> = {
+  contacto_organizacion: "Contacto",
+  propuesta_desafio: "Propuesta",
+};
 
 // Validación de correo mínima y tolerante (el formato exacto lo valida el envío).
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -57,6 +74,18 @@ export async function submitLead(
     console.error("[submitLead]", error.message);
     return { error: "No pudimos enviar tu mensaje. Inténtalo de nuevo en un momento." };
   }
+
+  await Promise.all([
+    sendPlainEmail(email, "Recibimos tu mensaje", `Hola ${nombre}, recibimos tu mensaje y lo vamos a revisar pronto.`, {
+      instruccion: "Nuestro equipo te va a contactar a este mismo correo en los próximos días.",
+    }),
+    sendPlainEmail(
+      CONTACTO_CAMPUSLAB,
+      `Nuevo lead: ${TIPO_LABEL[tipo as LeadTipo]}`,
+      `${nombre} (${email})${organizacion ? ` de ${organizacion}` : ""} escribió: "${mensaje}"`,
+      { instruccion: "Podés gestionarlo desde el panel de leads.", cta: "Ver leads", link: "/leads" },
+    ),
+  ]);
 
   return { ok: true };
 }
