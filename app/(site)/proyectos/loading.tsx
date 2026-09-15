@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function ProyectosLoading() {
   return (
     <main
-      className="min-h-[calc(100dvh-3.5rem)] bg-surface"
+      className="min-h-[calc(100dvh-3.5rem)] bg-white"
       role="status"
       aria-label="Cargando proyectos"
     >

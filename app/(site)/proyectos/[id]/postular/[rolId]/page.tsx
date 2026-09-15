@@ -40,6 +40,11 @@ export default async function PostularPage({ params }: PageProps) {
   const miPostulacion = await getMyActiveApplicationInProject(id);
   const esOtroRol = Boolean(miPostulacion) && miPostulacion!.roleId !== rolId;
   const skills = rol.skills ?? [];
+  // Rol ya cubierto (M72): puede pasar si el estudiante guardó el enlace o
+  // volvió atrás justo cuando el gestor aceptó al último cupo. La guarda real
+  // vive en la RLS de `applications_insert_own` — esto solo evita mostrar un
+  // formulario que la base de todas formas va a rechazar.
+  const rolLleno = !miPostulacion && rol.cupos - rol.aceptadas <= 0;
 
   return (
     <main className="mx-auto w-full max-w-xl flex-1 px-6 py-10">
@@ -85,6 +90,23 @@ export default async function PostularPage({ params }: PageProps) {
               {esOtroRol
                 ? `Solo puedes postular a un rol por proyecto (postulaste a "${miPostulacion.roleNombre}").`
                 : "Tu postulación está registrada. Te avisaremos si hay novedades."}
+            </p>
+            <Link
+              href={`/proyectos/${id}`}
+              className={cn(
+                "mt-4 inline-flex",
+                buttonClasses({ variant: "secondary", size: "sm" }),
+              )}
+            >
+              Volver al proyecto
+            </Link>
+          </div>
+        ) : rolLleno ? (
+          <div className="rounded-lg border border-border bg-surface/50 p-6 text-center">
+            <p className="font-medium text-ink">Ya se cubrieron los cupos de este rol</p>
+            <p className="mt-1 text-sm text-muted">
+              Alguien más fue aceptado mientras tanto. Puede que otro rol de este
+              proyecto siga disponible.
             </p>
             <Link
               href={`/proyectos/${id}`}
