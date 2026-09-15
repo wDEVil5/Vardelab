@@ -71,8 +71,17 @@ export default async function ProyectoPage({ params }: PageProps) {
     getPublicProjectTeam(project.id),
   ]);
 
-  // Cupos totales (suma de los roles) para el estado del proyecto.
+  // Tamaño del equipo (suma de los cupos de cada rol, sin descontar quién ya
+  // se sumó): describe el alcance fijo del proyecto, no cambia según avanza
+  // la selección — se usa en "Equipo de N".
   const cuposTotales = roles.reduce((total, rol) => total + rol.cupos, 0);
+  // Cupos REALMENTE restantes ahora mismo (M72): descuenta las postulaciones
+  // ya `aceptada` por rol — se usa en el badge "Abierto · N cupos", que sí
+  // debe reflejar cuánto queda por cubrir.
+  const cuposRestantes = roles.reduce(
+    (total, rol) => total + Math.max(0, rol.cupos - rol.aceptadas),
+    0,
+  );
 
   // Rango de dedicación semanal entre los roles, para el resumen del panel
   // lateral (RF: "4 semanas" de duración no dice cuánto tiempo por semana).
@@ -84,7 +93,7 @@ export default async function ProyectoPage({ params }: PageProps) {
   const horasMax = horasSemanales.length ? Math.max(...horasSemanales) : null;
 
   return (
-    <main className="flex-1 bg-surface">
+    <main className="flex-1 bg-white">
       <div className="mx-auto w-full max-w-5xl px-6 py-10">
         {/* Volver al catálogo */}
         <Link
@@ -212,7 +221,7 @@ export default async function ProyectoPage({ params }: PageProps) {
           <aside className="lg:col-span-1">
             <div className="sticky top-24 flex flex-col gap-4 rounded-2xl border border-border bg-white p-6">
               <span className="font-semibold text-sprout">
-                Abierto{cuposTotales > 0 && ` · ${cuposTotales} ${cuposTotales === 1 ? "cupo" : "cupos"}`}
+                Abierto{cuposRestantes > 0 && ` · ${cuposRestantes} ${cuposRestantes === 1 ? "cupo" : "cupos"}`}
               </span>
               <p className="text-sm text-muted">
                 Tu rol puede generar evidencia real para tu portafolio.
@@ -333,6 +342,12 @@ function RoleCard({
   // ¿Este rol es al que postulé, o postulé a otro del mismo proyecto?
   const esMiRol = miPostulacion?.roleId === rol.id;
   const tieneOtra = Boolean(miPostulacion) && !esMiRol;
+  // Cupos restantes de ESTE rol (M72): ya hay tantas postulaciones aceptadas
+  // como cupos tiene. La guarda real vive en la RLS de
+  // `applications_insert_own` — esto es para no ofrecer un botón que la base
+  // de todas formas va a rechazar.
+  const cuposRestantesRol = rol.cupos - rol.aceptadas;
+  const rolLleno = cuposRestantesRol <= 0;
 
   // Meta en una sola línea, unida con "·" (mismo separador que el resto del
   // panel admin) — descripción y dedicación ya no ocupan una línea cada una.
@@ -356,8 +371,10 @@ function RoleCard({
           </div>
           {meta && <p className="text-sm text-muted">{meta}</p>}
         </div>
-        <Badge>
-          {rol.cupos} {rol.cupos === 1 ? "cupo" : "cupos"}
+        <Badge tone={rolLleno ? "neutral" : "brand"}>
+          {rolLleno
+            ? "Cupos llenos"
+            : `${cuposRestantesRol} ${cuposRestantesRol === 1 ? "cupo" : "cupos"}`}
         </Badge>
       </div>
 
@@ -392,6 +409,10 @@ function RoleCard({
         ) : tieneOtra ? (
           <p className="text-sm text-muted">
             Ya tienes una postulación activa en este proyecto.
+          </p>
+        ) : rolLleno ? (
+          <p className="text-sm text-muted">
+            Ya se cubrieron los cupos de este rol.
           </p>
         ) : (
           <Link
