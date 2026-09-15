@@ -124,17 +124,17 @@ export function MemberEvaluationForm({
             {iniciales(member.nombre)}
           </span>
           <div className="flex flex-col gap-0.5">
-            {member.perfilPublico ? (
-              <Link
-                href={`/u/${member.userId}`}
-                onClick={(e) => e.stopPropagation()}
-                className="w-fit text-sm font-medium text-ink hover:text-electric hover:underline"
-              >
-                {member.nombre}
-              </Link>
-            ) : (
-              <span className="text-sm font-medium text-ink">{member.nombre}</span>
-            )}
+            {/* Este integrante llegó al equipo aceptando una postulación a
+                este mismo proyecto, así que el gestor que evalúa ya tiene
+                permiso de ver su perfil completo por RLS (M13) sea público
+                o no — siempre enlaza. */}
+            <Link
+              href={`/u/${member.userId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="w-fit text-sm font-medium text-ink hover:text-electric hover:underline"
+            >
+              {member.nombre}
+            </Link>
             {member.carrera && (
               <span className="text-xs text-muted">{member.carrera}</span>
             )}

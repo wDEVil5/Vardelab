@@ -171,7 +171,7 @@ export async function getPendingApplicationsForSponsor(): Promise<
   if (applicantIds.length > 0) {
     const { data: profs } = await supabase
       .from("profiles")
-      .select("id, nombre, carrera, visibility")
+      .select("id, nombre, carrera")
       .in("id", applicantIds);
     for (const p of profs ?? []) perfiles.set(p.id, p);
   }
@@ -232,7 +232,7 @@ export async function getRecentApplicationsForSponsor(
   if (applicantIds.length > 0) {
     const { data: profs } = await supabase
       .from("profiles")
-      .select("id, nombre, carrera, visibility")
+      .select("id, nombre, carrera")
       .in("id", applicantIds);
     for (const p of profs ?? []) perfiles.set(p.id, p);
   }
@@ -264,13 +264,12 @@ export type ApplicantProfile = {
   id: string;
   nombre: string | null;
   carrera: string | null;
-  visibility: string | null;
 };
 
 export type TeamMember = {
   userId: string;
   nombre: string | null;
-  perfilPublico: boolean;
+  carrera: string | null;
   roleNombre: string | null;
 };
 
@@ -331,7 +330,7 @@ export async function getProjectApplications(projectId: string) {
   const habilidadesPorPostulante = new Map<string, Set<string>>();
   if (applicantIds.length > 0) {
     const [{ data: profs }, { data: skills }] = await Promise.all([
-      supabase.from("profiles").select("id, nombre, carrera, visibility").in("id", applicantIds),
+      supabase.from("profiles").select("id, nombre, carrera").in("id", applicantIds),
       supabase
         .from("profile_skills")
         .select("profile_id, skill_id")
@@ -354,11 +353,17 @@ export async function getProjectApplications(projectId: string) {
 
   const miembros = team?.team_members ?? [];
   const equipoIds = miembros.map((m) => m.user_id);
-  const perfilesEquipo = new Map<string, { nombre: string | null; visibility: string | null }>();
+  const perfilesEquipo = new Map<string, { nombre: string | null; carrera: string | null }>();
   if (equipoIds.length > 0) {
+    // `carrera` se pide sin filtrar por `visibility`: la RLS de M13 ya deja
+    // ver el perfil de un postulante al gestor de su proyecto sea público o
+    // no (mismo criterio que ya usa la lista de "Postulaciones" de al lado),
+    // así que ocultarla acá para un integrante ya aceptado en el propio
+    // equipo no protegía nada — solo dejaba al gestor sin poder ver con
+    // quién está trabajando.
     const { data: profs } = await supabase
       .from("profiles")
-      .select("id, nombre, visibility")
+      .select("id, nombre, carrera")
       .in("id", equipoIds);
     for (const p of profs ?? []) perfilesEquipo.set(p.id, p);
   }
@@ -367,7 +372,7 @@ export async function getProjectApplications(projectId: string) {
   const equipo: TeamMember[] = miembros.map((m) => ({
     userId: m.user_id,
     nombre: perfilesEquipo.get(m.user_id)?.nombre ?? null,
-    perfilPublico: perfilesEquipo.get(m.user_id)?.visibility === "publico",
+    carrera: perfilesEquipo.get(m.user_id)?.carrera ?? null,
     roleNombre: m.project_role_id ? (nombreRolPorId.get(m.project_role_id) ?? null) : null,
   }));
 

@@ -377,7 +377,7 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
               <IconEvidencia className="size-4 text-electric" />
               <span className="text-lg font-bold text-ink">{items.length}</span>
               <span className="text-xs text-muted">
-                {items.length === 1 ? "evidencia pública" : "evidencias públicas"}
+                {items.length === 1 ? "evidencia" : "evidencias"}
               </span>
             </div>
             <div className="flex flex-1 flex-col items-center gap-1 px-3 py-3.5">
@@ -469,8 +469,8 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
           <div className="mt-4 rounded-2xl border border-dashed border-border bg-white px-6 py-12 text-center">
             <p className="text-sm text-muted">
               {esPropio
-                ? "Todavía no hay evidencias públicas — agrega alguna desde tu perfil para que se vea acá."
-                : "Todavía no hay evidencias públicas."}
+                ? "Todavía no hay evidencias — agrega alguna desde tu perfil para que se vea acá."
+                : "Todavía no hay evidencias."}
             </p>
           </div>
         ) : (
@@ -497,6 +497,15 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
                         </span>
                         <div className="min-w-0 flex-1">
                           <span className="font-semibold text-ink">{it.titulo}</span>
+                          {it.visibility !== "publico" && (
+                            // Solo puede llegar acá el dueño o alguien con
+                            // acceso autorizado (RLS) a un ítem que el
+                            // estudiante no hizo público — para un visitante
+                            // cualquiera, `items` nunca trae privados.
+                            <Badge tone="neutral" className="ml-2 align-middle">
+                              Privado
+                            </Badge>
+                          )}
                           {it.descripcion && (
                             <p className="mt-1 text-sm text-muted">{it.descripcion}</p>
                           )}
