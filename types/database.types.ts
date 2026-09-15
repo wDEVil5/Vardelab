@@ -42,6 +42,7 @@ export type Database = {
           evidencia: string | null
           id: string
           mensaje: string | null
+          project_id: string
           project_role_id: string
           status: Database["public"]["Enums"]["application_status"]
           updated_at: string
@@ -53,6 +54,7 @@ export type Database = {
           evidencia?: string | null
           id?: string
           mensaje?: string | null
+          project_id: string
           project_role_id: string
           status?: Database["public"]["Enums"]["application_status"]
           updated_at?: string
@@ -64,11 +66,19 @@ export type Database = {
           evidencia?: string | null
           id?: string
           mensaje?: string | null
+          project_id?: string
           project_role_id?: string
           status?: Database["public"]["Enums"]["application_status"]
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "applications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "applications_project_role_id_fkey"
             columns: ["project_role_id"]
@@ -1000,6 +1010,7 @@ export type Database = {
         Returns: number
       }
       find_user_id_by_email: { Args: { _email: string }; Returns: string }
+      has_own_skill: { Args: { _skill_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
