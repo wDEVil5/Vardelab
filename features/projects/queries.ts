@@ -42,6 +42,31 @@ const PROJECT_CARD_SELECT = `
   )
 ` as const;
 
+/**
+ * Cuántas postulaciones ya están `aceptada` por rol, para poder mostrar cupos
+ * REALMENTE restantes (`cupos - aceptadas`) en vez del total original —
+ * `applications` es privada (`applications_select_own_or_manager`), así que
+ * un visitante anónimo no puede contarlas con un `select` normal; se resuelve
+ * con la función `security definer` `accepted_counts_for_roles` (M72), que
+ * expone solo el conteo por rol, nunca las postulaciones en sí.
+ */
+async function aceptadasPorRol(
+  supabase: ReturnType<typeof createPublicClient>,
+  roleIds: string[],
+): Promise<Map<string, number>> {
+  const mapa = new Map<string, number>();
+  if (roleIds.length === 0) return mapa;
+  const { data, error } = await supabase.rpc("accepted_counts_for_roles", {
+    _role_ids: roleIds,
+  });
+  if (error) {
+    console.error("[accepted_counts_for_roles]", error.message);
+    return mapa;
+  }
+  for (const row of data ?? []) mapa.set(row.project_role_id, Number(row.aceptadas));
+  return mapa;
+}
+
 async function fetchPublishedProjects() {
   const supabase = createPublicClient();
 
@@ -58,7 +83,15 @@ async function fetchPublishedProjects() {
     throw error;
   }
 
-  return data ?? [];
+  const proyectos = data ?? [];
+  const mapa = await aceptadasPorRol(
+    supabase,
+    proyectos.flatMap((p) => (p.roles ?? []).map((r) => r.id)),
+  );
+  return proyectos.map((p) => ({
+    ...p,
+    roles: (p.roles ?? []).map((r) => ({ ...r, aceptadas: mapa.get(r.id) ?? 0 })),
+  }));
 }
 
 /**
@@ -102,7 +135,15 @@ export async function getPublishedProjectsByOrg(orgId: string) {
     throw error;
   }
 
-  return data ?? [];
+  const proyectos = data ?? [];
+  const mapa = await aceptadasPorRol(
+    supabase,
+    proyectos.flatMap((p) => (p.roles ?? []).map((r) => r.id)),
+  );
+  return proyectos.map((p) => ({
+    ...p,
+    roles: (p.roles ?? []).map((r) => ({ ...r, aceptadas: mapa.get(r.id) ?? 0 })),
+  }));
 }
 
 // Cola de moderación (M18): proyectos en `en_revision`, esperando aprobación.
@@ -247,8 +288,13 @@ async function fetchPublishedProjectById(id: string) {
     console.error("[getPublishedProjectById]", error.message);
     throw error;
   }
+  if (!data) return null;
 
-  return data;
+  const mapa = await aceptadasPorRol(supabase, (data.roles ?? []).map((r) => r.id));
+  return {
+    ...data,
+    roles: (data.roles ?? []).map((r) => ({ ...r, aceptadas: mapa.get(r.id) ?? 0 })),
+  };
 }
 
 /**
@@ -275,6 +321,11 @@ export type ProjectDetail = NonNullable<
  * proyecto indicado y que el proyecto esté publicado. Devuelve `null` si no se
  * cumple (rol inexistente, de otro proyecto, o proyecto no publicado) → la
  * página muestra 404.
+ *
+ * Incluye `aceptadas` (M72): la página necesita saber si el rol ya está lleno
+ * para no ofrecer el formulario — la guarda real vive en la RLS de
+ * `applications_insert_own`, esto es solo para no confundir con un formulario
+ * que de todas formas la base va a rechazar.
  */
 export async function getRoleForApplication(projectId: string, roleId: string) {
   const supabase = await createClient();
@@ -286,6 +337,7 @@ export async function getRoleForApplication(projectId: string, roleId: string) {
       id,
       nombre,
       descripcion,
+      cupos,
       project:projects!inner ( id, titulo, status ),
       skills:project_role_skills (
         nivel_minimo,
@@ -302,8 +354,16 @@ export async function getRoleForApplication(projectId: string, roleId: string) {
     console.error("[getRoleForApplication]", error.message);
     throw error;
   }
+  if (!data) return null;
 
-  return data;
+  const { data: counts, error: countsError } = await supabase.rpc(
+    "accepted_counts_for_roles",
+    { _role_ids: [data.id] },
+  );
+  if (countsError) console.error("[accepted_counts_for_roles]", countsError.message);
+  const aceptadas = Number(counts?.[0]?.aceptadas ?? 0);
+
+  return { ...data, aceptadas };
 }
 
 export type RoleForApplication = NonNullable<

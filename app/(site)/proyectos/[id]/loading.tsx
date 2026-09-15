@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export default function ProyectoLoading() {
   return (
-    <main className="flex-1 bg-surface" role="status" aria-label="Cargando el proyecto">
+    <main className="flex-1 bg-white" role="status" aria-label="Cargando el proyecto">
       <div className="mx-auto w-full max-w-5xl px-6 py-10">
         {/* Volver */}
         <Skeleton className="h-4 w-36" />

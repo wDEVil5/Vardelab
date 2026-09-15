@@ -1002,6 +1002,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accepted_count_for_role: { Args: { _role_id: string }; Returns: number }
+      accepted_counts_for_roles: {
+        Args: { _role_ids: string[] }
+        Returns: {
+          aceptadas: number
+          project_role_id: string
+        }[]
+      }
       can_manage_project: { Args: { _project_id: string }; Returns: boolean }
       can_manage_role: { Args: { _role_id: string }; Returns: boolean }
       can_manage_team: { Args: { _team_id: string }; Returns: boolean }
