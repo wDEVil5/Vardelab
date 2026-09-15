@@ -10,14 +10,12 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
+import { createClient } from "@/lib/supabase/client";
 import {
-  checkForNewNotifications,
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/features/notifications/actions";
 import type { Notification } from "@/features/notifications/queries";
-
-const INTERVALO_SONDEO_MS = 25_000;
 
 export type NotificationToast = { toastId: string; notification: Notification };
 
@@ -35,21 +33,19 @@ const NotificationsContext = createContext<NotificationsContextValue | null>(nul
 /**
  * Fuente única de las notificaciones del shell: la campanita y los toasts
  * (M42) leen del mismo Context en vez de cada uno llevar su propio estado,
- * para que marcar como leída y el sondeo de nuevas se reflejen en los dos a
- * la vez. Sondea cada ~25s en vez de Realtime (no hay suscripciones en este
- * proyecto todavía — ver nota de "próximo paso" en BACKEND.md) comparando
- * contra la marca de tiempo de la notificación más nueva vista hasta ahora;
- * arranca en el momento en que se monta el shell, así que no dispara toasts
- * de notificaciones que ya existían al cargar la página. El sondeo se salta
- * mientras la pestaña está en segundo plano (evita llamadas inútiles con
- * varias pestañas abiertas) y se dispara una vez de inmediato al volver a
- * primer plano, en vez de esperar hasta el próximo tick del intervalo.
+ * para que marcar como leída y las nuevas que lleguen se reflejen en los dos
+ * a la vez. Las notificaciones nuevas llegan por Realtime (M63, mismo patrón
+ * que `MessageThread` en M49) en vez del sondeo cada ~25s que se usaba antes
+ * — una suscripción a los INSERT de `notifications` filtrada por el usuario
+ * actual, en vez de estar preguntando por polling.
  */
 export function NotificationsProvider({
+  userId,
   initialNotifications,
   initialUnreadCount,
   children,
 }: {
+  userId: string;
   initialNotifications: Notification[];
   initialUnreadCount: number;
   children: ReactNode;
@@ -59,40 +55,50 @@ export function NotificationsProvider({
   const [toasts, setToasts] = useState<NotificationToast[]>([]);
   const [, startTransition] = useTransition();
 
-  const ultimaVistaRef = useRef(
-    initialNotifications[0]?.created_at ?? new Date().toISOString(),
-  );
-
   useEffect(() => {
+    const supabase = createClient();
+    let canal: ReturnType<typeof supabase.channel> | null = null;
     let cancelado = false;
 
-    const sondear = async () => {
-      if (document.visibilityState !== "visible") return;
-      const nuevas = await checkForNewNotifications(ultimaVistaRef.current);
-      if (cancelado || nuevas.length === 0) return;
+    // Igual que en `MessageThread` (M49): Realtime se autentica con la clave
+    // anónima, así que hace falta pasarle el token de la sesión actual antes
+    // de suscribirse para que la RLS de `notifications` (acotada a
+    // `auth.uid()`) deje pasar los INSERT — si no, el canal se suscribe sin
+    // error pero nunca llega nada.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelado) return;
+      if (session) supabase.realtime.setAuth(session.access_token);
 
-      ultimaVistaRef.current = nuevas[nuevas.length - 1].created_at;
-      setNotifications((prev) => [...nuevas].reverse().concat(prev));
-      setUnreadCount((c) => c + nuevas.length);
-      setToasts((prev) => [
-        ...prev,
-        ...nuevas.map((n) => ({ toastId: `${n.id}-${Date.now()}`, notification: n })),
-      ]);
-    };
-
-    const alVolverVisible = () => {
-      if (document.visibilityState === "visible") sondear();
-    };
-
-    const id = setInterval(sondear, INTERVALO_SONDEO_MS);
-    document.addEventListener("visibilitychange", alVolverVisible);
+      canal = supabase
+        .channel(`notifications-${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            const fila = payload.new as Notification;
+            setNotifications((prev) =>
+              prev.some((n) => n.id === fila.id) ? prev : [fila, ...prev],
+            );
+            setUnreadCount((c) => c + 1);
+            setToasts((prev) => [
+              ...prev,
+              { toastId: `${fila.id}-${Date.now()}`, notification: fila },
+            ]);
+          },
+        )
+        .subscribe();
+    });
 
     return () => {
       cancelado = true;
-      clearInterval(id);
-      document.removeEventListener("visibilitychange", alVolverVisible);
+      if (canal) supabase.removeChannel(canal);
     };
-  }, []);
+  }, [userId]);
 
   // El auto-cierre y la animación de salida viven en `ToastCard` (cada toast
   // controla su propio tiempo de vida); acá solo se saca del arreglo.

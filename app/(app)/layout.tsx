@@ -75,6 +75,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <NotificationsProvider
+      userId={user.id}
       initialNotifications={notifications}
       initialUnreadCount={unreadCount}
     >
