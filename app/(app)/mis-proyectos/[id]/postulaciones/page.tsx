@@ -190,6 +190,13 @@ export default async function PostulacionesProyectoPage({ params }: PageProps) {
               projectId={id}
               puedeConfirmar={project.status === "seleccion" && project.equipo.length > 0}
               yaConfirmado={project.status === "activo"}
+              rolesSinCubrir={roles
+                .filter(
+                  (r) =>
+                    (r.applications ?? []).filter((a) => a.status === "aceptada")
+                      .length < r.cupos,
+                )
+                .map((r) => r.nombre)}
             />
           </div>
         </div>
