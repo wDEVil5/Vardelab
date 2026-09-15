@@ -44,6 +44,14 @@ const ICONO_TONE_CLASSES: Partial<Record<BadgeTone, string>> = {
   neutral: "bg-surface text-muted",
 };
 
+// Fila de las 4 listas del inicio: antes cada una era su propia caja con
+// borde (una caja adentro de la caja de la Card, "cuadriculado"); ahora es
+// una fila lisa dentro de una lista con `divide-y`, con un tinte de fondo al
+// pasar el mouse en vez de aparecer un borde nuevo — una sola caja visible
+// por sección, no una por fila.
+const ROW_CLASS =
+  "flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-surface/70";
+
 // "Equipo" resume dónde está el proyecto en el ciclo aceptar → formar equipo
 // (mismo criterio que /mis-proyectos).
 function equipoTexto(equipoTamano: number, postulacionesPendientes: number): string {
@@ -89,10 +97,14 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
   ]);
 
   const publicados = proyectos.filter((p) => p.status === "publicado").length;
-  const postulacionesPendientes = proyectos.reduce(
-    (total, p) => total + p.postulacionesPendientes,
-    0,
-  );
+  // Un proyecto cancelado puede seguir con postulaciones `enviada` sin
+  // transicionar (M60 no las toca) — no cuentan para "necesita revisión": no
+  // hay nada que aceptar en un proyecto que ya no sigue. Mismo criterio que
+  // getPendingApplicationsForSponsor (/postulaciones), que además ya las
+  // excluye de la bandeja real.
+  const postulacionesPendientes = proyectos
+    .filter((p) => p.status !== "cancelado")
+    .reduce((total, p) => total + p.postulacionesPendientes, 0);
   const sinOrganizacion = organizaciones.length === 0;
   const conObservaciones = proyectos.filter(
     (p) => p.status === "borrador" && p.comentario_moderacion,
@@ -100,46 +112,51 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-8 lg:py-10">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-ink">
-            Hola, {nombre} <span aria-hidden>👋</span>
-          </h1>
-          <p className="mt-1 text-muted">
-            Tu resumen como organización: proyectos, equipos y su estado.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/mis-organizaciones/nueva"
-            className={buttonClasses({ variant: "secondary", size: "sm" })}
-          >
-            Nueva organización
-          </Link>
-          <Link
-            href="/mis-proyectos/nuevo"
-            className={buttonClasses({ variant: "primary", size: "sm" })}
-          >
-            Nuevo proyecto
-          </Link>
+      {/* Bienvenida: mismo lenguaje que /ingresar (acentos geométricos
+          borrosos en electric/sprout sobre una tarjeta blanca) en vez del
+          título suelto de antes — es la primera pantalla que ve el
+          patrocinador, y el resto del sitio ya reserva ese tratamiento para
+          las pantallas de "primera impresión" (landing, auth), no para
+          listas utilitarias. */}
+      <header className="relative overflow-hidden rounded-3xl border border-border bg-white p-8">
+        <div
+          className="pointer-events-none absolute -top-16 -right-16 size-56 rounded-full bg-electric/10 blur-2xl"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute -bottom-10 right-24 size-24 rounded-full bg-sprout/15 blur-xl"
+          aria-hidden
+        />
+        <div className="relative flex flex-wrap items-center justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-ink lg:text-4xl">
+              Hola, {nombre}
+            </h1>
+            <p className="mt-2 text-muted">
+              Tu resumen como organización: proyectos, equipos y su estado.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/mis-organizaciones/nueva"
+              className={buttonClasses({ variant: "outline", size: "sm" })}
+            >
+              Nueva organización
+            </Link>
+            <Link
+              href="/mis-proyectos/nuevo"
+              className={buttonClasses({ variant: "primary", size: "sm" })}
+            >
+              Nuevo proyecto
+            </Link>
+          </div>
         </div>
       </header>
 
-      {/* KPIs */}
-      <div className="mt-8 grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatCard label="Organizaciones" value={organizaciones.length} icon={IconBuilding} />
-        <StatCard label="Proyectos" value={proyectos.length} icon={IconCarpeta} />
-        <StatCard label="Publicados" value={publicados} icon={IconCheck} />
-        <StatCard
-          label="Postulaciones por revisar"
-          value={postulacionesPendientes}
-          icon={IconBandeja}
-          alerta={postulacionesPendientes > 0}
-        />
-      </div>
-
-      {/* Qué necesita atención primero: sin organización bloquea todo lo
-          demás, así que va antes que cualquier otro aviso. */}
+      {/* Sin organización, bloquea todo lo demás: nada de "0 proyectos, 0
+          publicados, todavía no llegan postulaciones..." repetido seis veces
+          por la pantalla — un patrocinador recién llegado solo necesita ver
+          este único llamado a la acción, no un dashboard lleno de ceros. */}
       {sinOrganizacion ? (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-border bg-white p-6">
           <div>
@@ -156,28 +173,66 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
           </Link>
         </div>
       ) : (
-        conObservaciones.length > 0 && (
-          <section className="mt-6 flex flex-col gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-              Necesitan tu atención
-            </h2>
-            {conObservaciones.map((p) => (
-              <Link
-                key={p.id}
-                href={`/mis-proyectos/${p.id}/observaciones`}
-                className="flex flex-col gap-1 rounded-2xl border border-coral/30 bg-coral/5 p-5 transition-colors hover:bg-coral/10"
-              >
-                <p className="text-sm font-medium text-ink">
-                  El moderador pidió cambios en &ldquo;{p.titulo}&rdquo;
-                </p>
-                <p className="line-clamp-1 text-sm text-muted">{p.comentario_moderacion}</p>
-              </Link>
-            ))}
-          </section>
-        )
-      )}
+        <>
+          {/* KPIs: cada uno con su propio color de familia (no los 4 en el
+              mismo azul pálido) para que se lean como cuatro señales
+              distintas, no cuatro copias del mismo componente con un número
+              distinto. Los tres primeros llevan a su lista completa;
+              "Postulaciones por revisar" es la señal más accionable de la
+              pantalla y antes no tenía ningún link — había que bajar hasta
+              "Últimas postulaciones" para encontrar el mismo destino. */}
+          <div className="mt-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
+            <StatCard
+              href="/mis-organizaciones"
+              label="Organizaciones"
+              value={organizaciones.length}
+              icon={IconBuilding}
+              tone="electric"
+            />
+            <StatCard
+              href="/mis-proyectos"
+              label="Proyectos"
+              value={proyectos.length}
+              icon={IconCarpeta}
+              tone="ink"
+            />
+            <StatCard
+              href="/mis-proyectos"
+              label="Publicados"
+              value={publicados}
+              icon={IconCheck}
+              tone="sprout"
+            />
+            <StatCard
+              href="/postulaciones"
+              label="Postulaciones por revisar"
+              value={postulacionesPendientes}
+              icon={IconBandeja}
+              tone={postulacionesPendientes > 0 ? "coral" : "ink"}
+            />
+          </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {conObservaciones.length > 0 && (
+            <section className="mt-6 flex flex-col gap-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Necesitan tu atención
+              </h2>
+              {conObservaciones.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/mis-proyectos/${p.id}/observaciones`}
+                  className="flex flex-col gap-1 rounded-2xl border border-coral/30 bg-coral/5 p-5 transition-colors hover:bg-coral/10"
+                >
+                  <p className="text-sm font-medium text-ink">
+                    El moderador pidió cambios en &ldquo;{p.titulo}&rdquo;
+                  </p>
+                  <p className="line-clamp-1 text-sm text-muted">{p.comentario_moderacion}</p>
+                </Link>
+              ))}
+            </section>
+          )}
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
         {/* Últimas postulaciones */}
         <Card
           title="Últimas postulaciones"
@@ -188,7 +243,7 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
           }
         >
           {postulacionesRecientes.length > 0 ? (
-            <ul className="flex flex-col gap-2">
+            <ul className="-mx-2 flex flex-col divide-y divide-border">
               {postulacionesRecientes.map((a) => {
                 const estado = POSTULACION_ESTADO[a.status] ?? {
                   label: a.status,
@@ -198,7 +253,7 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
                   <li key={a.id}>
                     <Link
                       href={`/mis-proyectos/${a.projectId}/postulaciones`}
-                      className="flex items-center gap-3 rounded-xl border border-border p-3 transition-all hover:border-electric/30 hover:shadow-sm"
+                      className={ROW_CLASS}
                     >
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-ink">
@@ -223,15 +278,12 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
         {/* Próximos hitos */}
         <Card title="Próximos hitos">
           {hitosProximos.length > 0 ? (
-            <ul className="flex flex-col gap-2">
+            <ul className="-mx-2 flex flex-col divide-y divide-border">
               {hitosProximos.map((h) => {
                 const venc = formatearVencimiento(h.fecha_limite);
                 return (
                   <li key={h.id}>
-                    <Link
-                      href={`/mis-proyectos/${h.projectId}/seguimiento`}
-                      className="flex items-center gap-3 rounded-xl border border-border p-3 transition-all hover:border-electric/30 hover:shadow-sm"
-                    >
+                    <Link href={`/mis-proyectos/${h.projectId}/seguimiento`} className={ROW_CLASS}>
                       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface text-muted">
                         <IconCalendario className="size-4" />
                       </span>
@@ -265,7 +317,7 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
           }
         >
           {proyectos.length > 0 ? (
-            <ul className="flex flex-col gap-2">
+            <ul className="-mx-2 flex flex-col divide-y divide-border">
               {proyectos.slice(0, 5).map((p) => {
                 const estado = ESTADO[p.status] ?? {
                   label: p.status,
@@ -280,10 +332,7 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
                   .join(" · ");
                 return (
                   <li key={p.id}>
-                    <Link
-                      href={`/mis-proyectos/${p.id}`}
-                      className="flex items-center gap-3 rounded-xl border border-border p-3 transition-all hover:border-electric/30 hover:shadow-sm"
-                    >
+                    <Link href={`/mis-proyectos/${p.id}`} className={ROW_CLASS}>
                       <span
                         className={cn(
                           "flex size-9 shrink-0 items-center justify-center rounded-lg",
@@ -331,7 +380,7 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
           }
         >
           {organizaciones.length > 0 ? (
-            <ul className="flex flex-col gap-2">
+            <ul className="-mx-2 flex flex-col divide-y divide-border">
               {organizaciones.slice(0, 5).map((o) => {
                 const v = VERIFICACION[o.verificacion ?? "sin_verificar"] ?? {
                   label: o.verificacion ?? "",
@@ -339,10 +388,7 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
                 };
                 return (
                   <li key={o.id}>
-                    <Link
-                      href={`/mis-organizaciones/${o.id}/editar`}
-                      className="flex items-center gap-3 rounded-xl border border-border p-3 transition-all hover:border-electric/30 hover:shadow-sm"
-                    >
+                    <Link href={`/mis-organizaciones/${o.id}/editar`} className={ROW_CLASS}>
                       <OrgLogo logoUrl={o.logo_url} nombre={o.nombre} size="sm" />
                       <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
                         {o.nombre}
@@ -359,7 +405,9 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
             </p>
           )}
         </Card>
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -399,23 +447,38 @@ function Card({
   );
 }
 
+const STAT_TONE_CLASSES = {
+  electric: "bg-electric/10 text-electric",
+  ink: "bg-ink/5 text-ink",
+  sprout: "bg-sprout/15 text-sprout",
+  coral: "bg-coral/10 text-coral",
+} as const;
+
+// `href`: cada KPI lleva a su lista completa — la de "Postulaciones por
+// revisar" en particular es la señal más accionable de la pantalla y antes
+// no era clicable en absoluto.
 function StatCard({
+  href,
   label,
   value,
   icon: Icon,
-  alerta = false,
+  tone,
 }: {
+  href: string;
   label: string;
   value: number;
   icon: (props: { className?: string }) => React.JSX.Element;
-  alerta?: boolean;
+  tone: keyof typeof STAT_TONE_CLASSES;
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-border bg-white p-6 shadow-sm">
+    <Link
+      href={href}
+      className="flex items-center gap-4 rounded-2xl border border-border bg-white p-6 shadow-sm transition-all hover:border-electric/30 hover:shadow-md"
+    >
       <span
         className={cn(
           "flex size-12 shrink-0 items-center justify-center rounded-full",
-          alerta ? "bg-coral/10 text-coral" : "bg-electric/10 text-electric",
+          STAT_TONE_CLASSES[tone],
         )}
       >
         <Icon className="size-5" />
@@ -424,7 +487,7 @@ function StatCard({
         <p className="text-3xl font-bold tracking-tight text-ink">{value}</p>
         <p className="text-sm text-muted">{label}</p>
       </div>
-    </div>
+    </Link>
   );
 }
 
