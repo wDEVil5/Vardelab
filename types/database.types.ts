@@ -217,6 +217,7 @@ export type Database = {
       }
       milestones: {
         Row: {
+          aviso_vencimiento_enviado_at: string | null
           created_at: string
           descripcion: string | null
           estado: Database["public"]["Enums"]["milestone_status"]
@@ -228,6 +229,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          aviso_vencimiento_enviado_at?: string | null
           created_at?: string
           descripcion?: string | null
           estado?: Database["public"]["Enums"]["milestone_status"]
@@ -239,6 +241,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          aviso_vencimiento_enviado_at?: string | null
           created_at?: string
           descripcion?: string | null
           estado?: Database["public"]["Enums"]["milestone_status"]
@@ -1008,6 +1011,7 @@ export type Database = {
       is_project_member: { Args: { _project_id: string }; Returns: boolean }
       is_team_member: { Args: { _team_id: string }; Returns: boolean }
       manages_applicant: { Args: { _applicant_id: string }; Returns: boolean }
+      notificar_hitos_por_vencer: { Args: never; Returns: undefined }
       org_recipient_ids: { Args: { _org_id: string }; Returns: string[] }
       owns_org: { Args: { _org_id: string }; Returns: boolean }
       pilot_autoaprobacion_activa: { Args: never; Returns: boolean }
