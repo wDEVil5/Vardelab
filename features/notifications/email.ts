@@ -17,6 +17,12 @@ import type { Notification } from "@/features/notifications/queries";
  * bastante aire entre líneas, un botón grande, y un pie con divisor fino que
  * indica a quién se envió el correo. Sin pills, sin barras decorativas, sin
  * frases de misión — todo el color queda en el título y el botón.
+ *
+ * `sendPlainEmail` (M65) reusa la misma plantilla y el mismo envío por Brevo
+ * para casos que no son un `notification_tipo` — el canal de contacto
+ * (leads) es el primero — sin pasar por `CATALOGO`, que sigue acoplado al
+ * enum de notificaciones a propósito (cada entrada ahí es un evento in-app
+ * real, no un catálogo de correos genérico).
  */
 
 const REMITENTE = { name: "Campuslab", email: "wilnesdevil9@gmail.com" };
@@ -86,16 +92,29 @@ const CATALOGO: Record<
   },
 };
 
+type PlantillaConfig = {
+  asunto: string;
+  mensaje: string;
+  instruccion: string;
+  cta?: string;
+  link?: string | null;
+  confianza?: string;
+  to: string;
+};
+
 // Documento completo (no solo un fragmento): así entran los <meta> de
 // color-scheme, que son lo que le permite a Apple Mail / Outlook.com
 // adaptar la plantilla en modo oscuro sin que el texto oscuro quede
 // ilegible sobre un fondo que el cliente oscureció por su cuenta.
-function plantilla(tipo: Tipo, mensaje: string, link: string | null | undefined, to: string): string {
-  const { asunto, instruccion, cta, confianza } = CATALOGO[tipo];
+//
+// Genérica a propósito (no recibe `Tipo`): la usan tanto los correos de
+// notificaciones (vía `CATALOGO`, abajo) como el canal de contacto (leads),
+// que no es un evento de `notification_tipo` y arma su propio asunto/cuerpo.
+function plantilla({ asunto, mensaje, instruccion, cta, link, confianza, to }: PlantillaConfig): string {
   const fuente = "-apple-system,BlinkMacSystemFont,'Inter',Helvetica,Arial,sans-serif";
 
   const boton = link
-    ? `<a href="${SITE_URL}${link}" style="display:inline-block;background:#3867ff;color:#ffffff;font-size:15px;font-weight:700;padding:15px 36px;border-radius:8px;text-decoration:none;font-family:${fuente}">${cta}</a>`
+    ? `<a href="${SITE_URL}${link}" style="display:inline-block;background:#3867ff;color:#ffffff;font-size:15px;font-weight:700;padding:15px 36px;border-radius:8px;text-decoration:none;font-family:${fuente}">${cta ?? "Ver más"}</a>`
     : "";
 
   const lineaConfianza = confianza
@@ -138,9 +157,7 @@ function plantilla(tipo: Tipo, mensaje: string, link: string | null | undefined,
           <tr>
             <td class="ink" style="padding:0 0 20px;font-size:16px;line-height:1.7;color:#0d253b">${mensaje}</td>
           </tr>
-          <tr>
-            <td class="muted" style="padding:0 0 40px;font-size:15px;line-height:1.7;color:#607086">${instruccion}</td>
-          </tr>
+          ${instruccion ? `<tr><td class="muted" style="padding:0 0 40px;font-size:15px;line-height:1.7;color:#607086">${instruccion}</td></tr>` : ""}
           ${boton ? `<tr><td style="padding:0 0 8px">${boton}</td></tr>` : ""}
           ${lineaConfianza ? `<tr><td>${lineaConfianza}</td></tr>` : ""}
           <tr>
@@ -174,16 +191,11 @@ function plantilla(tipo: Tipo, mensaje: string, link: string | null | undefined,
 </html>`;
 }
 
-/** Envía un correo a una dirección directa (invitaciones: el destinatario puede no tener cuenta todavía). */
-export async function sendEmail(
-  to: string,
-  tipo: Tipo,
-  mensaje: string,
-  link?: string | null,
-): Promise<void> {
+/** Llamada de bajo nivel a la API de Brevo, sin conocer `notification_tipo` ni el catálogo — la comparten `sendEmail` y `sendPlainEmail`. Nunca lanza: un correo que falla no debe romper la acción que lo originó. */
+async function enviarPorBrevo(to: string, asunto: string, html: string): Promise<void> {
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) {
-    console.error("[sendEmail] Falta BREVO_API_KEY en el entorno; correo no enviado.");
+    console.error("[enviarPorBrevo] Falta BREVO_API_KEY en el entorno; correo no enviado.");
     return;
   }
 
@@ -198,17 +210,46 @@ export async function sendEmail(
       body: JSON.stringify({
         sender: REMITENTE,
         to: [{ email: to }],
-        subject: CATALOGO[tipo].asunto,
-        htmlContent: plantilla(tipo, mensaje, link, to),
+        subject: asunto,
+        htmlContent: html,
       }),
     });
 
     if (!res.ok) {
-      console.error("[sendEmail] Brevo respondió", res.status, await res.text());
+      console.error("[enviarPorBrevo] Brevo respondió", res.status, await res.text());
     }
   } catch (err) {
-    console.error("[sendEmail]", err);
+    console.error("[enviarPorBrevo]", err);
   }
+}
+
+/** Envía un correo a una dirección directa (invitaciones: el destinatario puede no tener cuenta todavía). */
+export async function sendEmail(
+  to: string,
+  tipo: Tipo,
+  mensaje: string,
+  link?: string | null,
+): Promise<void> {
+  const { asunto, instruccion, cta, confianza } = CATALOGO[tipo];
+  await enviarPorBrevo(to, asunto, plantilla({ asunto, mensaje, instruccion, cta, confianza, link, to }));
+}
+
+/**
+ * Correo genérico, sin pasar por `notification_tipo` (features/notifications/queries.ts) ni
+ * `CATALOGO`: para el canal de contacto (leads) y cualquier otro caso que no
+ * sea uno de los eventos de notificación in-app. Misma plantilla visual.
+ */
+export async function sendPlainEmail(
+  to: string,
+  asunto: string,
+  mensaje: string,
+  opts?: { instruccion?: string; cta?: string; link?: string | null },
+): Promise<void> {
+  await enviarPorBrevo(
+    to,
+    asunto,
+    plantilla({ asunto, mensaje, instruccion: opts?.instruccion ?? "", cta: opts?.cta, link: opts?.link, to }),
+  );
 }
 
 /**
