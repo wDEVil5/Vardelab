@@ -25,8 +25,14 @@ export function ProjectCard({ project }: { project: ProjectCardData }) {
   const org = project.organization;
   const roles = project.roles ?? [];
 
-  // Cupos totales sumando los de cada rol.
-  const cuposTotales = roles.reduce((total, rol) => total + rol.cupos, 0);
+  // Cupos REALMENTE restantes (M72): no el total original de cada rol, sino
+  // descontando las postulaciones ya `aceptada` — un rol ya cubierto no
+  // resta cupo, aunque el proyecto siga en el catálogo mientras se completan
+  // los demás roles.
+  const cuposTotales = roles.reduce(
+    (total, rol) => total + Math.max(0, rol.cupos - rol.aceptadas),
+    0,
+  );
 
   // Nivel de entrada: si algún rol es apto sin experiencia, se destaca en la
   // tarjeta para bajar la barrera de postulación (se deriva de las skills).

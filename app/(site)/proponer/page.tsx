@@ -25,7 +25,7 @@ const RAZONES = [
 export default function ProponerPage() {
   return (
     <>
-      <main className="relative z-10 md:mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-surface">
+      <main className="relative z-10 md:mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-white">
         <section className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-24">
           <div className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-16">
             {/* Columna izquierda: el pitch. */}
