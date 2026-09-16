@@ -66,6 +66,12 @@ const TRAZOS: Record<Notification["tipo"], ReactNode> = {
       <path d="M9.5 9.5l5 5M14.5 9.5l-5 5" />
     </>
   ),
+  postulacion_removida: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 12h8" />
+    </>
+  ),
 };
 
 const TONO: Record<Notification["tipo"], string> = {
@@ -79,6 +85,7 @@ const TONO: Record<Notification["tipo"], string> = {
   proyecto_cancelado: "bg-coral/15 text-coral",
   organizacion_verificada: "bg-sprout/15 text-sprout",
   organizacion_no_verificada: "bg-coral/15 text-coral",
+  postulacion_removida: "bg-ink/10 text-ink",
 };
 
 export function NotificationIcon({ tipo }: { tipo: Notification["tipo"] }) {

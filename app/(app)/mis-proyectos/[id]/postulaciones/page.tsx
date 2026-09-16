@@ -11,6 +11,7 @@ import {
 } from "@/features/applications/queries";
 import { acceptApplication, rejectApplication } from "@/features/applications/actions";
 import { ConfirmTeamButton } from "@/features/applications/components/confirm-team-button";
+import { RemoveTeamMemberButton } from "@/features/applications/components/remove-team-member-button";
 
 export const metadata: Metadata = {
   title: "Seleccionar equipo · CampusLab",
@@ -33,6 +34,7 @@ const ESTADO_POSTULACION: Record<string, { label: string; tone: BadgeTone }> = {
   aceptada: { label: "Aceptada", tone: "success" },
   rechazada: { label: "Rechazada", tone: "danger" },
   retirada: { label: "Retirada", tone: "neutral" },
+  removida: { label: "Quitada del equipo", tone: "neutral" },
 };
 
 const MODALIDAD_LABEL: Record<string, string> = {
@@ -157,7 +159,7 @@ export default async function PostulacionesProyectoPage({ params }: PageProps) {
           ) : (
             <ul className="-mr-1 flex max-h-72 flex-col gap-3 overflow-y-auto pr-1">
               {project.equipo.map((m) => (
-                <li key={m.userId} className="flex min-w-0 items-center gap-3">
+                <li key={m.teamMemberId} className="flex min-w-0 items-center gap-3">
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-electric/10 text-xs font-semibold text-electric">
                     {iniciales(m.nombre)}
                   </span>
@@ -171,18 +173,12 @@ export default async function PostulacionesProyectoPage({ params }: PageProps) {
                       </span>
                     )}
                   </div>
-                  {/* Todo integrante llegó al equipo aceptando una
-                      postulación a este proyecto, así que el gestor ya
-                      tiene permiso de ver su perfil completo por RLS
-                      (M13) sea público o no. */}
-                  <Link
-                    href={`/u/${m.userId}`}
-                    aria-label="Ver perfil"
-                    title="Ver perfil"
-                    className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-electric/10 hover:text-electric"
-                  >
-                    <IconFlecha className="size-3.5" />
-                  </Link>
+                  <RemoveTeamMemberButton
+                    teamMemberId={m.teamMemberId}
+                    projectId={id}
+                    userId={m.userId}
+                    nombre={m.nombre ?? "este integrante"}
+                  />
                 </li>
               ))}
             </ul>

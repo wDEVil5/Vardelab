@@ -22,6 +22,16 @@ const ESTADO: Record<string, { label: string; tone: BadgeTone }> = {
   pendiente: { label: "Invitación pendiente", tone: "neutral" },
 };
 
+// Para que quede claro a quién se está invitando a co-gestionar: si la cuenta
+// ya existe, qué rol tiene hoy en la plataforma (p. ej. ya es 'estudiante').
+const ROL_LABEL: Record<string, string> = {
+  estudiante: "Estudiante",
+  patrocinador: "Patrocinador",
+  mentor: "Mentor",
+  moderador: "Moderador",
+  admin: "Admin",
+};
+
 // Iniciales para el avatar del miembro (o "?" si todavía no hay nombre).
 function iniciales(nombre: string | null): string {
   if (!nombre) return "?";
@@ -174,6 +184,11 @@ export default async function MiembrosOrganizacionPage({ params }: PageProps) {
                     <p className="truncate text-xs text-muted">{m.invited_email}</p>
                   )}
                 </div>
+                {activo && m.roles.length > 0 && (
+                  <span className="hidden shrink-0 text-xs text-muted sm:inline">
+                    {m.roles.map((r) => ROL_LABEL[r] ?? r).join(" · ")}
+                  </span>
+                )}
                 <Badge tone={estado.tone}>{estado.label}</Badge>
                 <form action={removeOrganizationMember}>
                   <input type="hidden" name="memberId" value={m.id} />

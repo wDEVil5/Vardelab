@@ -15,6 +15,7 @@ const ESTADO: Record<string, { label: string; tone: BadgeTone }> = {
   aceptada: { label: "Aceptada", tone: "success" },
   rechazada: { label: "Rechazada", tone: "danger" },
   retirada: { label: "Retirada", tone: "neutral" },
+  removida: { label: "Ya no en el equipo", tone: "neutral" },
 };
 
 type FiltroId = "todas" | "enviada" | "aceptada" | "cerradas";
@@ -46,7 +47,9 @@ function IconFlecha({ className }: { className?: string }) {
 
 function coincide(status: string, filtro: FiltroId): boolean {
   if (filtro === "todas") return true;
-  if (filtro === "cerradas") return status === "rechazada" || status === "retirada";
+  if (filtro === "cerradas") {
+    return status === "rechazada" || status === "retirada" || status === "removida";
+  }
   return status === filtro;
 }
 
