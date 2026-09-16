@@ -53,3 +53,5 @@ docs/CampusLab_Vision_Tesis_y_Expansion.pdf
 tmp/
 BACKEND.md
 .vscode/
+.responsive-audit/
+.tmp-shots/

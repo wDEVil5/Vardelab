@@ -1032,6 +1032,13 @@ export type Database = {
       manages_applicant: { Args: { _applicant_id: string }; Returns: boolean }
       notificar_hitos_por_vencer: { Args: never; Returns: undefined }
       org_recipient_ids: { Args: { _org_id: string }; Returns: string[] }
+      organization_member_roles: {
+        Args: { _org_id: string }
+        Returns: {
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
       owns_org: { Args: { _org_id: string }; Returns: boolean }
       pilot_autoaprobacion_activa: { Args: never; Returns: boolean }
       pilot_moderacion_obligatoria: { Args: never; Returns: boolean }
@@ -1049,7 +1056,12 @@ export type Database = {
     }
     Enums: {
       app_role: "estudiante" | "patrocinador" | "mentor" | "moderador" | "admin"
-      application_status: "enviada" | "aceptada" | "rechazada" | "retirada"
+      application_status:
+        | "enviada"
+        | "aceptada"
+        | "rechazada"
+        | "retirada"
+        | "removida"
       lead_estado: "nuevo" | "contactado" | "descartado"
       lead_tipo: "contacto_organizacion" | "propuesta_desafio"
       milestone_status: "pendiente" | "en_progreso" | "entregado" | "aprobado"
@@ -1064,6 +1076,7 @@ export type Database = {
         | "proyecto_cancelado"
         | "organizacion_verificada"
         | "organizacion_no_verificada"
+        | "postulacion_removida"
       org_type:
         | "academica"
         | "social"
@@ -1217,7 +1230,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["estudiante", "patrocinador", "mentor", "moderador", "admin"],
-      application_status: ["enviada", "aceptada", "rechazada", "retirada"],
+      application_status: [
+        "enviada",
+        "aceptada",
+        "rechazada",
+        "retirada",
+        "removida",
+      ],
       lead_estado: ["nuevo", "contactado", "descartado"],
       lead_tipo: ["contacto_organizacion", "propuesta_desafio"],
       milestone_status: ["pendiente", "en_progreso", "entregado", "aprobado"],
@@ -1232,6 +1251,7 @@ export const Constants = {
         "proyecto_cancelado",
         "organizacion_verificada",
         "organizacion_no_verificada",
+        "postulacion_removida",
       ],
       org_type: ["academica", "social", "emprendimiento", "empresa", "interna"],
       project_modality: ["presencial", "remoto", "hibrido"],
