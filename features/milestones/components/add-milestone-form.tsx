@@ -12,15 +12,18 @@ import { SubmitButton } from "@/features/auth/components/submit-button";
 
 const INITIAL: AddMilestoneState = {};
 
-/** Formulario para agregar un hito. Limpia los campos tras un alta exitosa. */
+/**
+ * Formulario para agregar un hito. Limpia los campos tras un alta exitosa.
+ * `state !== INITIAL` es verdadero solo tras un envío real — no una ref "ya
+ * hubo un envío" marcada dentro del propio efecto, que se rompe con el
+ * doble-invocado de efectos de React Strict Mode en desarrollo.
+ */
 export function AddMilestoneForm({ projectId }: { projectId: string }) {
   const [state, formAction] = useActionState(addMilestone, INITIAL);
   const formRef = useRef<HTMLFormElement>(null);
-  const enviado = useRef(false);
 
   useEffect(() => {
-    if (enviado.current && !state.error) formRef.current?.reset();
-    enviado.current = true;
+    if (state !== INITIAL && !state.error) formRef.current?.reset();
   }, [state]);
 
   return (

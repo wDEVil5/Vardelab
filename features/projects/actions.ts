@@ -268,16 +268,115 @@ export async function addRole(
   return {};
 }
 
+export type UpdateRoleState = { error?: string };
+
 /**
- * Elimina un rol de un proyecto. La RLS restringe a quien gestiona el proyecto;
- * el `project_id` del formulario solo se usa para revalidar la vista.
+ * Edita nombre/descripción/cupos/horas de un rol ya creado (antes no existía
+ * ningún camino para esto: solo se podía agregar y borrar). Las habilidades
+ * se siguen editando aparte, con `addRoleSkill`/`deleteRoleSkill` desde
+ * `RoleSkillsEditor` — este formulario no las toca. La RLS
+ * `project_roles_update_manager` (M76) exige gestionar el proyecto.
+ *
+ * Guarda propia (no solo delegada a la base): los cupos no pueden bajar del
+ * número de postulaciones ya `aceptada` en este rol — dejaría el rol
+ * "sobre-cubierto" (más aceptados que cupos) sin sacar a nadie, rompiendo el
+ * cálculo de cupos restantes (M72). Si hace falta bajar cupos por debajo de
+ * eso, primero hay que quitar a alguien del equipo (`removeTeamMember`).
  */
-export async function deleteRole(formData: FormData): Promise<void> {
+export async function updateRole(
+  _prevState: UpdateRoleState,
+  formData: FormData,
+): Promise<UpdateRoleState> {
   const roleId = String(formData.get("roleId") ?? "");
   const projectId = String(formData.get("projectId") ?? "");
-  if (!roleId) return;
+  const nombre = String(formData.get("nombre") ?? "").trim();
+  const descripcion = String(formData.get("descripcion") ?? "").trim();
+  const cuposRaw = String(formData.get("cupos") ?? "").trim();
+  const horasRaw = String(formData.get("horas_semanales") ?? "").trim();
+
+  if (!roleId) return { error: "Falta el rol." };
+  if (!nombre) return { error: "El rol necesita un nombre." };
+
+  const cupos = cuposRaw ? Number(cuposRaw) : 1;
+  if (!Number.isInteger(cupos) || cupos < 1) {
+    return { error: "Los cupos deben ser un número entero de 1 o más." };
+  }
+
+  let horasSemanales: number | null = null;
+  if (horasRaw) {
+    const horas = Number(horasRaw);
+    if (!Number.isInteger(horas) || horas < 1 || horas > 60) {
+      return { error: "Las horas por semana deben ser un entero entre 1 y 60." };
+    }
+    horasSemanales = horas;
+  }
 
   const supabase = await createClient();
+
+  const { count: aceptadas } = await supabase
+    .from("applications")
+    .select("id", { count: "exact", head: true })
+    .eq("project_role_id", roleId)
+    .eq("status", "aceptada");
+
+  if ((aceptadas ?? 0) > cupos) {
+    return {
+      error: `Ya hay ${aceptadas} persona${aceptadas === 1 ? "" : "s"} aceptada${aceptadas === 1 ? "" : "s"} en este rol: los cupos no pueden bajar de ese número. Para liberar cupos, primero quita a alguien del equipo.`,
+    };
+  }
+
+  const { error } = await supabase
+    .from("project_roles")
+    .update({
+      nombre,
+      descripcion: descripcion || null,
+      cupos,
+      horas_semanales: horasSemanales,
+    })
+    .eq("id", roleId);
+
+  if (error) {
+    console.error("[updateRole]", error.message);
+    return { error: "No se pudo actualizar el rol. Inténtalo de nuevo." };
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}`);
+  return {};
+}
+
+export type DeleteRoleState = { error?: string };
+
+/**
+ * Elimina un rol de un proyecto. La RLS `project_roles_delete_manager` (M76)
+ * es la barrera real: además de exigir gestionar el proyecto, bloquea el
+ * borrado si el rol tiene una postulación 'enviada' o 'aceptada' — borrar un
+ * rol así de golpe se llevaba la postulación entera por delante (`ON DELETE
+ * CASCADE`), sin aviso. El chequeo de acá adelanta esa misma condición para
+ * dar un mensaje claro en vez de un rechazo genérico de RLS.
+ */
+export async function deleteRole(
+  _prevState: DeleteRoleState,
+  formData: FormData,
+): Promise<DeleteRoleState> {
+  const roleId = String(formData.get("roleId") ?? "");
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!roleId) return { error: "Falta el rol." };
+
+  const supabase = await createClient();
+
+  const { count } = await supabase
+    .from("applications")
+    .select("id", { count: "exact", head: true })
+    .eq("project_role_id", roleId)
+    .in("status", ["enviada", "aceptada"]);
+
+  if ((count ?? 0) > 0) {
+    return {
+      error:
+        "Este rol tiene postulaciones activas. Resuélvelas (o quita del equipo a quien ya esté aceptado) antes de eliminarlo.",
+    };
+  }
+
   const { error } = await supabase
     .from("project_roles")
     .delete()
@@ -285,9 +384,11 @@ export async function deleteRole(formData: FormData): Promise<void> {
 
   if (error) {
     console.error("[deleteRole]", error.message);
+    return { error: "No se pudo eliminar el rol. Inténtalo de nuevo." };
   }
 
   revalidatePath(`/mis-proyectos/${projectId}`);
+  return {};
 }
 
 export type AddRoleSkillState = { error?: string };

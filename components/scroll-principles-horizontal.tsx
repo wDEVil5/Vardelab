@@ -178,16 +178,13 @@ export function ScrollPrinciples({ items }: { items: Principio[] }) {
             className="relative mx-auto h-full max-w-7xl px-8 pt-8 lg:px-12"
           >
             <div className="max-w-3xl">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-electric">
-                La experiencia CampusLab
-              </span>
-              <h2 className="mt-4 max-w-2xl text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white lg:text-6xl">
+              <h2 className="max-w-2xl text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white lg:text-6xl">
                 Aprender haciendo,
                 <span className="block text-white/50"> con un marco claro.</span>
               </h2>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-white/65">
-                Cuatro decisiones que cuidan tu tiempo, el de la organización y
-                el resultado que ambos pueden mostrar.
+                Cuatro decisiones de producto: alcance chico, hitos visibles,
+                colaboración real y barrera baja para empezar.
               </p>
             </div>
 
@@ -223,11 +220,11 @@ export function ScrollPrinciples({ items }: { items: Principio[] }) {
               style={{ marginTop: -34 }}
             >
               <h3 className="max-w-68 text-[2rem] font-semibold leading-none tracking-[-0.04em] text-white">
-                Todo parte con una necesidad concreta.
+                Empiezas con un rol claro.
               </h3>
               <p className="mt-5 max-w-68 text-sm leading-relaxed text-white/62">
-                Reducir filas, ordenar datos o hacer visible una iniciativa.
-                CampusLab la convierte en un desafío alcanzable.
+                Un microdesafío de 2 a 8 semanas, con rol, alcance y plazos
+                definidos desde el inicio.
               </p>
             </div>
 
@@ -245,14 +242,17 @@ function PrincipleCard({
   index,
   active,
   revealed,
+  compact = false,
 }: {
   item: Principio;
   index: number;
   active: boolean;
   revealed: boolean;
+  /** Móvil: ancho del viewport, sin desnivel exagerado. */
+  compact?: boolean;
 }) {
-  // El desnivel intencional evita que parezca una grilla de tarjetas.
-  const offsets = [-34, 72, 0, 106];
+  // El desnivel intencional evita que parezca una grilla de tarjetas (solo desktop).
+  const offsets = compact ? [0, 0, 0, 0] : [-34, 72, 0, 106];
   const tones = [
     "bg-[#163451] border-white/12",
     "bg-[#122F4B] border-white/12",
@@ -263,7 +263,10 @@ function PrincipleCard({
   return (
     <article
       className={cn(
-        "relative flex h-108 w-96 shrink-0 flex-col overflow-hidden rounded-2xl border px-9 py-10 transition-[opacity,transform,filter,border-color,background-color] duration-700 ease-out sm:w-100",
+        "relative flex shrink-0 flex-col rounded-2xl border transition-[opacity,transform,filter,border-color,background-color] duration-700 ease-out",
+        compact
+          ? "h-80 w-[min(18.5rem,calc(100vw-2.75rem))] overflow-hidden px-5 py-6"
+          : "h-108 w-96 overflow-hidden px-9 py-10 sm:w-100",
         !revealed
           ? "translate-x-14 translate-y-8 scale-95 border-transparent bg-transparent opacity-0 blur-[5px]"
           : active
@@ -273,16 +276,31 @@ function PrincipleCard({
       style={{ marginTop: offsets[index % offsets.length] }}
     >
       <div className="relative">
-        <h3 className="max-w-68 text-[2rem] font-semibold leading-none tracking-[-0.04em] text-white">
+        <h3
+          className={cn(
+            "font-semibold leading-none tracking-[-0.04em] text-white",
+            compact ? "max-w-none text-xl" : "max-w-68 text-[2rem]",
+          )}
+        >
           {item.titulo}
         </h3>
-        <p className="mt-5 max-w-[18rem] text-sm leading-relaxed text-white/62">
+        <p
+          className={cn(
+            "leading-relaxed text-white/62",
+            compact ? "mt-4 text-sm" : "mt-5 max-w-[18rem] text-sm",
+          )}
+        >
           {item.texto}
         </p>
       </div>
 
       <div className="relative mt-auto border-t border-white/10 pt-5">
-        <p className="max-w-[18rem] text-xs leading-relaxed text-white/50">
+        <p
+          className={cn(
+            "leading-relaxed text-white/50",
+            compact ? "text-xs" : "max-w-[18rem] text-xs",
+          )}
+        >
           {item.practica}
         </p>
       </div>
@@ -292,28 +310,127 @@ function PrincipleCard({
 
 /** Fallback accesible: sin pin ni animación; las tarjetas se recorren al deslizar. */
 function MobilePrinciples({ items }: { items: Principio[] }) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+  const [hintVisible, setHintVisible] = useState(true);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const cards = [...el.querySelectorAll<HTMLElement>("[data-principle-card]")];
+      if (cards.length === 0) return;
+      const mid = el.scrollLeft + el.clientWidth / 2;
+      let best = 0;
+      let bestDist = Infinity;
+      cards.forEach((card, i) => {
+        const center = card.offsetLeft + card.offsetWidth / 2;
+        const dist = Math.abs(center - mid);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = i;
+        }
+      });
+      setActive(best);
+      if (el.scrollLeft > 12) setHintVisible(false);
+    };
+
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      el.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [items.length]);
+
   return (
-    <section className="block overflow-hidden border-t border-white/12 bg-ink text-white motion-safe:md:hidden">
-      <div className="px-6 pb-10 pt-16">
-        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-electric">
-          Principios
-        </span>
-        <h2 className="mt-3 text-3xl font-bold tracking-tight">Cómo trabajamos.</h2>
+    <section className="block overflow-x-clip border-t border-white/12 bg-ink text-white motion-safe:md:hidden">
+      <div className="px-6 pb-6 pt-12">
+        <h2 className="text-[1.65rem] font-bold leading-tight tracking-tight sm:text-3xl">
+          Aprender haciendo, con un marco claro.
+        </h2>
         <p className="mt-3 max-w-md text-sm leading-relaxed text-white/65">
-          Un proyecto claro para aprender, aportar y llegar a un resultado que sí se puede mostrar.
+          Cuatro decisiones de producto: alcance chico, hitos visibles,
+          colaboración real y barrera baja para empezar.
         </p>
       </div>
-      <div className="-mr-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-16 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {items.map((item, index) => (
-          <div key={item.titulo} className="snap-center">
-            <PrincipleCard
-              item={item}
-              index={index}
-              active={index === 0}
-              revealed
+
+      <div className="relative">
+        {/* Fade derecho: sugiere que hay más cards fuera de pantalla. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-linear-to-l from-ink to-transparent"
+        />
+
+        <div
+          ref={scrollerRef}
+          className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-4 pe-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {items.map((item, index) => (
+            <div
+              key={item.titulo}
+              data-principle-card
+              className="snap-start"
+            >
+              <PrincipleCard
+                item={item}
+                index={index}
+                active={index === active}
+                revealed
+                compact
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 px-6 pb-10 pt-1">
+        <div
+          className="flex items-center gap-1.5"
+          role="tablist"
+          aria-label="Principios"
+        >
+          {items.map((item, i) => (
+            <button
+              key={item.titulo}
+              type="button"
+              role="tab"
+              aria-selected={i === active}
+              aria-label={`Ver: ${item.titulo}`}
+              onClick={() => {
+                const el = scrollerRef.current;
+                const card = el?.querySelectorAll<HTMLElement>(
+                  "[data-principle-card]",
+                )[i];
+                card?.scrollIntoView({
+                  behavior: "smooth",
+                  inline: "start",
+                  block: "nearest",
+                });
+                setHintVisible(false);
+              }}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-300",
+                i === active
+                  ? "w-5 bg-electric"
+                  : "w-1.5 bg-white/25 hover:bg-white/45",
+              )}
             />
-          </div>
-        ))}
+          ))}
+        </div>
+
+        <p
+          aria-hidden={!hintVisible}
+          className={cn(
+            "flex items-center gap-1 text-xs text-white/45 transition-opacity duration-300",
+            hintVisible ? "opacity-100" : "opacity-0",
+          )}
+        >
+          Desliza
+          <span className="inline-block animate-pulse">›</span>
+        </p>
       </div>
     </section>
   );

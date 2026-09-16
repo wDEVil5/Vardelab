@@ -10,8 +10,7 @@ export const metadata: Metadata = {
 type PageProps = { searchParams: Promise<{ rol?: string }> };
 
 /**
- * A-01 · Registro. La vista es cliente: el rol elegido adapta el panel. El rol
- * inicial puede venir por `?rol=` (p. ej. "Soy una organización" → patrocinador).
+ * A-01 · Registro. El split y el peek viven en el layout de credenciales.
  */
 export default async function RegistroPage({ searchParams }: PageProps) {
   const { rol } = await searchParams;
@@ -25,5 +24,7 @@ export default async function RegistroPage({ searchParams }: PageProps) {
 
   const registroAbierto = error ? true : data !== false;
 
-  return <RegistroView initialRol={initialRol} registroAbierto={registroAbierto} />;
+  return (
+    <RegistroView initialRol={initialRol} registroAbierto={registroAbierto} />
+  );
 }

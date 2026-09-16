@@ -267,6 +267,7 @@ export type ApplicantProfile = {
 };
 
 export type TeamMember = {
+  teamMemberId: string;
   userId: string;
   nombre: string | null;
   carrera: string | null;
@@ -347,7 +348,7 @@ export async function getProjectApplications(projectId: string) {
   // 3) Equipo ya formado (si existe): integrantes con su nombre y el rol que cubren.
   const { data: team } = await supabase
     .from("teams")
-    .select("id, team_members ( user_id, project_role_id )")
+    .select("id, team_members ( id, user_id, project_role_id )")
     .eq("project_id", projectId)
     .maybeSingle();
 
@@ -370,6 +371,7 @@ export async function getProjectApplications(projectId: string) {
   const nombreRolPorId = new Map(roles.map((r) => [r.id, r.nombre]));
 
   const equipo: TeamMember[] = miembros.map((m) => ({
+    teamMemberId: m.id,
     userId: m.user_id,
     nombre: perfilesEquipo.get(m.user_id)?.nombre ?? null,
     carrera: perfilesEquipo.get(m.user_id)?.carrera ?? null,

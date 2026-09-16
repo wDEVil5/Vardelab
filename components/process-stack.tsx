@@ -15,17 +15,14 @@ const COLORES = [
 // Offset (px) del primer nodo respecto al top del viewport, y cuánto se
 // desplaza cada nodo siguiente — deja asomado un margen de color de la
 // tarjeta de abajo, como fichas de un mazo.
-const TOP_BASE = 80;
-const TOP_PASO = 18;
-// Cuánto scroll (px) toma la transición de escala/blur de cada tarjeta,
-// igual que `scaleEndPosition` del `ScrollStack` original.
-const DISTANCIA_ACTIVACION = 320;
+const TOP_BASE = 72;
+const TOP_PASO = 14;
 // Escala final de la tarjeta más al fondo (i=0); cada tarjeta siguiente
 // termina un poco menos achicada — mismo criterio que `baseScale`/`itemScale`
 // del componente de referencia.
-const ESCALA_BASE = 0.75;
-const ESCALA_POR_NIVEL = 0.05;
-const BLUR_MAX = 8;
+const ESCALA_BASE = 0.88;
+const ESCALA_POR_NIVEL = 0.03;
+const BLUR_MAX = 2.5;
 // Margen (%) fuera del viewport en el que ya se conecta/desconecta el
 // listener de scroll — evita quedar "corto" y notarse un salto al entrar.
 const MARGEN_RANGO = 100;
@@ -46,10 +43,9 @@ const MARGEN_RANGO = 100;
  * documento (`offsetTop`) comparada con el scroll actual — no contra si "ya
  * hay N tarjetas encima", que se sentía escalonado/con saltos en vez de
  * suave. Esta versión sigue el mismo criterio que el original: cada tarjeta
- * tiene su propia ventana de scroll (`DISTANCIA_ACTIVACION` px) en la que pasa
- * de tamaño normal a su escala final, calculada en cada frame directamente a
- * partir de `scrollY` — continuo, sin pasos discretos ni transición CSS
- * persiguiendo un valor. El `scroll` de `window` solo se conecta mientras la
+ * achica en cascada a mitad del viaje de la tarjeta que la tapa, calculado
+ * en cada frame desde `scrollY` — continuo, sin pasos discretos. El `scroll`
+ * de `window` solo se conecta mientras la
  * sección está cerca del viewport (via `IntersectionObserver`), y cada frame
  * se salta la escritura al DOM si el valor no cambió respecto al anterior —
  * si no, cualquier scroll en OTRA parte de una página larga recalcularía
@@ -68,21 +64,27 @@ export function ProcessStack({ titulo, pasos }: { titulo: string; pasos: Proceso
     if (!el) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    // Posición estática (como si no fuera `sticky`) de cada tarjeta en el
-    // documento, menos su propio offset de apilado — el punto de scroll en el
-    // que esa tarjeta empieza a considerarse "cubierta".
+    let escuchandoScroll = false;
+
+    // Posición de layout en el documento (no la visual sticky).
+    // `getBoundingClientRect` falla si la página carga a mitad de la sección:
+    // la tarjeta ya está "pegada" y el top visual no es el top real del flujo,
+    // y los disparadores quedan corruptos → el efecto deja de responder al
+    // subir/bajar. `offsetTop` respecto al contenedor sí es la posición estática.
     const medir = () => {
-      // Limpia cualquier `transform` antes de medir: `getBoundingClientRect`
-      // devuelve el rectángulo YA transformado (visual), no el de layout —
-      // con una tarjeta achicada a mitad de camino, la medición saldría mal.
       cardRefs.current.forEach((c) => {
-        if (c) c.style.transform = "";
+        if (!c) return;
+        c.style.transform = "";
+        c.style.filter = "";
       });
+      if (tituloRef.current) tituloRef.current.style.opacity = "";
+
+      const rootTop = el.getBoundingClientRect().top + window.scrollY;
       disparadoresRef.current = cardRefs.current.map((c, i) => {
         if (!c) return 0;
-        const staticTop = c.getBoundingClientRect().top + window.scrollY;
-        return staticTop - (TOP_BASE + i * TOP_PASO);
+        return rootTop + c.offsetTop - (TOP_BASE + i * TOP_PASO);
       });
+      ultimoPintadoRef.current = [];
     };
 
     const pintar = () => {
@@ -90,39 +92,38 @@ export function ProcessStack({ titulo, pasos }: { titulo: string; pasos: Proceso
       cardRefs.current.forEach((c, i) => {
         if (!c) return;
 
-        // El achicado/blur de la tarjeta i tiene que seguir a la tarjeta
-        // SIGUIENTE (la que la tapa), no a su propio punto de scroll — antes
-        // dependía de cuándo la tarjeta i misma se pegaba arriba, que casi
-        // nunca coincidía con el momento real en que la siguiente empezaba a
-        // cubrirla (se sentía desfasado). Así: progreso 0 cuando la
-        // siguiente está a `DISTANCIA_ACTIVACION` px de llegar, progreso 1
-        // justo cuando la siguiente termina de pegarse — sincronizado con lo
-        // que se ve. La última tarjeta no tiene quién la tape: se queda
-        // siempre a tamaño normal.
+        // Cascada: profundidad de i sigue el viaje de la siguiente. Progreso
+        // 0 al pegarse la actual; 1 a mitad de camino de la que la tapa.
         const esUltima = i === cardRefs.current.length - 1;
-        const disparadorSiguiente = esUltima ? null : (disparadoresRef.current[i + 1] ?? 0);
-        const progreso = esUltima
+        const disparadorActual = disparadoresRef.current[i] ?? 0;
+        const disparadorSiguiente = esUltima
+          ? null
+          : (disparadoresRef.current[i + 1] ?? 0);
+        const viaje = esUltima
+          ? 0
+          : Math.max((disparadorSiguiente as number) - disparadorActual, 1);
+        const finCascada = disparadorActual + viaje * 0.5;
+        const progresoCrudo = esUltima
           ? 0
           : Math.min(
               1,
-              Math.max(0, (scrollY - (disparadorSiguiente! - DISTANCIA_ACTIVACION)) / DISTANCIA_ACTIVACION),
+              Math.max(
+                0,
+                (scrollY - disparadorActual) /
+                  Math.max(finCascada - disparadorActual, 1),
+              ),
             );
+        // Cuantizar para el cache: evita falsos "sin cambio" por floats.
+        const progreso = Math.round(progresoCrudo * 1000) / 1000;
 
-        // Sin cambio real respecto al último frame pintado (ya llegó a 0 o a
-        // 1 y se quedó ahí) → no tocar el DOM. Evita forzar recálculo de
-        // estilos/repintado en cada scroll de la página una vez que esta
-        // tarjeta ya no se está moviendo.
         if (ultimoPintadoRef.current[i] === progreso) return;
         ultimoPintadoRef.current[i] = progreso;
 
-        // Progreso "adelantado" (ease-out) solo para el achicado/blur: para
-        // que se note apenas la tapa la siguiente, no recién cuando ya casi
-        // terminó de cubrirla — con progreso lineal, a la mitad del cover
-        // recién iba como 1/3 de achicada; así a la mitad ya va como 3/4.
         const progresoAdelantado = 1 - (1 - progreso) ** 2;
         const escalaObjetivo = ESCALA_BASE + i * ESCALA_POR_NIVEL;
         const escala = 1 - progresoAdelantado * (1 - escalaObjetivo);
-        const blur = progresoAdelantado * BLUR_MAX * (1 - i / (pasos.length - 1 || 1));
+        const blur =
+          progresoAdelantado * BLUR_MAX * (1 - i / (pasos.length - 1 || 1));
 
         if (progreso <= 0) {
           c.style.transform = "";
@@ -132,12 +133,8 @@ export function ProcessStack({ titulo, pasos }: { titulo: string; pasos: Proceso
           c.style.filter = blur > 0.1 ? `blur(${blur.toFixed(1)}px)` : "";
         }
 
-        // El título se tapa con la tarjeta 1 apenas empieza a cubrirla —
-        // ahora usa el mismo `progreso` recién corregido (sincronizado con la
-        // tarjeta 2 acercándose), no un valor propio de la tarjeta 1.
         if (i === 0 && tituloRef.current) {
-          const opacidad = 1 - progreso;
-          tituloRef.current.style.opacity = opacidad.toFixed(2);
+          tituloRef.current.style.opacity = (1 - progreso).toFixed(2);
         }
       });
     };
@@ -147,25 +144,29 @@ export function ProcessStack({ titulo, pasos }: { titulo: string; pasos: Proceso
       rafRef.current = requestAnimationFrame(pintar);
     };
 
-    // El listener de scroll solo se conecta mientras la sección anda cerca
-    // del viewport — si no, cada scroll en CUALQUIER parte de la página
-    // (aunque este componente esté a miles de píxeles de distancia) recalcula
-    // las 4 tarjetas para nada.
+    const activarScroll = () => {
+      // Remedir siempre al entrar: corrige carga a mitad de sección y
+      // vuelve a calibrar si el layout cambió mientras estaba fuera.
+      medir();
+      pintar();
+      if (!escuchandoScroll) {
+        window.addEventListener("scroll", onScroll, { passive: true });
+        escuchandoScroll = true;
+      }
+    };
+
+    const desactivarScroll = () => {
+      if (escuchandoScroll) {
+        window.removeEventListener("scroll", onScroll);
+        escuchandoScroll = false;
+      }
+      cancelAnimationFrame(rafRef.current);
+    };
+
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          // Sin `medir()` acá: si se vuelve a llamar después de que alguna
-          // tarjeta ya tiene `scale(...)` aplicado, `getBoundingClientRect`
-          // devuelve el rectángulo YA achicado, no el real — corrompe los
-          // disparadores para el resto del scroll (esto era lo que hacía
-          // que el título volviera a asomar más adelante). Medir posiciones
-          // una sola vez, antes de que exista cualquier transform.
-          pintar();
-          window.addEventListener("scroll", onScroll, { passive: true });
-        } else {
-          window.removeEventListener("scroll", onScroll);
-          cancelAnimationFrame(rafRef.current);
-        }
+        if (entry.isIntersecting) activarScroll();
+        else desactivarScroll();
       },
       { rootMargin: `${MARGEN_RANGO}% 0px` },
     );
@@ -173,18 +174,24 @@ export function ProcessStack({ titulo, pasos }: { titulo: string; pasos: Proceso
 
     const onResize = () => {
       medir();
-      ultimoPintadoRef.current = [];
+      pintar();
+    };
+
+    // Restauración de scroll del navegador / back-forward cache.
+    const onPageShow = () => {
+      medir();
       pintar();
     };
 
     medir();
     pintar();
     window.addEventListener("resize", onResize);
+    window.addEventListener("pageshow", onPageShow);
     return () => {
       observer.disconnect();
-      cancelAnimationFrame(rafRef.current);
-      window.removeEventListener("scroll", onScroll);
+      desactivarScroll();
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("pageshow", onPageShow);
     };
   }, [pasos.length]);
 
@@ -193,7 +200,7 @@ export function ProcessStack({ titulo, pasos }: { titulo: string; pasos: Proceso
     <div ref={contenedorRef} className="relative">
       <h2
         ref={tituloRef}
-        className="sticky top-20 z-0 mb-10 text-center text-2xl font-bold tracking-tight text-ink sm:text-3xl"
+        className="sticky top-18 z-0 mb-8 text-center text-2xl font-bold tracking-tight text-ink sm:mb-10 sm:text-3xl"
       >
         {titulo}
       </h2>
@@ -205,12 +212,12 @@ export function ProcessStack({ titulo, pasos }: { titulo: string; pasos: Proceso
             ref={(el) => {
               cardRefs.current[i] = el;
             }}
-            className="sticky mb-6 origin-top will-change-transform last:mb-0"
+            className="sticky mb-5 origin-top will-change-transform last:mb-0"
             style={{ top: TOP_BASE + i * TOP_PASO, zIndex: i + 1 }}
           >
             <div
               className={cn(
-                "flex min-h-64 items-center gap-6 rounded-3xl p-8 shadow-[0_20px_40px_-24px_rgba(13,37,59,0.35)] sm:min-h-80 sm:p-12",
+                "flex h-64 items-center gap-5 rounded-3xl p-7 shadow-[0_16px_36px_-24px_rgba(13,37,59,0.28)] sm:h-72 sm:gap-6 sm:p-10",
                 color.bg,
                 color.text,
               )}

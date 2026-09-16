@@ -146,6 +146,62 @@ export async function getPublishedProjectsByOrg(orgId: string) {
   }));
 }
 
+/**
+ * Proyectos parecidos al de la ficha (P-03), para el bloque "Proyectos
+ * similares". Reusa `getPublishedProjects` (misma caché y `PROJECT_CARD_SELECT`,
+ * sin query extra ni cambios de RLS): excluye el actual y ordena por afinidad —
+ * misma organización, skills en común y misma modalidad — y luego por
+ * antigüedad. Devuelve como máximo `limit` (default 3); lista vacía si no hay
+ * candidatos.
+ */
+export async function getSimilarPublishedProjects(
+  current: {
+    id: string;
+    modalidad: string | null;
+    orgId: string | null;
+    skillIds: string[];
+  },
+  limit = 3,
+): Promise<ProjectCard[]> {
+  const all = await getPublishedProjects();
+  const skillSet = new Set(current.skillIds);
+
+  const scored = all
+    .filter((p) => p.id !== current.id)
+    .map((p) => {
+      const orgId = p.organization?.id ?? null;
+      const sameOrg = Boolean(current.orgId && orgId === current.orgId);
+      const skills = new Set(
+        (p.roles ?? []).flatMap((r) =>
+          (r.skills ?? [])
+            .map((s) => s.skill?.id)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      );
+      let sharedSkills = 0;
+      for (const id of skills) if (skillSet.has(id)) sharedSkills += 1;
+      const sameModalidad = Boolean(
+        current.modalidad && p.modalidad === current.modalidad,
+      );
+      // Pesos simples: org > skills compartidos > modalidad.
+      const score =
+        (sameOrg ? 100 : 0) + sharedSkills * 10 + (sameModalidad ? 5 : 0);
+      return { project: p, score, created_at: p.created_at };
+    })
+    // Si nadie comparte nada, igual mostrar recientes del catálogo para no
+    // dejar el bloque vacío cuando hay otros proyectos publicados.
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return (
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    })
+    .slice(0, limit)
+    .map((s) => s.project);
+
+  return scored;
+}
+
 // Cola de moderación (M18): proyectos en `en_revision`, esperando aprobación.
 // Solo un moderador/admin los ve (RLS `projects_select_moderator`). Incluye el
 // alcance (problema/alcance/entregable) para poder revisar antes de aprobar.
@@ -450,6 +506,7 @@ export async function getManagedProject(id: string) {
         nombre,
         descripcion,
         cupos,
+        horas_semanales,
         skills:project_role_skills (
           nivel_minimo,
           skill:skills ( id, nombre )

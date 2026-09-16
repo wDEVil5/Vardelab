@@ -1,20 +1,103 @@
+"use client";
+
+import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
+import { useIsClient } from "@/lib/use-is-client";
+
+type TipPos = { top: number; left: number };
+
+const TIP_BASE =
+  "pointer-events-none fixed z-[100] -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md bg-ink px-2 py-1 text-xs font-medium text-white shadow-sm transition-opacity duration-100 ease-out";
+
+function useFixedTooltip() {
+  const tipId = useId();
+  const triggerRef = useRef<HTMLSpanElement>(null);
+  const hideTimer = useRef<number>(0);
+  const mounted = useIsClient();
+  const [open, setOpen] = useState(false);
+  const [shown, setShown] = useState(false);
+  const [pos, setPos] = useState<TipPos | null>(null);
+
+  function updatePos() {
+    const el = triggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const next = { top: r.top - 6, left: r.left + r.width / 2 };
+    setPos((prev) =>
+      prev && prev.top === next.top && prev.left === next.left ? prev : next,
+    );
+  }
+
+  function show() {
+    window.clearTimeout(hideTimer.current);
+    updatePos();
+    setOpen(true);
+  }
+
+  function hide() {
+    setShown(false);
+    window.clearTimeout(hideTimer.current);
+    // Un poco menos que la transición para desmontar apenas termina el fade.
+    hideTimer.current = window.setTimeout(() => setOpen(false), 100);
+  }
+
+  useEffect(() => {
+    if (!open) {
+      queueMicrotask(() => setShown(false));
+      return;
+    }
+    const id = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(id);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onScroll = () => updatePos();
+    window.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [open]);
+
+  useEffect(() => () => window.clearTimeout(hideTimer.current), []);
+
+  const tipClass = cn(TIP_BASE, shown ? "opacity-100" : "opacity-0");
+
+  return {
+    triggerRef,
+    tip: {
+      tipId,
+      mounted,
+      open,
+      pos,
+      tipClass,
+      show,
+      hide,
+    },
+  };
+}
 
 /**
- * Sello de organización verificada (ícono tipo "check badge"). Modo icónico,
- * al estilo de las marcas de verificación de redes. Toma el color de `className`
- * (por defecto el azul de marca) y muestra un tooltip "Verificado" al pasar el
- * mouse o enfocar con teclado (CSS puro, sin JS). Trae etiqueta accesible.
- *
- * El grupo lleva nombre propio (`group/verified`) a propósito: sin nombre,
- * `group-hover` responde a CUALQUIER ancestro con clase `group` (por ejemplo
- * la tarjeta u organización que lo envuelve), no solo a este `<span>` — el
- * tooltip aparecía con pasar el mouse por la tarjeta entera, no solo por el
- * sello.
+ * Sello de organización verificada. Tooltip arriba en portal fixed (no lo
+ * corta overflow), con fade corto al entrar/salir.
  */
 export function VerifiedBadge({ className }: { className?: string }) {
+  const { triggerRef, tip } = useFixedTooltip();
+
   return (
-    <span className="group/verified relative inline-flex shrink-0" tabIndex={0}>
+    <span
+      ref={triggerRef}
+      className="relative inline-flex shrink-0"
+      tabIndex={0}
+      aria-describedby={tip.open ? tip.tipId : undefined}
+      onMouseEnter={tip.show}
+      onMouseLeave={tip.hide}
+      onFocus={tip.show}
+      onBlur={tip.hide}
+    >
       <svg
         viewBox="0 0 24 24"
         fill="currentColor"
@@ -28,23 +111,26 @@ export function VerifiedBadge({ className }: { className?: string }) {
           clipRule="evenodd"
         />
       </svg>
-      <span
-        role="tooltip"
-        className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-md bg-ink px-2 py-1 text-xs font-medium text-white opacity-0 shadow-sm transition-all duration-150 group-hover/verified:translate-y-0 group-hover/verified:opacity-100 group-focus-visible/verified:translate-y-0 group-focus-visible/verified:opacity-100"
-      >
-        Verificado
-      </span>
+      {tip.mounted &&
+        tip.open &&
+        tip.pos &&
+        createPortal(
+          <span
+            id={tip.tipId}
+            role="tooltip"
+            className={tip.tipClass}
+            style={{ top: tip.pos.top, left: tip.pos.left }}
+          >
+            Verificado
+          </span>,
+          document.body,
+        )}
     </span>
   );
 }
 
 /**
- * Marcador de "todavía no verificada" (M62): un círculo punteado, sin color
- * ni relleno, en el mismo lugar donde iría el sello azul una vez aprobada —
- * al estilo de la insignia vacía que Instagram muestra junto al nombre de una
- * cuenta profesional antes de verificarla. Va solo en el perfil de la propia
- * organización (`/mis-organizaciones/[id]/editar`), nunca en la ficha pública:
- * es una señal para quien gestiona la organización, no para quien la visita.
+ * Marcador de "todavía no verificada" (M62). Mismo tooltip arriba con fade corto.
  */
 export function PendingVerificationBadge({
   className,
@@ -53,10 +139,21 @@ export function PendingVerificationBadge({
   className?: string;
   estado: "sin_verificar" | "en_revision";
 }) {
-  const label = estado === "en_revision" ? "Verificación en revisión" : "Sin verificar";
+  const { triggerRef, tip } = useFixedTooltip();
+  const label =
+    estado === "en_revision" ? "Verificación en revisión" : "Sin verificar";
 
   return (
-    <span className="group/pending relative inline-flex shrink-0" tabIndex={0}>
+    <span
+      ref={triggerRef}
+      className="relative inline-flex shrink-0"
+      tabIndex={0}
+      aria-describedby={tip.open ? tip.tipId : undefined}
+      onMouseEnter={tip.show}
+      onMouseLeave={tip.hide}
+      onFocus={tip.show}
+      onBlur={tip.hide}
+    >
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -73,12 +170,20 @@ export function PendingVerificationBadge({
           d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"
         />
       </svg>
-      <span
-        role="tooltip"
-        className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-md bg-ink px-2 py-1 text-xs font-medium text-white opacity-0 shadow-sm transition-all duration-150 group-hover/pending:translate-y-0 group-hover/pending:opacity-100 group-focus-visible/pending:translate-y-0 group-focus-visible/pending:opacity-100"
-      >
-        {label}
-      </span>
+      {tip.mounted &&
+        tip.open &&
+        tip.pos &&
+        createPortal(
+          <span
+            id={tip.tipId}
+            role="tooltip"
+            className={tip.tipClass}
+            style={{ top: tip.pos.top, left: tip.pos.left }}
+          >
+            {label}
+          </span>,
+          document.body,
+        )}
     </span>
   );
 }
