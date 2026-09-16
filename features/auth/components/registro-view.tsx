@@ -1,28 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { SignupForm, type Rol } from "@/features/auth/components/signup-form";
-
-// Mensaje de marca según el rol elegido — mismo criterio visual que
-// `/ingresar` (mensaje grande + acentos geométricos), pero reactivo al rol en
-// vez de un carrusel de diapositivas aparte.
-const MENSAJE: Record<Rol, { titulo: string; texto: string }> = {
-  estudiante: {
-    titulo: "Tu próximo desafío empieza acá.",
-    texto: "Microproyectos reales que se suman a tu portafolio.",
-  },
-  patrocinador: {
-    titulo: "Encuentra el talento que tu proyecto necesita.",
-    texto:
-      "Publica un desafío real y conecta con estudiantes listos para resolverlo.",
-  },
-};
+import { useAuthRol } from "@/features/auth/components/auth-rol-context";
 
 /**
- * A-01 · Vista de registro. Mismo layout de dos columnas que `/ingresar`: a
- * la izquierda el mensaje de marca (cambia según el rol elegido) con acentos
- * geométricos, a la derecha la tarjeta del formulario.
+ * Contenido del formulario de registro. El shell de credenciales monta el
+ * panel de marca; aquí solo el card derecho y el rol vía contexto.
  */
 export function RegistroView({
   initialRol = "estudiante",
@@ -31,94 +16,48 @@ export function RegistroView({
   initialRol?: Rol;
   registroAbierto?: boolean;
 }) {
-  const [rol, setRol] = useState<Rol>(initialRol);
-  const mensaje = MENSAJE[rol];
+  const { rol, setRol } = useAuthRol();
+
+  useEffect(() => {
+    setRol(initialRol);
+  }, [initialRol, setRol]);
 
   return (
-    <div className="animate-fade-in flex min-h-screen bg-surface">
-      <div className="relative hidden flex-1 flex-col overflow-hidden p-10 lg:flex">
-        <Link href="/" className="text-lg font-bold text-ink">
-          CampusLab
-        </Link>
+    <>
+      <h2 className="text-2xl font-bold text-ink">Crea tu cuenta</h2>
+      {registroAbierto ? (
+        <>
+          <p className="mt-1 text-sm text-muted">
+            ¿Ya tienes cuenta?{" "}
+            <Link
+              href="/ingresar"
+              className="font-medium text-electric hover:underline"
+            >
+              Ingresar
+            </Link>
+          </p>
 
-        <div className="mt-20 max-w-md">
-          <h1 className="text-5xl leading-[1.1] font-bold text-ink">
-            {mensaje.titulo}
-          </h1>
-          <p className="mt-4 text-lg text-muted">{mensaje.texto}</p>
+          <div className="mt-6">
+            <SignupForm rol={rol} onRolChange={setRol} />
+          </div>
+        </>
+      ) : (
+        <div className="mt-6 rounded-2xl border border-amber-300 bg-surface p-6 text-center">
+          <p className="font-semibold text-ink">
+            El registro de cuentas nuevas está pausado temporalmente.
+          </p>
+          <p className="mt-2 text-sm text-muted">
+            Reintenta más tarde. Si ya existe una cuenta, se puede{" "}
+            <Link
+              href="/ingresar"
+              className="font-medium text-electric hover:underline"
+            >
+              ingresar aquí
+            </Link>
+            .
+          </p>
         </div>
-
-        {/* Acentos geométricos: mismos tokens de color que el resto del sitio
-            (y los mismos que ya usa `/ingresar`, para que ambas pantallas se
-            sientan parte de un mismo par). */}
-        <div
-          className="pointer-events-none absolute -bottom-24 -left-24 size-72 rounded-full bg-electric/10 blur-2xl"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute bottom-12 left-16 size-28 rounded-full bg-sprout/20 blur-xl"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute bottom-40 left-56 size-12 rotate-45 rounded-xl border-2 border-electric/30"
-          aria-hidden
-        />
-        <span
-          className="pointer-events-none absolute bottom-64 left-40 size-2.5 rounded-full bg-coral/50"
-          aria-hidden
-        />
-        <span
-          className="pointer-events-none absolute bottom-28 left-72 size-2 rounded-full bg-electric/50"
-          aria-hidden
-        />
-      </div>
-
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
-        <Link href="/" className="mb-8 text-lg font-bold text-ink lg:hidden">
-          CampusLab
-        </Link>
-
-        <div className="w-full max-w-sm rounded-3xl border border-border bg-white p-8 shadow-[0_4px_16px_-8px_rgba(13,37,59,0.12)]">
-          <h2 className="text-center text-2xl font-bold text-ink">
-            Crea tu cuenta
-          </h2>
-          {registroAbierto ? (
-            <>
-              <p className="mt-1 text-center text-sm text-muted">
-                ¿Ya tienes cuenta?{" "}
-                <Link
-                  href="/ingresar"
-                  className="font-medium text-electric hover:underline"
-                >
-                  Ingresar
-                </Link>
-              </p>
-
-              <div className="mt-6">
-                <SignupForm rol={rol} onRolChange={setRol} />
-              </div>
-            </>
-          ) : (
-            <div className="mt-6 rounded-2xl border border-amber-300 bg-surface p-6 text-center">
-              <p className="font-semibold text-ink">
-                El registro de cuentas nuevas está pausado temporalmente.
-              </p>
-              <p className="mt-2 text-sm text-muted">
-                Reintenta más tarde. Si ya existe una cuenta, se puede{" "}
-                <Link
-                  href="/ingresar"
-                  className="font-medium text-electric hover:underline"
-                >
-                  ingresar aquí
-                </Link>
-                .
-              </p>
-            </div>
-          )}
-        </div>
-
-        <p className="mt-6 text-xs text-muted">Piloto independiente</p>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
