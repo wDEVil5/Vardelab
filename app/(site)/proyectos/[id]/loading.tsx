@@ -7,8 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export default function ProyectoLoading() {
   return (
-    <main className="flex-1 bg-white" role="status" aria-label="Cargando el proyecto">
-      <div className="mx-auto w-full max-w-5xl px-6 py-10">
+    <main className="relative z-10 md:mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-white" role="status" aria-label="Cargando el proyecto">
+      <div className="mx-auto w-full max-w-6xl px-6 py-10">
         {/* Volver */}
         <Skeleton className="h-4 w-36" />
 
@@ -19,9 +19,9 @@ export default function ProyectoLoading() {
           <Skeleton className="mt-2 h-5 w-48" />
         </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-3">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
           {/* Contenido principal */}
-          <div className="flex flex-col gap-6 lg:col-span-2">
+          <div className="order-2 flex min-w-0 flex-col gap-6 lg:order-1">
             <div className="flex flex-col gap-6 rounded-2xl border border-border bg-white p-6 sm:p-8">
               <Skeleton className="h-5 w-full" />
               {Array.from({ length: 3 }).map((_, i) => (
@@ -49,7 +49,7 @@ export default function ProyectoLoading() {
           </div>
 
           {/* Tarjeta lateral */}
-          <aside className="lg:col-span-1">
+          <aside className="order-1 min-w-0 lg:order-2">
             <div className="flex flex-col gap-4 rounded-2xl border border-border bg-white p-6">
               <Skeleton className="h-5 w-28" />
               <Skeleton className="h-4 w-full" />
