@@ -61,8 +61,8 @@ export function TiltedProjectCard({
     <figure
       ref={ref}
       className={cn(
-        "relative mx-auto flex w-full items-center justify-center [perspective:1000px]",
-        compact ? "h-[22.5rem] max-w-md" : "h-[28rem] max-w-lg",
+        "relative mx-auto flex w-full items-center justify-center perspective-[1000px]",
+        compact ? "h-90 max-w-md" : "h-112 max-w-lg",
       )}
       onPointerMove={handlePointerMove}
       onPointerEnter={handlePointerEnter}
@@ -90,21 +90,21 @@ export function TiltedProjectCard({
 
       <motion.div
         className={cn(
-          "relative z-10 will-change-transform [transform-style:preserve-3d]",
+          "relative z-10 will-change-transform transform-3d",
           compact
-            ? "h-[18.75rem] w-[min(100%,22rem)]"
-            : "h-[23.5rem] w-[min(100%,26rem)]",
+            ? "h-75 w-[min(100%,22rem)]"
+            : "h-94 w-[min(100%,26rem)]",
         )}
         style={{ rotateX, rotateY, scale }}
       >
         <div
           className={cn(
-            "flex h-full flex-col rounded-3xl bg-white p-2 shadow-[0_28px_70px_-28px_rgba(13,37,59,0.48)] [transform:translateZ(0)]",
+            "flex h-full flex-col rounded-3xl bg-white p-2 shadow-[0_28px_70px_-28px_rgba(13,37,59,0.48)] transform-[translateZ(0)]",
             compact && "p-1.5 shadow-[0_20px_50px_-24px_rgba(13,37,59,0.55)]",
           )}
         >
           <div
-            className="min-h-0 flex-1 overflow-hidden rounded-[1.15rem] [transform:translateZ(24px)]"
+            className="min-h-0 flex-1 overflow-hidden rounded-[1.15rem] transform-[translateZ(24px)]"
           >
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
@@ -134,7 +134,7 @@ export function TiltedProjectCard({
 
         <figcaption
           className={cn(
-            "pointer-events-none absolute rounded-full border border-border bg-white font-medium text-ink shadow-md [transform:translateZ(42px)]",
+            "pointer-events-none absolute rounded-full border border-border bg-white font-medium text-ink shadow-md transform-[translateZ(42px)]",
             compact
               ? "-right-2 -bottom-3 px-2.5 py-1.5 text-xs"
               : "-right-4 -bottom-4 px-3.5 py-2 text-sm",
