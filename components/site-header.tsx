@@ -23,7 +23,7 @@ export function SiteHeader() {
         {/* Navegación desktop CENTRADA (absoluta). Solo enlaces PÚBLICOS (igual
             con o sin sesión); lo privado vive en la sidebar del panel, accesible
             con "Ir a mi panel". */}
-        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-5 md:flex">
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-5 lg:flex">
           <NavLink href="/proyectos">Explorar</NavLink>
           <NavLink href="/#como-funciona">Cómo funciona</NavLink>
           <NavLink href="/organizaciones">Para organizaciones</NavLink>
