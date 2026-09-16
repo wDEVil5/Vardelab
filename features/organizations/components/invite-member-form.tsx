@@ -20,11 +20,13 @@ const INITIAL: InviteMemberState = {};
 export function InviteMemberForm({ orgId }: { orgId: string }) {
   const [state, formAction] = useActionState(inviteOrganizationMember, INITIAL);
   const formRef = useRef<HTMLFormElement>(null);
-  const enviado = useRef(false);
 
+  // `state.ok` solo es verdadero tras un envío real (el estado inicial no lo
+  // trae) — no hace falta una ref "ya hubo un envío" para no confundir el
+  // montaje con un envío real; esa ref se rompe con el doble-invocado de
+  // efectos de React Strict Mode en desarrollo.
   useEffect(() => {
-    if (enviado.current && state.ok) formRef.current?.reset();
-    enviado.current = true;
+    if (state.ok) formRef.current?.reset();
   }, [state]);
 
   return (

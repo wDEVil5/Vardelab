@@ -1,11 +1,13 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, type ReactNode } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { confirmTeam, type ConfirmTeamState } from "@/features/applications/actions";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 
 const INITIAL: ConfirmTeamState = {};
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 /**
  * Botón "Confirmar equipo" (S-04): cierra la selección y pasa el proyecto a
@@ -22,6 +24,11 @@ const INITIAL: ConfirmTeamState = {};
  * un segundo click para confirmar así a propósito (mismo patrón de
  * confirmación en dos pasos que `DeleteProjectButton`, sin `confirm()` del
  * navegador).
+ *
+ * Cada estado entra con un fade + leve desplazamiento vertical (no
+ * horizontal como `RemoveTeamMemberButton`/`DeleteProjectButton`: acá el
+ * bloque es de ancho completo y apilado, así que "salir de donde estaba el
+ * disparador" se traduce en vertical, no en un `scaleX` desde un costado).
  */
 export function ConfirmTeamButton({
   projectId,
@@ -36,17 +43,30 @@ export function ConfirmTeamButton({
 }) {
   const [state, formAction] = useActionState(confirmTeam, INITIAL);
   const [confirmandoIncompleto, setConfirmandoIncompleto] = useState(false);
+  const reduceMotion = useReducedMotion();
+
+  const transition = { duration: 0.18, ease: EASE };
+  const variants = reduceMotion
+    ? {}
+    : {
+        initial: { opacity: 0, y: 6 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: -6 },
+      };
+
+  let key: string;
+  let content: ReactNode;
 
   if (yaConfirmado) {
-    return (
+    key = "confirmado";
+    content = (
       <div className="rounded-lg bg-sprout/10 py-2.5 text-center text-sm font-medium text-ink">
         Equipo confirmado
       </div>
     );
-  }
-
-  if (!puedeConfirmar) {
-    return (
+  } else if (!puedeConfirmar) {
+    key = "sin-integrantes";
+    content = (
       <div className="flex flex-col items-stretch gap-1.5">
         <Button variant="primary" disabled className="w-full">
           Confirmar equipo
@@ -56,10 +76,9 @@ export function ConfirmTeamButton({
         </span>
       </div>
     );
-  }
-
-  if (rolesSinCubrir.length > 0 && !confirmandoIncompleto) {
-    return (
+  } else if (rolesSinCubrir.length > 0 && !confirmandoIncompleto) {
+    key = "advertencia";
+    content = (
       <div className="flex flex-col items-stretch gap-1.5">
         <Button
           type="button"
@@ -74,10 +93,9 @@ export function ConfirmTeamButton({
         </span>
       </div>
     );
-  }
-
-  if (confirmandoIncompleto) {
-    return (
+  } else if (confirmandoIncompleto) {
+    key = "confirmando-incompleto";
+    content = (
       <div className="flex flex-col items-stretch gap-2 rounded-lg border border-coral/30 bg-coral/5 p-3">
         <p className="text-xs text-ink">
           {rolesSinCubrir.length === 1 ? "El rol" : "Los roles"}{" "}
@@ -110,19 +128,28 @@ export function ConfirmTeamButton({
         )}
       </div>
     );
+  } else {
+    key = "listo";
+    content = (
+      <form action={formAction} className="flex flex-col items-stretch gap-1.5">
+        <input type="hidden" name="projectId" value={projectId} />
+        <SubmitButton variant="primary" pendingText="Confirmando…" className="w-full">
+          Confirmar equipo
+        </SubmitButton>
+        {state.error && (
+          <p role="alert" className="text-center text-xs text-coral">
+            {state.error}
+          </p>
+        )}
+      </form>
+    );
   }
 
   return (
-    <form action={formAction} className="flex flex-col items-stretch gap-1.5">
-      <input type="hidden" name="projectId" value={projectId} />
-      <SubmitButton variant="primary" pendingText="Confirmando…" className="w-full">
-        Confirmar equipo
-      </SubmitButton>
-      {state.error && (
-        <p role="alert" className="text-center text-xs text-coral">
-          {state.error}
-        </p>
-      )}
-    </form>
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div key={key} {...variants} transition={transition}>
+        {content}
+      </motion.div>
+    </AnimatePresence>
   );
 }
