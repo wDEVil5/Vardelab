@@ -34,15 +34,17 @@ export function AddRoleForm({
   const [state, formAction] = useActionState(addRole, INITIAL);
   const formRef = useRef<HTMLFormElement>(null);
   const [resetKey, setResetKey] = useState(0);
-  // Marca si ya hubo al menos un envío, para no limpiar en el montaje inicial.
-  const enviado = useRef(false);
 
+  // `state !== INITIAL` es verdadero solo tras un envío real — no una ref
+  // "ya hubo un envío" marcada dentro del propio efecto: ese patrón se rompe
+  // con el doble-invocado de efectos de React Strict Mode en desarrollo (la
+  // segunda invocación la vería ya en `true` desde la primera y limpiaría el
+  // formulario apenas se monta, sin que hubiera ningún envío).
   useEffect(() => {
-    if (enviado.current && !state.error) {
+    if (state !== INITIAL && !state.error) {
       formRef.current?.reset();
-      setResetKey((k) => k + 1);
+      queueMicrotask(() => setResetKey((k) => k + 1));
     }
-    enviado.current = true;
   }, [state]);
 
   return (

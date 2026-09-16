@@ -143,18 +143,19 @@ export function MilestoneSubmissions({
   const [state, formAction] = useActionState(addSubmission, INITIAL);
   const formRef = useRef<HTMLFormElement>(null);
   const archivoInputRef = useRef<HTMLInputElement>(null);
-  const enviado = useRef(false);
   // El archivo elegido vive en estado (el objeto File, no solo su nombre) para
   // poder mostrar nombre + tamaño y permitir quitarlo — antes solo se guardaba
   // el nombre y no había forma de deshacer la selección antes de enviar.
   const [archivo, setArchivo] = useState<File | null>(null);
 
+  // `state !== INITIAL` es verdadero solo tras un envío real — no una ref "ya
+  // hubo un envío" marcada dentro del propio efecto, que se rompe con el
+  // doble-invocado de efectos de React Strict Mode en desarrollo.
   useEffect(() => {
-    if (enviado.current && !state.error) {
+    if (state !== INITIAL && !state.error) {
       formRef.current?.reset();
-      setArchivo(null);
+      queueMicrotask(() => setArchivo(null));
     }
-    enviado.current = true;
   }, [state]);
 
   // Limpia también el input nativo, no solo el estado: si no, el archivo
