@@ -5,14 +5,17 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmailToUser } from "@/features/notifications/email";
+import { getCurrentUser } from "@/features/auth/queries";
 
 /**
  * Acciones de postulación (Server Actions).
  *
  * `applyToRole` inserta una postulación del usuario autenticado a un rol. La RLS
- * de M4 (`applications_insert_own`) es la barrera real: exige que `applicant_id`
- * sea el propio usuario y que el rol pertenezca a un proyecto publicado. Aquí se
- * validan las precondiciones para dar mensajes claros.
+ * de M4/M73 (`applications_insert_own`) es la barrera real: exige que
+ * `applicant_id` sea el propio usuario, que tenga el rol 'estudiante' y que el
+ * rol pertenezca a un proyecto publicado. Aquí se validan las precondiciones
+ * para dar mensajes claros (el chequeo de rol se adelanta para no depender del
+ * mensaje genérico que da un rechazo de RLS).
  */
 
 export type ApplyState = { error?: string };
@@ -34,16 +37,19 @@ export async function applyToRole(
     return { error: "Escribe un mensaje para tu postulación." };
   }
 
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
     // Sin sesión no se puede postular; se envía al ingreso.
     redirect(`/ingresar`);
   }
+  if (!currentUser.esEstudiante) {
+    return {
+      error:
+        "Solo cuentas de estudiante pueden postular. Tu cuenta no tiene ese rol.",
+    };
+  }
+
+  const supabase = await createClient();
 
   // Regla de producto: a lo sumo una postulación activa por proyecto. Si ya hay
   // una `enviada` o `aceptada` en cualquier rol de este proyecto, no se permite
@@ -52,7 +58,7 @@ export async function applyToRole(
   const { data: activa } = await supabase
     .from("applications")
     .select("id, project_roles!inner ( project_id )")
-    .eq("applicant_id", user.id)
+    .eq("applicant_id", currentUser.id)
     .eq("project_roles.project_id", projectId)
     .in("status", ["enviada", "aceptada"])
     .limit(1)
@@ -72,7 +78,7 @@ export async function applyToRole(
     // el tipo generado (columna `not null` sin default de columna posible,
     // porque depende de otra columna de la misma fila).
     project_id: projectId,
-    applicant_id: user.id,
+    applicant_id: currentUser.id,
     mensaje,
     // Campos opcionales: se guardan solo si el estudiante los completó.
     evidencia: evidencia || null,
@@ -115,7 +121,7 @@ export async function applyToRole(
     const { data: perfil } = await supabase
       .from("profiles")
       .select("nombre")
-      .eq("id", user.id)
+      .eq("id", currentUser.id)
       .maybeSingle();
     const { data: destinatarios } = await supabase.rpc("org_recipient_ids", {
       _org_id: roleInfo.project.org_id,
@@ -397,5 +403,79 @@ export async function confirmTeam(
 
   revalidatePath(`/mis-proyectos/${projectId}/postulaciones`);
   revalidatePath("/mis-proyectos");
+  return {};
+}
+
+export type RemoveTeamMemberState = { error?: string };
+
+/**
+ * Saca a alguien del equipo ya confirmado (M76). Antes de esto no existía
+ * ningún camino para hacerlo salvo borrar el rol completo — lo que además
+ * destruía su postulación entera por el `ON DELETE CASCADE` de
+ * `applications.project_role_id`. Acá la postulación se conserva: pasa de
+ * 'aceptada' a 'removida' (distinta de 'rechazada' — sí llegó a estar en el
+ * equipo) y el cupo del rol queda libre para alguien más. La RLS
+ * `team_members_write_manager` (M4) es la barrera real de quién puede hacerlo.
+ */
+export async function removeTeamMember(
+  _prevState: RemoveTeamMemberState,
+  formData: FormData,
+): Promise<RemoveTeamMemberState> {
+  const teamMemberId = String(formData.get("teamMemberId") ?? "");
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!teamMemberId) return { error: "Falta el integrante." };
+
+  const supabase = await createClient();
+
+  const { data: miembro } = await supabase
+    .from("team_members")
+    .select("user_id, project_role_id")
+    .eq("id", teamMemberId)
+    .maybeSingle();
+
+  if (!miembro) {
+    return { error: "No se encontró a ese integrante." };
+  }
+
+  const { error } = await supabase
+    .from("team_members")
+    .delete()
+    .eq("id", teamMemberId);
+
+  if (error) {
+    console.error("[removeTeamMember]", error.message);
+    return { error: "No se pudo quitar al integrante. Inténtalo de nuevo." };
+  }
+
+  if (miembro.project_role_id) {
+    const { error: appError } = await supabase
+      .from("applications")
+      .update({ status: "removida" })
+      .eq("project_role_id", miembro.project_role_id)
+      .eq("applicant_id", miembro.user_id)
+      .eq("status", "aceptada");
+    if (appError) {
+      console.error("[removeTeamMember] application", appError.message);
+    }
+
+    // Correo al estudiante (M43): mismo criterio que aceptar/rechazar. El
+    // aviso in-app ya lo genera el trigger `notify_postulacion_estado` (M76)
+    // al detectar el cambio de estado, así que acá solo va el correo.
+    const { data: proyecto } = await supabase
+      .from("projects")
+      .select("titulo")
+      .eq("id", projectId)
+      .maybeSingle();
+    after(() =>
+      sendEmailToUser(
+        miembro.user_id,
+        "postulacion_removida",
+        `Ya no formas parte del equipo de "${proyecto?.titulo ?? "un proyecto"}".`,
+        "/mis-postulaciones",
+      ),
+    );
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}/postulaciones`);
   return {};
 }

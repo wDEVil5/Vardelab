@@ -90,6 +90,11 @@ const CATALOGO: Record<
     instruccion: "Puedes revisar los datos de tu organización y volver a solicitarla.",
     cta: "Ver mi organización",
   },
+  postulacion_removida: {
+    asunto: "Cambios en tu equipo de proyecto",
+    instruccion: "Puedes seguir explorando otros proyectos disponibles.",
+    cta: "Ver mis postulaciones",
+  },
 };
 
 type PlantillaConfig = {
