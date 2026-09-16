@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -154,6 +155,8 @@ export function AppSidebar({
   const [open, setOpen] = useState(false); // drawer móvil
   const [colapsado, setColapsado] = useState(false); // riel desktop
   const pathname = usePathname();
+  const reduceMotion = useReducedMotion();
+  const drawerDuration = reduceMotion ? 0 : 0.22;
 
   // Restaura la preferencia de plegado (tras el primer render, para no romper
   // la hidratación: el servidor siempre pinta el riel desplegado).
@@ -192,6 +195,15 @@ export function AppSidebar({
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
   // Ítem activo: el de href más específico que matchea la ruta actual (para
@@ -428,20 +440,38 @@ export function AppSidebar({
         </div>
       </header>
 
-      {/* Drawer (móvil). */}
-      {open && (
-        <>
-          <button
-            type="button"
-            aria-label="Cerrar menú"
-            onClick={() => setOpen(false)}
-            className="fixed inset-0 z-40 cursor-default bg-ink/40 lg:hidden"
-          />
-          <div className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85%] overflow-y-auto bg-white shadow-xl lg:hidden">
-            {contenido(false, false)}
-          </div>
-        </>
-      )}
+      {/* Drawer (móvil): slide + fade (no aparece de golpe). */}
+      <AnimatePresence>
+        {open ? (
+          <>
+            <motion.button
+              key="app-drawer-overlay"
+              type="button"
+              aria-label="Cerrar menú"
+              tabIndex={-1}
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: drawerDuration }}
+              onClick={() => setOpen(false)}
+              className="fixed inset-0 z-40 cursor-default bg-ink/30 backdrop-blur-[1px] lg:hidden"
+            />
+            <motion.aside
+              key="app-drawer-panel"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menú del panel"
+              initial={reduceMotion ? false : { x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ duration: drawerDuration, ease: [0.22, 1, 0.36, 1] }}
+              className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85%] overflow-y-auto rounded-r-3xl border-r border-border bg-white shadow-[0_20px_50px_-24px_rgba(13,37,59,0.45)] lg:hidden"
+            >
+              {contenido(false, false)}
+            </motion.aside>
+          </>
+        ) : null}
+      </AnimatePresence>
     </>
   );
 }

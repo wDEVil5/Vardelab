@@ -30,8 +30,8 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
  * scroll se detiene, como un resorte suave, no como una barra de progreso.
  * Estilos inline (no clases/transition de Tailwind) porque el valor se
  * recalcula a mano cada frame.
- * Sticky (no fixed) para conservar su espacio en el flujo y no requerir
- * padding-top en cada página que usa este header.
+ * Sticky (no fixed) para conservar su espacio en el flujo. La píldora queda
+ * pegada arriba (sin marginTop): al scrollear solo se encoge y redondea.
  */
 export function SiteHeaderBar({ children }: { children: ReactNode }) {
   const pillRef = useRef<HTMLDivElement>(null);
@@ -42,14 +42,42 @@ export function SiteHeaderBar({ children }: { children: ReactNode }) {
     let raf = 0;
     let corriendo = false;
 
+    // Cacheado (no leído en cada frame de `pintar`): el layout solo cambia
+    // cuando cruza el breakpoint, así que basta escuchar ese evento.
+    const mq = window.matchMedia("(max-width: 767px)");
+    let mobile = mq.matches;
+    const onMqChange = (e: MediaQueryListEvent) => {
+      mobile = e.matches;
+    };
+    mq.addEventListener("change", onMqChange);
+
     const pintar = (t: number) => {
       const el = pillRef.current;
       if (!el) return;
-      el.style.maxWidth = `${lerp(ANCHO_COMPLETO, ANCHO_CONTENIDO, t)}px`;
-      el.style.marginTop = `${lerp(0, 12, t)}px`;
-      el.style.borderRadius = `${lerp(0, 28, t)}px`;
-      el.style.backgroundColor = `rgba(255, 255, 255, ${lerp(0.6, 0.92, t)})`;
-      el.style.borderColor = `rgba(226, 232, 240, ${lerp(0, 1, t)})`;
+      // La tarjeta queda siempre pegada arriba (sin hueco). Al scrollear se
+      // encoge y redondea; en móvil también, con un margen lateral suave.
+      if (mobile) {
+        const inset = lerp(0, 12, t);
+        el.style.maxWidth = "100%";
+        el.style.width = `calc(100% - ${inset * 2}px)`;
+        el.style.marginLeft = "auto";
+        el.style.marginRight = "auto";
+        el.style.borderRadius = `${lerp(0, 20, t)}px`;
+      } else {
+        el.style.width = "";
+        el.style.maxWidth = `${lerp(ANCHO_COMPLETO, ANCHO_CONTENIDO, t)}px`;
+        el.style.marginLeft = "";
+        el.style.marginRight = "";
+        el.style.borderRadius = `${lerp(0, 28, t)}px`;
+      }
+      el.style.marginTop = "0px";
+      // En reposo: blanco sólido igual que body/main (--background), para que
+      // no se note una costura de color con el hero (p. ej. glow detrás).
+      // Al scrollear: vidrio suave + borde del token --color-border (#e3e8ee).
+      // La clase `bg-white` del nodo cubre el primer paint (SSR / pre-hydrate);
+      // sin ella el fondo solo existía tras el useEffect y se veía un flash.
+      el.style.backgroundColor = `rgba(255, 255, 255, ${lerp(1, 0.92, t)})`;
+      el.style.borderColor = `rgba(227, 232, 238, ${lerp(0, 1, t)})`;
       el.style.boxShadow = `0 10px 30px -12px rgba(15, 23, 42, ${lerp(0, 0.18, t)})`;
     };
 
@@ -79,14 +107,15 @@ export function SiteHeaderBar({ children }: { children: ReactNode }) {
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("scroll", onScroll);
+      mq.removeEventListener("change", onMqChange);
     };
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 flex justify-center">
+    <header className="sticky top-0 z-50 flex justify-center">
       <div
         ref={pillRef}
-        className="w-full border border-transparent backdrop-blur-md"
+        className="w-full border border-transparent bg-white backdrop-blur-md"
       >
         {children}
       </div>

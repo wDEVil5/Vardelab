@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SkipLink } from "@/components/skip-link";
+import { AuthUserProvider } from "@/features/auth/components/auth-user-context";
 
 /**
  * Layout de la app con header global (catálogo, paneles, perfil, etc.). Las
@@ -9,7 +10,7 @@ import { SkipLink } from "@/components/skip-link";
  */
 export default function SiteLayout({ children }: { children: ReactNode }) {
   return (
-    <>
+    <AuthUserProvider>
       <SkipLink />
       <SiteHeader />
       {/* Landmark de destino del skip-link. `contents`-like: mantiene el flex
@@ -17,6 +18,6 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
       <div id="contenido-principal" tabIndex={-1} className="flex flex-1 flex-col">
         {children}
       </div>
-    </>
+    </AuthUserProvider>
   );
 }

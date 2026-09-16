@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { buttonClasses } from "@/components/ui/button";
 import { MobileMenu, type MobileNavItem } from "@/components/mobile-menu";
 import { AccountMenu, type AccountMenuItem } from "@/components/account-menu";
+import { useAuthUser } from "@/features/auth/components/auth-user-context";
 
 type SessionUser = {
   nombre: string;
@@ -33,28 +34,34 @@ const PUBLIC_MOBILE_ITEMS: MobileNavItem[] = [
  * Costo del cambio: un instante (mientras resuelve `auth.getUser()` + perfil)
  * en el que se muestra un esqueleto en vez del botón real — decisión tomada
  * con el dueño del producto.
+ *
+ * El usuario auth base (sin perfil/roles) viene de `AuthUserProvider`,
+ * compartido con `FooterAccountLinks`; aquí solo se agrega el fetch de
+ * perfil + roles que el footer no necesita.
  */
 export function SiteAuthStatus() {
+  const { user: authUser, loading: authLoading } = useAuthUser();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
+  // En móvil solo uno: avatar o hamburguesa.
+  const [mobileSheet, setMobileSheet] = useState<"account" | "nav" | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!authUser) {
+      queueMicrotask(() => {
+        setUser(null);
+        setLoading(false);
+      });
+      return;
+    }
+
     let vigente = true;
     const supabase = createClient();
 
-    async function cargarSesion() {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
-
-      if (!authUser) {
-        if (vigente) {
-          setUser(null);
-          setLoading(false);
-        }
-        return;
-      }
-
+    async function cargarPerfil() {
+      if (!authUser) return;
       const [{ data: profile }, { data: roles }] = await Promise.all([
         supabase
           .from("profiles")
@@ -78,19 +85,12 @@ export function SiteAuthStatus() {
       setLoading(false);
     }
 
-    cargarSesion();
-
-    // Re-resuelve si la sesión cambia (login/logout, refresh de token) sin
-    // necesidad de recargar la página.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => cargarSesion());
+    cargarPerfil();
 
     return () => {
       vigente = false;
-      subscription.unsubscribe();
     };
-  }, []);
+  }, [authUser, authLoading]);
 
   // Destinos del menú de cuenta según el rol — mismo criterio que la
   // navegación de la sidebar en `app/(app)/layout.tsx`.
@@ -116,19 +116,21 @@ export function SiteAuthStatus() {
       ]
     : [];
 
-  const mobileItems: MobileNavItem[] = user
-    ? [{ href: "/inicio", label: "Ir a mi panel" }, ...PUBLIC_MOBILE_ITEMS]
-    : PUBLIC_MOBILE_ITEMS;
+  // "Ir a mi panel" va como CTA abajo del menú (no repetido en la lista).
+  const mobileItems: MobileNavItem[] = PUBLIC_MOBILE_ITEMS;
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="hidden md:flex md:items-center md:gap-3">
+    <div className="flex items-center gap-2 sm:gap-3">
+      {/* Desktop: panel + avatar. Móvil: solo avatar (hay espacio junto al
+          hamburguesa); login/registro siguen en el menú. */}
+      <div className="hidden lg:flex lg:items-center lg:gap-3">
         {loading ? (
-          <div className="h-8 w-28 animate-pulse rounded-md bg-surface" aria-hidden />
+          <div className="flex items-center gap-3" aria-hidden>
+            <div className="h-8 w-28 animate-pulse rounded-md bg-surface" />
+            <div className="h-8 w-24 animate-pulse rounded-md bg-surface" />
+          </div>
         ) : user ? (
           <>
-            {/* Entrada al panel privado (como "Mi Escritorio"). El cierre de
-                sesión vive dentro del panel (sidebar) y en el menú móvil. */}
             <Link
               href="/inicio"
               className={buttonClasses({ variant: "primary", size: "sm" })}
@@ -144,16 +146,43 @@ export function SiteAuthStatus() {
             />
           </>
         ) : (
-          <Link
-            href="/ingresar"
-            className={buttonClasses({ variant: "outline", size: "sm" })}
-          >
-            Iniciar sesión
-          </Link>
+          <>
+            <Link
+              href="/ingresar"
+              className={buttonClasses({ variant: "outline", size: "sm" })}
+            >
+              Iniciar sesión
+            </Link>
+            <Link
+              href="/registro"
+              className={buttonClasses({ variant: "primary", size: "sm" })}
+            >
+              Registrarse
+            </Link>
+          </>
         )}
       </div>
 
-      <MobileMenu items={mobileItems} userName={user?.nombre ?? null} />
+      {!loading && user ? (
+        <div className="lg:hidden">
+          <AccountMenu
+            nombre={user.nombre}
+            email={user.email}
+            avatarUrl={user.avatarUrl}
+            initials={iniciales(user.nombre)}
+            items={accountItems}
+            open={mobileSheet === "account"}
+            onOpenChange={(o) => setMobileSheet(o ? "account" : null)}
+          />
+        </div>
+      ) : null}
+
+      <MobileMenu
+        items={mobileItems}
+        userName={user?.nombre ?? null}
+        open={mobileSheet === "nav"}
+        onOpenChange={(o) => setMobileSheet(o ? "nav" : null)}
+      />
     </div>
   );
 }
