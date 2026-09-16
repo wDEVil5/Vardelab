@@ -143,8 +143,10 @@ export function ModerationQueueTable({
                       {p.titulo}
                     </p>
                     {p.organization && (
-                      <span className="flex items-center gap-1.5 truncate text-sm text-muted">
-                        {p.organization.nombre}
+                      <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted">
+                        <span className="truncate">
+                          {p.organization.nombre}
+                        </span>
                         {p.organization.verificacion === "verificado" && (
                           <VerifiedBadge />
                         )}

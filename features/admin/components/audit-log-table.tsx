@@ -339,7 +339,7 @@ export function AuditLogTable({ eventos }: { eventos: AuditLogEntry[] }) {
             </>
           ) : (
             <p className="self-center text-sm text-muted">
-              Haz clic en "Ver" en un evento de la tabla para ver el detalle acá.
+              Haz clic en «Ver» en un evento de la tabla para ver el detalle acá.
             </p>
           )}
         </div>
