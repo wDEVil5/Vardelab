@@ -123,10 +123,12 @@ export type PublicOrganization = NonNullable<
 >;
 
 /**
- * Miembros e invitaciones pendientes de una organización propia (M37). Sin
- * pantalla propia todavía — es la pieza de datos para cuando exista la UI de
- * gestión de miembros. `perfil` va `null` mientras la invitación está
- * pendiente (nadie con ese `user_id` todavía).
+ * Miembros e invitaciones pendientes de una organización propia (M37). `perfil`
+ * va `null` mientras la invitación está pendiente (nadie con ese `user_id`
+ * todavía). `roles` (M74) deja ver, para un miembro ya activo, qué rol tiene
+ * hoy en la plataforma (p. ej. si ya es 'estudiante') — vía una función acotada
+ * que solo expone roles de gente que ya es miembro activo de una organización
+ * que quien consulta ya gestiona, nunca un lookup libre por correo.
  */
 export async function getOrganizationMembers(orgId: string) {
   const supabase = await createClient();
@@ -147,17 +149,24 @@ export async function getOrganizationMembers(orgId: string) {
     .filter((id): id is string => Boolean(id));
 
   const perfiles = new Map<string, string | null>();
+  const roles = new Map<string, string[]>();
   if (userIds.length > 0) {
-    const { data: profs } = await supabase
-      .from("profiles")
-      .select("id, nombre")
-      .in("id", userIds);
+    const [{ data: profs }, { data: rolesData }] = await Promise.all([
+      supabase.from("profiles").select("id, nombre").in("id", userIds),
+      supabase.rpc("organization_member_roles", { _org_id: orgId }),
+    ]);
     for (const p of profs ?? []) perfiles.set(p.id, p.nombre);
+    for (const r of rolesData ?? []) {
+      const lista = roles.get(r.user_id) ?? [];
+      lista.push(r.role);
+      roles.set(r.user_id, lista);
+    }
   }
 
   return (data ?? []).map((m) => ({
     ...m,
     nombre: m.user_id ? (perfiles.get(m.user_id) ?? null) : null,
+    roles: m.user_id ? (roles.get(m.user_id) ?? []) : [],
   }));
 }
 

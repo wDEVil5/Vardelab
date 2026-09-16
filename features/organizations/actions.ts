@@ -6,14 +6,17 @@ import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { INVITACIONES_HABILITADAS } from "@/features/organizations/config";
 import { sendEmail } from "@/features/notifications/email";
+import { getCurrentUser } from "@/features/auth/queries";
 
 /**
  * Acciones de organizaciones (lado del patrocinador).
  *
  * `createOrganization` crea una organización propiedad del usuario. La RLS
- * `organizations_insert_own` (M3) exige `owner_id = auth.uid()`; la organización
+ * `organizations_insert_own` (M3/M73) exige `owner_id = auth.uid()` y el rol
+ * 'patrocinador' (o admin), sea cual sea el `tipo` elegido; la organización
  * nace `sin_verificar` (default de la tabla) — la verificación la hará el
- * moderador/admin en una etapa futura.
+ * moderador/admin en una etapa futura. El chequeo de rol se adelanta acá para
+ * no depender del mensaje genérico que da un rechazo de RLS.
  */
 
 export type CreateOrgState = { error?: string };
@@ -43,15 +46,19 @@ export async function createOrganization(
     return { error: "Selecciona un tipo de organización válido." };
   }
 
+  const currentUser = await getCurrentUser();
+  if (!currentUser) redirect("/ingresar");
+  if (!currentUser.esPatrocinador) {
+    return {
+      error:
+        "Solo cuentas de patrocinador pueden crear una organización. Tu cuenta no tiene ese rol.",
+    };
+  }
+
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
-
   const { error } = await supabase.from("organizations").insert({
-    owner_id: user.id,
+    owner_id: currentUser.id,
     nombre,
     tipo: tipo as (typeof TIPOS)[number],
     descripcion: descripcion || null,

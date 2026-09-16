@@ -8,9 +8,10 @@ import {
   getManagedProject,
   type ManagedProject,
 } from "@/features/projects/queries";
-import { deleteRole } from "@/features/projects/actions";
 import { AddRoleModal } from "@/features/projects/components/add-role-modal";
 import { RoleSkillsEditor } from "@/features/projects/components/role-skills-editor";
+import { DeleteRoleButton } from "@/features/projects/components/delete-role-button";
+import { EditRoleModal } from "@/features/projects/components/edit-role-modal";
 import { PublishControls } from "@/features/projects/components/publish-controls";
 import { DeleteProjectButton } from "@/features/projects/components/delete-project-button";
 import { CancelProjectButton } from "@/features/projects/components/cancel-project-button";
@@ -241,23 +242,13 @@ function RoleRow({
 }) {
   return (
     <li className="flex flex-col gap-2.5 rounded-xl border border-border bg-white p-7 transition-all hover:border-electric/30 hover:shadow-sm">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-ink">{rol.nombre}</span>
-          <Badge>
-            {rol.cupos} {rol.cupos === 1 ? "cupo" : "cupos"}
-          </Badge>
-        </div>
-        <form action={deleteRole}>
-          <input type="hidden" name="roleId" value={rol.id} />
-          <input type="hidden" name="projectId" value={projectId} />
-          <button
-            type="submit"
-            className={buttonClasses({ variant: "ghost", size: "sm" })}
-          >
-            Eliminar
-          </button>
-        </form>
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="truncate font-semibold text-ink" title={rol.nombre}>
+          {rol.nombre}
+        </span>
+        <Badge>
+          {rol.cupos} {rol.cupos === 1 ? "cupo" : "cupos"}
+        </Badge>
       </div>
       {rol.descripcion && (
         <p className="text-sm text-muted">{rol.descripcion}</p>
@@ -268,6 +259,10 @@ function RoleRow({
         skills={rol.skills ?? []}
         catalog={catalog}
       />
+      <div className="mt-1 flex items-center gap-2 border-t border-border pt-3">
+        <EditRoleModal rol={rol} projectId={projectId} />
+        <DeleteRoleButton roleId={rol.id} projectId={projectId} nombreRol={rol.nombre} />
+      </div>
     </li>
   );
 }

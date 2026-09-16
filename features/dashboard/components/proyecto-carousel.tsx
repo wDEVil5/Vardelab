@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, type PointerEvent, type WheelEvent } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ProgressGauge } from "@/components/progress-gauge";
@@ -23,26 +23,200 @@ function vencimiento(n: number | null): string | null {
 }
 
 /**
- * Progreso + próximas entregas del proyecto activo. Con más de un proyecto
- * abierto, se convierte en un carrusel: los paneles se deslizan hacia la
- * izquierda y unos puntos abajo (o las flechas a los costados) permiten
- * moverse entre proyectos, en vez de mostrar solo el más avanzado y esconder
- * el resto.
+ * Progreso + próximas entregas. Varios proyectos: una slide completa a la vez.
+ * Swipe por transform (sin scroll-snap) para que no se sienta pegado; el gesto
+ * horizontal solo se captura tras un umbral, así el scroll vertical de la página
+ * sigue libre.
  */
-export function ProyectoCarousel({ proyectos }: { proyectos: ProyectoAbierto[] }) {
+export function ProyectoCarousel({
+  proyectos,
+}: {
+  proyectos: ProyectoAbierto[];
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
   const [indice, setIndice] = useState(0);
+  const [arrastre, setArrastre] = useState(0);
+  const [arrastrando, setArrastrando] = useState(false);
+  const [anchoContenedor, setAnchoContenedor] = useState(1);
+
+  const drag = useRef<{
+    pointerId: number | null;
+    startX: number;
+    startY: number;
+    lastX: number;
+    lastT: number;
+    vx: number;
+    locked: "h" | "v" | null;
+    width: number;
+  }>({
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    lastX: 0,
+    lastT: 0,
+    vx: 0,
+    locked: null,
+    width: 1,
+  });
+
+  const varios = proyectos.length > 1;
+  const max = Math.max(proyectos.length - 1, 0);
+
+  function irA(i: number) {
+    const next = Math.min(Math.max(i, 0), max);
+    setArrastre(0);
+    setArrastrando(false);
+    setIndice(next);
+  }
+
+  const wheelLock = useRef(false);
+
+  function onWheel(e: WheelEvent<HTMLDivElement>) {
+    if (!varios || wheelLock.current) return;
+    const horizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY) * 1.25;
+    if (!horizontal || Math.abs(e.deltaX) < 12) return;
+    // No preventDefault: evita trabar el scroll vertical del trackpad.
+    wheelLock.current = true;
+    if (e.deltaX > 0) irA(indice + 1);
+    else irA(indice - 1);
+    window.setTimeout(() => {
+      wheelLock.current = false;
+    }, 420);
+  }
+
+  function onPointerDown(e: PointerEvent<HTMLDivElement>) {
+    // Solo swipe táctil. En desktop el scroll de la página y las flechas/puntos.
+    if (!varios || e.button !== 0 || e.pointerType !== "touch") return;
+    const el = trackRef.current;
+    const width = Math.max(el?.parentElement?.clientWidth ?? 1, 1);
+    drag.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      lastX: e.clientX,
+      lastT: performance.now(),
+      vx: 0,
+      locked: null,
+      width,
+    };
+    setAnchoContenedor(width);
+  }
+
+  function onPointerMove(e: PointerEvent<HTMLDivElement>) {
+    const d = drag.current;
+    if (d.pointerId !== e.pointerId) return;
+
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+
+    if (d.locked === null) {
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      // Solo reclama el gesto si es claramente horizontal.
+      if (Math.abs(dx) > Math.abs(dy) * 1.2) {
+        d.locked = "h";
+        e.currentTarget.setPointerCapture(e.pointerId);
+        setArrastrando(true);
+      } else {
+        d.locked = "v";
+        d.pointerId = null;
+        return;
+      }
+    }
+
+    if (d.locked !== "h") return;
+
+    const now = performance.now();
+    const dt = Math.max(now - d.lastT, 1);
+    d.vx = ((e.clientX - d.lastX) / dt) * 1000;
+    d.lastX = e.clientX;
+    d.lastT = now;
+
+    // Resistencia suave en los extremos.
+    let offset = dx;
+    if ((indice === 0 && dx > 0) || (indice === max && dx < 0)) {
+      offset = dx * 0.35;
+    }
+    setArrastre(offset);
+  }
+
+  function onPointerUp(e: PointerEvent<HTMLDivElement>) {
+    const d = drag.current;
+    if (d.pointerId !== e.pointerId) return;
+
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+
+    const wasHorizontal = d.locked === "h";
+    d.pointerId = null;
+    d.locked = null;
+
+    if (!wasHorizontal) {
+      setArrastre(0);
+      setArrastrando(false);
+      return;
+    }
+
+    const width = d.width;
+    const dx = e.clientX - d.startX;
+    const umbral = Math.min(width * 0.22, 96);
+    let next = indice;
+
+    if (Math.abs(d.vx) > 450) {
+      next = d.vx < 0 ? indice + 1 : indice - 1;
+    } else if (dx <= -umbral) {
+      next = indice + 1;
+    } else if (dx >= umbral) {
+      next = indice - 1;
+    }
+
+    setArrastre(0);
+    setArrastrando(false);
+    setIndice(Math.min(Math.max(next, 0), max));
+  }
+
+  function onPointerCancel(e: PointerEvent<HTMLDivElement>) {
+    if (drag.current.pointerId !== e.pointerId) return;
+    drag.current.pointerId = null;
+    drag.current.locked = null;
+    setArrastre(0);
+    setArrastrando(false);
+  }
 
   if (proyectos.length === 0) return null;
 
+  const pct = -(indice * 100);
+  const dragPct = arrastre === 0 ? 0 : (arrastre / anchoContenedor) * 100;
+
   return (
     <div className="relative">
-      <div className="overflow-hidden">
+      <div
+        className={cn(
+          "overflow-hidden",
+          varios && "touch-pan-y",
+        )}
+        onPointerDown={varios ? onPointerDown : undefined}
+        onPointerMove={varios ? onPointerMove : undefined}
+        onPointerUp={varios ? onPointerUp : undefined}
+        onPointerCancel={varios ? onPointerCancel : undefined}
+        onWheel={varios ? onWheel : undefined}
+      >
         <div
-          className="flex transition-transform duration-300 ease-out"
-          style={{ transform: `translateX(-${indice * 100}%)` }}
+          ref={trackRef}
+          className={cn(
+            "flex will-change-transform",
+            !arrastrando && "transition-transform duration-300 ease-out",
+          )}
+          style={{
+            transform: `translate3d(calc(${pct}% + ${dragPct}%), 0, 0)`,
+          }}
         >
           {proyectos.map((p) => (
-            <div key={p.id} className="w-full shrink-0">
+            <div
+              key={p.id}
+              data-proyecto-slide
+              className="w-full min-w-full max-w-full shrink-0"
+            >
               <div className="grid gap-4 lg:grid-cols-2">
                 <PanelProgreso proyecto={p} />
                 <PanelEntregas proyecto={p} />
@@ -52,44 +226,62 @@ export function ProyectoCarousel({ proyectos }: { proyectos: ProyectoAbierto[] }
         </div>
       </div>
 
-      {proyectos.length > 1 && (
+      {varios && (
         <>
-          {/* Flechas: solo si hay más de un proyecto que mostrar. */}
           <button
             type="button"
-            onClick={() => setIndice((i) => Math.max(0, i - 1))}
+            onClick={() => irA(indice - 1)}
             disabled={indice === 0}
             aria-label="Proyecto anterior"
             className="absolute top-1/2 -left-3 hidden size-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white text-muted shadow-sm transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-0 sm:flex"
           >
-            <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <svg
+              viewBox="0 0 24 24"
+              className="size-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
               <path d="M15 6l-6 6 6 6" />
             </svg>
           </button>
           <button
             type="button"
-            onClick={() => setIndice((i) => Math.min(proyectos.length - 1, i + 1))}
-            disabled={indice === proyectos.length - 1}
+            onClick={() => irA(indice + 1)}
+            disabled={indice === max}
             aria-label="Proyecto siguiente"
             className="absolute top-1/2 -right-3 hidden size-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white text-muted shadow-sm transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-0 sm:flex"
           >
-            <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <svg
+              viewBox="0 0 24 24"
+              className="size-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
               <path d="M9 6l6 6-6 6" />
             </svg>
           </button>
 
-          {/* Puntos: uno por proyecto, el activo resaltado. */}
           <div className="mt-3 flex items-center justify-center gap-1.5">
             {proyectos.map((p, i) => (
               <button
                 key={p.id}
                 type="button"
-                onClick={() => setIndice(i)}
+                onClick={() => irA(i)}
                 aria-label={`Ver ${p.titulo}`}
                 aria-current={i === indice}
                 className={cn(
                   "h-1.5 rounded-full transition-all",
-                  i === indice ? "w-5 bg-electric" : "w-1.5 bg-border hover:bg-muted/40",
+                  i === indice
+                    ? "w-5 bg-electric"
+                    : "w-1.5 bg-border hover:bg-muted/40",
                 )}
               />
             ))}

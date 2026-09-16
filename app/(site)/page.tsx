@@ -4,6 +4,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/reveal";
 import { Faq } from "@/components/faq";
+import { FadeContent } from "@/components/fade-content";
 import {
   ScrollPrinciples,
   type Principio,
@@ -12,14 +13,15 @@ import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 import { getPublishedProjects } from "@/features/projects/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
-import { HeroShapes } from "@/components/hero-shapes";
+import { HeroOpenProjects } from "@/features/projects/components/hero-open-projects";
+import { cuposRestantesProyecto } from "@/features/projects/roles";
 
 export const metadata: Metadata = {
-  title: "CampusLab — Desafíos reales. Talento que se demuestra.",
+  title: "CampusLab · Desafíos reales. Talento que se demuestra.",
   description:
-    "Estudiantes que resuelven desafíos reales de organizaciones, con alcance definido y acompañamiento por hitos. Portafolio verificable, sin relleno.",
+    "Microdesafíos acotados junto a organizaciones: practica colaborar con alcance definido y acompañamiento por hitos.",
   openGraph: {
-    title: "CampusLab — Desafíos reales. Talento que se demuestra.",
+    title: "CampusLab · Desafíos reales. Talento que se demuestra.",
   },
 };
 
@@ -33,54 +35,48 @@ export default async function Home() {
   const publicados = await getPublishedProjects();
   // Destacados: hasta 3 tarjetas, consistentes con el catálogo (P-02).
   const destacados = publicados.slice(0, 3);
+  // Hero: pocos proyectos con cupo abierto real (calmo; máx. 3).
+  const heroAbiertos = publicados
+    .filter((p) => cuposRestantesProyecto(p) > 0)
+    .slice(0, 3);
 
   return (
     <>
-      <main className="relative z-10 md:mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-white md:shadow-[0_8px_24px_-16px_rgba(13,37,59,0.12)]">
-      {/* 1 · HERO */}
-      <section className="relative mx-auto w-full max-w-5xl px-6 py-16 sm:py-24">
-        {/* En mobile/tablet, el `HeroShapes` interactivo con etiquetas no tiene
-            dónde ir (cae apilado bajo los CTA, se ve como un diagrama suelto) —
-            se reemplaza por un halo ambiental sin texto que sangra hacia arriba,
-            detrás del header translúcido (mismo idioma que el halo de "Proponer
-            un desafío" más abajo). Desde `lg:` hay espacio real para el visual
-            con propósito completo, así que se muestra ese en su lugar. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 -top-28 -z-10 flex justify-center lg:hidden"
-        >
-          <div className="animate-breathe size-64 rounded-full bg-electric/28 blur-xl" />
-          <div className="-ml-16 size-56 rounded-full bg-sprout/24 blur-xl" />
-        </div>
-
-        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-            <div className="flex animate-rise flex-col items-start gap-6">
-              <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+      <main className="relative z-10 min-h-[calc(100dvh-3.5rem)] flex-1 overflow-x-clip bg-white md:mb-(--footer-h,0px) md:shadow-[0_8px_24px_-16px_rgba(13,37,59,0.12)]">
+      {/* 1 · HERO
+          Percepción estudiante: eyebrow + CTA primario; organizaciones como
+          link secundario. Ancla: rotación calmada de pocos proyectos con
+          cupo abierto (tilt en desktop; sin tilt en mobile). */}
+      <section className="relative mx-auto w-full max-w-6xl overflow-x-clip px-5 py-8 sm:px-6 sm:py-16 lg:py-20 lg:pb-22">
+        {/* Móvil: solo mensaje + CTA (la ficha rotativa satura el primer pantallazo).
+            md+: copy izquierda, card derecha. Los proyectos siguen abajo en el grid. */}
+        <div className="grid items-center gap-8 md:grid-cols-2 md:gap-10 lg:gap-12">
+            <div className="flex animate-rise flex-col items-start gap-5 sm:gap-7">
+              <span className="text-xs font-semibold uppercase tracking-wide text-electric sm:text-sm">
+                Para estudiantes
+              </span>
+              <h1 className="text-[1.85rem] font-bold leading-[1.15] tracking-tight text-ink sm:text-4xl sm:leading-tight lg:text-[3.25rem] lg:leading-[1.1]">
                 Desafíos reales. Talento que se demuestra.
               </h1>
-              <p className="max-w-md text-lg text-muted">
-                CampusLab conecta estudiantes con organizaciones para resolver
-                microproyectos claros, con objetivos, acompañamiento y evidencia
-                de resultado.
+              <p className="max-w-lg text-base text-muted sm:text-lg sm:leading-relaxed lg:text-xl">
+                Empieza con un microdesafío acotado: practica colaborar y llega
+                a tu práctica o primer trabajo con más seguridad.
               </p>
-              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+              <div className="flex w-full flex-col items-start gap-4">
                 <Link
                   href="/proyectos"
                   className={cn(
                     buttonClasses({ variant: "primary" }),
-                    "h-11 justify-center px-6 text-base",
+                    "h-12 w-full justify-center px-7 text-base sm:w-auto sm:text-lg",
                   )}
                 >
                   Explorar proyectos
                 </Link>
                 <Link
                   href="/organizaciones"
-                  className={cn(
-                    buttonClasses({ variant: "outline" }),
-                    "group h-11 justify-center px-6 text-base",
-                  )}
+                  className="group inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-electric"
                 >
-                  Para organizaciones
+                  ¿Eres organización, pyme o fundación?
                   <span className="transition-transform group-hover:translate-x-0.5">
                     →
                   </span>
@@ -88,27 +84,26 @@ export default async function Home() {
               </div>
             </div>
 
-            {/* Visual con propósito: Estudiantes + Organizaciones + Proyectos,
-                que se encuentran (superposición), interactivo con el cursor.
-                Solo desde `lg:` — en pantallas chicas queda el halo de arriba. */}
-            <div
-              className="hidden animate-rise lg:block"
-              style={{ animationDelay: "150ms" }}
-            >
-              <HeroShapes />
-            </div>
+            {heroAbiertos.length > 0 ? (
+              <div className="hidden md:block">
+                <HeroOpenProjects projects={heroAbiertos} />
+              </div>
+            ) : null}
           </div>
       </section>
 
       {/* 2 · PROYECTOS DESTACADOS */}
       {destacados.length > 0 && (
         <section className="bg-surface">
-          <div className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
+          <div className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-6 sm:py-16">
             <Reveal>
               <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
                 Proyectos con un objetivo claro.
               </h2>
-              <p className="mt-2 text-muted">Roles abiertos para estudiantes.</p>
+              <p className="mt-2 text-muted">
+                Roles abiertos, con alcance, plazo y entregable visibles en cada
+                ficha.
+              </p>
             </Reveal>
             <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {destacados.map((project, i) => (
@@ -120,95 +115,50 @@ export default async function Home() {
             <div className="mt-8">
               <Link
                 href="/proyectos"
-                className="text-sm font-medium text-electric hover:underline"
+                className="group inline-flex items-center gap-1 text-sm font-medium text-electric transition-colors hover:text-electric"
               >
-                Ver todos los proyectos →
+                Ver todos los proyectos
+                <span
+                  aria-hidden
+                  className="transition-transform group-hover:translate-x-0.5"
+                >
+                  →
+                </span>
               </Link>
             </div>
           </div>
         </section>
       )}
 
-      {/* 3 · PROTAGONISMO ESTUDIANTE (+ acceso secundario a organizaciones) */}
-      <section className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
-        <Reveal>
-          <h2 className="max-w-2xl text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-            Construye experiencia que se demuestra.
-          </h2>
-        </Reveal>
-        <div className="mt-8 grid gap-4 lg:grid-cols-3">
-          {/* Estudiantes: tarjeta protagonista. */}
-          <Reveal delayMs={80} className="h-full lg:col-span-2">
-            <div className="group flex h-full flex-col gap-4 rounded-2xl border border-border bg-white p-8 transition-all duration-200 hover:-translate-y-1 hover:border-electric/40 hover:shadow-lg sm:p-10">
-              <span className="text-xs font-semibold uppercase tracking-wide text-electric">
-                Estudiantes
-              </span>
-              <p className="text-2xl font-semibold text-ink sm:text-3xl">
-                Resuelve desafíos reales y llévate evidencia de tu trabajo.
-              </p>
-              <p className="max-w-md text-muted">
-                Postula a un rol, colabora por hitos y termina con un resultado
-                concreto que puedes mostrar.
-              </p>
-              <Link
-                href="/proyectos"
-                className={cn(
-                  buttonClasses({ variant: "primary" }),
-                  "mt-2 h-11 w-fit px-6 text-base",
-                )}
-              >
-                Explorar proyectos
-              </Link>
-            </div>
-          </Reveal>
 
-          {/* Organizaciones: acceso secundario a su propia landing. */}
-          <Reveal delayMs={160} className="h-full">
-            <div className="group flex h-full flex-col gap-3 rounded-2xl border border-border bg-surface p-8 transition-all duration-200 hover:-translate-y-1 hover:border-sprout/50">
-              <span className="text-xs font-semibold uppercase tracking-wide text-sprout">
-                Organizaciones
-              </span>
-              <p className="font-semibold text-ink">
-                ¿Tienes una necesidad concreta?
-              </p>
-              <p className="text-sm text-muted">
-                Transfórmala en un proyecto acotado con talento estudiantil.
-              </p>
-              <Link
-                href="/organizaciones"
-                className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-electric"
-              >
-                Conoce cómo funciona
-                <span className="transition-transform group-hover:translate-x-0.5">
-                  →
-                </span>
-              </Link>
-            </div>
-          </Reveal>
-        </div>
-      </section>
 
       {/* 4 · CÓMO FUNCIONA (flujo del estudiante como protagonista) */}
-      <section id="como-funciona" className="scroll-mt-28 bg-surface">
-        <div className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
+      <section id="como-funciona" className="scroll-mt-20 bg-white sm:scroll-mt-32">
+        <div className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-6 sm:py-16">
           <Reveal>
             <span className="text-xs font-semibold uppercase tracking-wide text-electric">
               Para estudiantes
             </span>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-              Del desafío al resultado, paso a paso.
+            <h2 className="mt-3 max-w-2xl text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+              Así empiezas, paso a paso.
             </h2>
+            <p className="mt-3 max-w-xl text-muted">
+              Perfil, postulación a un rol y trabajo por hitos junto a la
+              organización.
+            </p>
           </Reveal>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
+          <div className="mt-10 grid gap-4 md:grid-cols-3 md:gap-5">
             {PASOS_ESTUDIANTE.map((paso, i) => (
-              <Reveal key={paso.titulo} delayMs={i * 100} className="h-full">
-                <div className="group relative flex h-full flex-col rounded-2xl border border-border bg-white p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
-                  <span className="text-4xl font-bold text-electric/20 transition-colors duration-300 group-hover:text-electric/40">
-                    0{i + 1}
+              <Reveal key={paso.titulo} delayMs={i * 60} className="h-full">
+                <div className="group flex h-full flex-col rounded-2xl border border-border bg-surface/80 p-6 transition-colors duration-200 hover:bg-white sm:p-7">
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-electric/10 text-sm font-bold text-electric transition-colors duration-200 group-hover:bg-electric group-hover:text-white">
+                    {i + 1}
                   </span>
-                  <h3 className="mt-3 font-semibold text-ink">{paso.titulo}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-muted">
+                  <h3 className="mt-5 text-lg font-semibold text-ink">
+                    {paso.titulo}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">
                     {paso.texto}
                   </p>
                 </div>
@@ -218,10 +168,72 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* 4.25 · CÓMO SURGIÓ — contenedor acotado (no full bleed) */}
+      <section className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-6 sm:py-14">
+        <FadeContent>
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-surface px-6 py-10 sm:px-10 sm:py-12">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0"
+            >
+              <div className="animate-breathe absolute -top-12 -right-8 size-48 rounded-full bg-electric/15 blur-3xl" />
+              <div
+                className="animate-breathe absolute -bottom-14 -left-10 size-44 rounded-full bg-sprout/15 blur-3xl"
+                style={{ animationDelay: "-3s" }}
+              />
+            </div>
+
+            <div className="relative">
+              <span className="text-xs font-semibold uppercase tracking-wide text-electric">
+                Cómo surgió
+              </span>
+              <h2 className="mt-3 max-w-2xl text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                Nació de una brecha que se ve en la carrera.
+              </h2>
+
+              <div className="mt-10 grid max-w-4xl gap-8 sm:gap-10">
+                <div className="grid gap-3 sm:grid-cols-[7rem_1fr] sm:gap-8">
+                  <p className="text-xs font-semibold tracking-wide text-electric uppercase sm:pt-1">
+                    La brecha
+                  </p>
+                  <p className="text-base leading-relaxed text-muted sm:text-lg">
+                    Muchos estudiantes llegan a la práctica o al primer trabajo
+                    sin haber colaborado aún en un proyecto real: herramientas,
+                    coordinación y la seguridad de decir “esto sí lo hice”.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-[7rem_1fr] sm:gap-8">
+                  <p className="text-xs font-semibold tracking-wide text-electric uppercase sm:pt-1">
+                    La idea
+                  </p>
+                  <p className="text-base leading-relaxed text-muted sm:text-lg">
+                    CampusLab existe para acortar esa distancia con microdesafíos
+                    acotados junto a{" "}
+                    <strong className="font-semibold text-ink">organizaciones</strong>,{" "}
+                    <strong className="font-semibold text-ink">pymes</strong>,{" "}
+                    emprendimientos,{" "}
+                    <strong className="font-semibold text-ink">fundaciones</strong> e{" "}
+                    <strong className="font-semibold text-ink">instituciones</strong>.
+                    El foco es hacer en un marco claro, no vender un certificado.
+                  </p>
+                </div>
+
+                <blockquote className="border-l-2 border-electric/40 pl-5 sm:ml-36">
+                  <p className="text-lg font-semibold tracking-tight text-ink sm:text-xl">
+                    Un espacio para hacer, y ganar confianza haciendo.
+                  </p>
+                </blockquote>
+              </div>
+            </div>
+          </div>
+        </FadeContent>
+      </section>
+
       {/* 4.5 · PROPONER UN DESAFÍO (growth loop: el estudiante detecta necesidades) */}
-      <section className="mx-auto w-full max-w-5xl px-6 py-12 sm:py-16">
+      <section className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-6 sm:py-14">
         <Reveal>
-          <div className="relative overflow-hidden rounded-2xl border border-electric/25 bg-electric/5 p-8 shadow-[0_4px_20px_-10px_rgba(56,103,255,0.25)]">
+          <div className="relative overflow-hidden rounded-2xl border border-electric/25 bg-electric/5 p-5 shadow-[0_4px_20px_-10px_rgba(56,103,255,0.25)] sm:p-8">
             {/* Mismo halo difuminado que el hero de Organizaciones y /contacto:
                 le da presencia sin agregar un recurso visual nuevo. */}
             <div
@@ -246,10 +258,11 @@ export default async function Home() {
                 </span>
                 <div>
                   <p className="text-lg font-semibold text-ink">
-                    ¿Conoces una organización con un desafío?
+                    ¿Conoces una organización, pyme o fundación con un desafío?
                   </p>
                   <p className="mt-1 text-sm text-muted">
-                    Proponlo y ayúdanos a sumar proyectos reales para más estudiantes.
+                    Si ves una necesidad concreta en tu entorno, proponla y ayuda
+                    a sumar microproyectos reales.
                   </p>
                 </div>
               </div>
@@ -271,7 +284,7 @@ export default async function Home() {
       <ScrollPrinciples items={PRINCIPIOS} />
 
       {/* 6 · PREGUNTAS FRECUENTES */}
-      <section className="mx-auto w-full max-w-3xl px-6 py-16 sm:py-20">
+      <section className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-6 sm:py-16">
         <Reveal>
           <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
             Preguntas frecuentes
@@ -285,11 +298,11 @@ export default async function Home() {
       </section>
 
       {/* 7 · CTA FINAL */}
-      <section className="mx-auto w-full max-w-5xl px-6 pb-20 sm:pb-28">
+      <section className="mx-auto w-full max-w-5xl px-6 pb-14 sm:pb-20">
         <Reveal>
-          <div className="rounded-3xl border border-border bg-surface px-6 py-16 text-center sm:px-12">
-            <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-              Convierte una necesidad o una habilidad en un proyecto con impacto.
+          <div className="rounded-3xl border border-border bg-surface px-6 py-12 text-center sm:px-12 sm:py-14">
+            <h2 className="mx-auto max-w-2xl text-2xl font-bold tracking-tight text-ink sm:text-3xl md:text-4xl">
+              Elige un rol abierto y empieza a colaborar.
             </h2>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
               <Link
@@ -323,27 +336,32 @@ export default async function Home() {
   );
 }
 
-// Preguntas frecuentes de la landing.
+// Preguntas frecuentes de la landing (voz estudiante).
+// Las dudas de organizaciones viven en /organizaciones.
 const FAQ = [
   {
-    q: "¿Qué tipo de proyectos se pueden publicar?",
-    a: "Necesidades reales y acotadas —análisis de datos, prototipos, automatizaciones, contenido, investigación—, siempre con un objetivo y un entregable claros.",
+    q: "¿Puedo participar si recién estoy empezando?",
+    a: "Sí. Busca roles marcados “apto sin experiencia” en el catálogo.",
   },
   {
-    q: "¿Cuánto dura un microproyecto?",
-    a: "Son cortos y acotados, del orden de pocas semanas. La organización define la duración según el alcance del desafío.",
+    q: "¿Cuánto dura y cuánto tiempo me pide?",
+    a: "Entre 2 y 8 semanas, con unas 3 a 6 horas semanales según el proyecto. Lo exacto está en cada ficha.",
   },
   {
-    q: "¿Cómo se seleccionan los estudiantes?",
-    a: "Cada estudiante postula a un rol del proyecto; la organización revisa las postulaciones y elige a quienes mejor calzan con el desafío.",
+    q: "¿Cómo postulo y quién decide?",
+    a: "Eliges un rol abierto, envías tu postulación y la organización decide si te suma al equipo.",
   },
   {
-    q: "¿Qué recibe una organización?",
-    a: "Una necesidad concreta avanzada por un equipo de estudiantes, con seguimiento por hitos y una entrega con evidencia del resultado.",
+    q: "¿Trabajo solo o en equipo?",
+    a: "Depende del desafío: de 1 a 5 estudiantes, con roles definidos en la ficha.",
   },
   {
-    q: "¿CampusLab reemplaza un puesto de trabajo?",
-    a: "No. Es una experiencia acotada para resolver un desafío puntual y generar evidencia; no sustituye un empleo ni una contratación.",
+    q: "¿Me sirve para la práctica o el primer trabajo?",
+    a: "Te da una primera experiencia de colaboración en un proyecto concreto. No reemplaza esos procesos formales.",
+  },
+  {
+    q: "¿CampusLab es un empleo?",
+    a: "No. Es una experiencia acotada para un desafío puntual; no sustituye un puesto ni una contratación.",
   },
 ];
 
@@ -354,31 +372,31 @@ const PRINCIPIOS: Principio[] = [
     icon: "alcance",
     titulo: "Alcance definido",
     texto:
-      "Cada desafío nace con objetivos, plazo y entregable claros. Nada de tareas difusas ni expectativas que se descubren a mitad de camino.",
+      "Cada desafío nace con objetivos, plazo y entregable claros. Nada de tareas difusas a mitad de camino.",
     practica:
-      "El proyecto publica su duración y su entregable antes de abrir los roles.",
+      "En la ficha ves duración, dedicación estimada y entregable antes de postular.",
   },
   {
     icon: "hitos",
     titulo: "Acompañamiento por hitos",
     texto:
-      "El avance se valida por etapas, no recién al final. La organización sigue el trabajo y da retroalimentación en el camino.",
+      "Avanzas por etapas con retroalimentación en el camino. No estás solo hasta el final.",
     practica:
-      "Entregas parciales que el gestor aprueba o pide ajustar, hito por hito.",
+      "Entregas parciales que se revisan hito a hito, con seguimiento visible.",
   },
   {
     icon: "resultado",
-    titulo: "Resultado demostrable",
+    titulo: "Colaboración real",
     texto:
-      "El trabajo termina en evidencia real, útil para el portafolio del estudiante y para la organización.",
+      "Trabajas con roles, plazos y herramientas de verdad: coordinación, no solo tareas sueltas.",
     practica:
-      "Evidencia verificable ligada al proyecto en tu perfil público.",
+      "Un desafío concreto en equipo de 1 a 5, junto a una organización, pyme, fundación u otra institución.",
   },
   {
     icon: "barrera",
     titulo: "Barrera baja",
     texto:
-      "Hay roles pensados para empezar, sin experiencia previa. Lo que importa es querer aprender haciendo.",
+      "Hay roles pensados para empezar. Lo que importa es querer aprender haciendo.",
     practica: "Proyectos marcados “apto sin experiencia” en el catálogo.",
   },
 ];
@@ -387,14 +405,17 @@ const PRINCIPIOS: Principio[] = [
 const PASOS_ESTUDIANTE = [
   {
     titulo: "Crea tu perfil",
-    texto: "Cuéntanos qué sabes hacer y qué te interesa.",
+    texto:
+      "Regístrate y completa lo básico: carrera, habilidades e intereses, para poder postular.",
   },
   {
-    titulo: "Postula a un desafío",
-    texto: "Elige un rol que calce con tus habilidades.",
+    titulo: "Postula a un rol abierto",
+    texto:
+      "Elige un desafío acotado y un rol concreto; hay opciones marcadas apto sin experiencia.",
   },
   {
-    titulo: "Entrega evidencia de tu trabajo",
-    texto: "Colabora por hitos y termina con un resultado que puedes mostrar.",
+    titulo: "Colabora por hitos",
+    texto:
+      "Trabajas con el equipo y la organización: avances por etapas, con seguimiento visible.",
   },
 ];

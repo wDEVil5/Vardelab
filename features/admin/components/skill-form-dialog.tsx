@@ -11,8 +11,12 @@ const INITIAL: CatalogState = {};
 /**
  * Diálogo compartido para crear o editar una habilidad — mismo formulario,
  * distinta Server Action según haya o no `skill`. Se cierra solo al terminar
- * bien (mismo patrón que `PortfolioEditor`: un `ref` distingue el primer
- * render de un envío real, para no cerrar el modal antes de tiempo).
+ * bien: `state !== INITIAL` es verdadero solo después de un envío real (la
+ * action devuelve un objeto nuevo). No un `ref` que se marca "ya hubo un
+ * envío" dentro del propio efecto — ese patrón se rompe con el doble-invocado
+ * de efectos de React Strict Mode en desarrollo (mount → cleanup → mount): la
+ * segunda invocación veía la ref ya en `true` desde la primera y cerraba el
+ * modal de inmediato, antes de que existiera ningún envío real.
  */
 export function SkillFormDialog({
   trigger,
@@ -26,14 +30,12 @@ export function SkillFormDialog({
   const [open, setOpen] = useState(false);
   const [state, formAction] = useActionState(skill ? updateSkill : createSkill, INITIAL);
   const formRef = useRef<HTMLFormElement>(null);
-  const enviado = useRef(false);
 
   useEffect(() => {
-    if (enviado.current && !state.error) {
-      setOpen(false);
+    if (state !== INITIAL && !state.error) {
+      queueMicrotask(() => setOpen(false));
       formRef.current?.reset();
     }
-    enviado.current = true;
   }, [state]);
 
   return (

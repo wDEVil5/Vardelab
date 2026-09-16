@@ -97,7 +97,6 @@ export function MessageThread({
 }) {
   const [state, formAction] = useActionState(sendMessage, INITIAL);
   const formRef = useRef<HTMLFormElement>(null);
-  const enviado = useRef(false);
   const listaRef = useRef<HTMLUListElement>(null);
 
   // Mensajes recibidos en vivo que todavía no llegaron por props (el servidor
@@ -105,11 +104,14 @@ export function MessageThread({
   // combinan con `messages` para no perder ninguno mientras tanto.
   const [enVivo, setEnVivo] = useState<ProjectMessage[]>([]);
 
-  // Cuando el servidor manda una lista nueva (por ejemplo, tras enviar un
-  // mensaje propio), ya no hace falta guardar aparte lo que ahí ya viene.
-  useEffect(() => {
+  // Cuando el servidor trae un mensaje que ya teníamos en vivo, lo sacamos
+  // del buffer local. Se ajusta durante el render (patrón React al cambiar
+  // props), no en un effect — evita setState en cascade.
+  const [messagesPrev, setMessagesPrev] = useState(messages);
+  if (messages !== messagesPrev) {
+    setMessagesPrev(messages);
     setEnVivo((prev) => prev.filter((m) => !messages.some((sv) => sv.id === m.id)));
-  }, [messages]);
+  }
 
   const todos = useMemo(() => {
     const combinados = [...messages, ...enVivo];
@@ -120,7 +122,9 @@ export function MessageThread({
   // La lista más reciente vive en un ref porque el callback de la suscripción
   // se registra una sola vez (no se quiere reabrir el canal en cada mensaje).
   const todosRef = useRef(todos);
-  todosRef.current = todos;
+  useEffect(() => {
+    todosRef.current = todos;
+  }, [todos]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -177,12 +181,15 @@ export function MessageThread({
     };
   }, [projectId, currentUserId, participantNames]);
 
-  // Limpia el campo y baja el scroll al fondo cuando se envía con éxito.
+  // Limpia el campo cuando se envía con éxito. `state !== INITIAL` es
+  // verdadero solo tras un envío real — no una ref "ya hubo un envío" que se
+  // rompe con el doble-invocado de efectos de React Strict Mode en
+  // desarrollo (la segunda invocación la vería ya en `true` desde la
+  // primera).
   useEffect(() => {
-    if (enviado.current && !state.error) {
+    if (state !== INITIAL && !state.error) {
       formRef.current?.reset();
     }
-    enviado.current = true;
   }, [state]);
 
   // Baja el scroll al fondo cada vez que aparece un mensaje nuevo (propio o

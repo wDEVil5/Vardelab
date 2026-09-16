@@ -2,38 +2,25 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { buttonClasses } from "@/components/ui/button";
 import { OrgLogo } from "@/components/ui/org-logo";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
-import { cn } from "@/lib/utils";
 import {
   getPublishedProjectById,
-  type ProjectDetail,
+  getSimilarPublishedProjects,
 } from "@/features/projects/queries";
-import { esAptoSinExperiencia } from "@/features/projects/roles";
+import { ProjectCard } from "@/features/projects/components/project-card";
+import { ProjectAside } from "@/features/projects/components/project-aside";
+import { RoleCard } from "@/features/projects/components/role-card";
+import { RolesScroller } from "@/features/projects/components/roles-scroller";
 import { getCurrentUser } from "@/features/auth/queries";
 import { ReportButton } from "@/features/reports/components/report-button";
-import {
-  getMyActiveApplicationInProject,
-  type MyProjectApplication,
-} from "@/features/applications/queries";
+import { getMyActiveApplicationInProject } from "@/features/applications/queries";
 import { getPublicProjectTeam } from "@/features/teams/queries";
-
-// Etiquetas legibles de los enums para la interfaz.
-const MODALIDAD_LABEL: Record<string, string> = {
-  remoto: "Remoto",
-  presencial: "Presencial",
-  hibrido: "Híbrido",
-};
-const NIVEL_LABEL: Record<string, string> = {
-  basico: "Básico",
-  intermedio: "Intermedio",
-  avanzado: "Avanzado",
-};
+import { SiteFooter } from "@/components/site-footer";
+import { RevealFooter } from "@/components/reveal-footer";
 
 type PageProps = { params: Promise<{ id: string }> };
 
-// Título de pestaña dinámico según el proyecto (o genérico si no existe).
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
@@ -50,8 +37,8 @@ export async function generateMetadata({
 
 /**
  * P-03 · Ficha pública de un proyecto.
- * Server Component: resuelve la ficha en el servidor; si no existe o no está
- * publicado, `getPublishedProjectById` devuelve null y se muestra 404.
+ * Jerarquía: título + estado, CTA/aside temprano en móvil, contenido compacto,
+ * roles con ancho usable (no 1/3 forzado).
  */
 export default async function ProyectoPage({ params }: PageProps) {
   const { id } = await params;
@@ -63,29 +50,33 @@ export default async function ProyectoPage({ params }: PageProps) {
   const org = project.organization;
   const roles = project.roles ?? [];
 
-  // Postulación activa del usuario en este proyecto (si la hay). Regla: a lo
-  // sumo un rol por proyecto, así que si existe, el resto de roles no ofrece
-  // postular y el rol postulado muestra su estado.
-  const [miPostulacion, equipo] = await Promise.all([
+  const skillIds = Array.from(
+    new Set(
+      roles.flatMap((rol) =>
+        (rol.skills ?? [])
+          .map((s) => s.skill?.id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ),
+  );
+
+  const [miPostulacion, equipo, similares] = await Promise.all([
     user ? getMyActiveApplicationInProject(project.id) : Promise.resolve(null),
     getPublicProjectTeam(project.id),
+    getSimilarPublishedProjects({
+      id: project.id,
+      modalidad: project.modalidad,
+      orgId: org?.id ?? null,
+      skillIds,
+    }),
   ]);
 
-  // Tamaño del equipo (suma de los cupos de cada rol, sin descontar quién ya
-  // se sumó): describe el alcance fijo del proyecto, no cambia según avanza
-  // la selección — se usa en "Equipo de N".
   const cuposTotales = roles.reduce((total, rol) => total + rol.cupos, 0);
-  // Cupos REALMENTE restantes ahora mismo (M72): descuenta las postulaciones
-  // ya `aceptada` por rol — se usa en el badge "Abierto · N cupos", que sí
-  // debe reflejar cuánto queda por cubrir.
   const cuposRestantes = roles.reduce(
     (total, rol) => total + Math.max(0, rol.cupos - rol.aceptadas),
     0,
   );
 
-  // Rango de dedicación semanal entre los roles, para el resumen del panel
-  // lateral (RF: "4 semanas" de duración no dice cuánto tiempo por semana).
-  // Es un dato por rol, no por proyecto, así que se muestra como rango.
   const horasSemanales = roles
     .map((r) => r.horas_semanales)
     .filter((h): h is number => h != null);
@@ -93,186 +84,197 @@ export default async function ProyectoPage({ params }: PageProps) {
   const horasMax = horasSemanales.length ? Math.max(...horasSemanales) : null;
 
   return (
-    <main className="flex-1 bg-white">
-      <div className="mx-auto w-full max-w-5xl px-6 py-10">
-        {/* Volver al catálogo */}
-        <Link
-          href="/proyectos"
-          className="text-sm text-muted transition-colors hover:text-electric"
-        >
-          ← Volver a proyectos
-        </Link>
-
-        {/* Encabezado */}
-        <header className="mt-6 flex flex-col gap-2">
-          <span className="text-sm font-medium text-muted">
-            Detalle de proyecto
-          </span>
-          <h1 className="text-3xl font-bold text-ink sm:text-4xl">
-            {project.titulo}
-          </h1>
-          {org?.nombre && (
-            <Link
-              href={`/organizaciones/${org.id}`}
-              className="group flex w-fit items-center gap-2"
+    <>
+      <main className="relative z-10 md:mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-white md:shadow-[0_8px_24px_-16px_rgba(13,37,59,0.12)]">
+        <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-6 sm:py-10">
+          <Link
+            href="/proyectos"
+            className="group inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-electric"
+          >
+            <span
+              aria-hidden
+              className="inline-block transition-transform group-hover:-translate-x-0.5"
             >
-              <OrgLogo logoUrl={org.logo_url} nombre={org.nombre} />
-              <span className="flex items-center gap-1.5 text-muted group-hover:text-electric">
-                {org.nombre}
-                {org.verificacion === "verificado" && <VerifiedBadge />}
-              </span>
-            </Link>
-          )}
-        </header>
+              ←
+            </span>
+            Volver a proyectos
+          </Link>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-3">
-          {/* Contenido principal */}
-          <div className="flex flex-col gap-6 lg:col-span-2">
-            <div className="flex flex-col gap-8 rounded-2xl border border-border bg-white p-6 sm:p-8">
-              {project.resumen && (
-                <p className="text-lg text-muted">{project.resumen}</p>
-              )}
-              <Section titulo="El desafío" contenido={project.problema} />
-              <Section titulo="Alcance" contenido={project.alcance} />
-              {project.entregable && (
-                <section className="flex flex-col gap-1.5 rounded-xl border border-electric/20 bg-electric/5 p-5">
-                  <h2 className="text-lg font-semibold text-ink">Entregable</h2>
-                  <p className="whitespace-pre-line text-ink">
-                    {project.entregable}
-                  </p>
-                </section>
-              )}
-              <Section titulo="Expectativas" contenido={project.expectativas} />
+          <header className="mt-5 flex flex-col gap-3 sm:mt-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-sprout/15 px-2.5 py-0.5 text-xs font-medium text-sprout">
+                Abierto
+                {cuposRestantes > 0 &&
+                  ` · ${cuposRestantes} ${cuposRestantes === 1 ? "cupo" : "cupos"}`}
+              </span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl lg:text-4xl">
+              {project.titulo}
+            </h1>
+            {org?.nombre && (
+              <Link
+                href={`/organizaciones/${org.id}`}
+                className="group flex w-fit items-center gap-2"
+              >
+                <OrgLogo logoUrl={org.logo_url} nombre={org.nombre} />
+                <span className="flex items-center gap-1.5 text-sm text-muted group-hover:text-electric sm:text-base">
+                  {org.nombre}
+                  {org.verificacion === "verificado" && <VerifiedBadge />}
+                </span>
+              </Link>
+            )}
+            {project.resumen && (
+              <p className="max-w-2xl text-base text-muted sm:text-lg">
+                {project.resumen}
+              </p>
+            )}
+          </header>
+
+          {/* Móvil: aside (CTA) primero. Desktop: contenido | aside. */}
+          <div className="mt-6 grid gap-5 lg:mt-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="order-1 min-w-0 lg:sticky lg:top-24 lg:order-2 lg:self-start">
+              <ProjectAside
+                organization={org}
+                modalidad={project.modalidad}
+                duracionSemanas={project.duracion_semanas}
+                horasMin={horasMin}
+                horasMax={horasMax}
+                cuposTotales={cuposTotales}
+                cuposRestantes={cuposRestantes}
+                tieneRoles={roles.length > 0}
+              />
             </div>
 
-            {/* Condiciones del proyecto: señales de confianza para ambas partes. */}
-            <div className="flex flex-col gap-4 rounded-2xl border border-border bg-white p-6 sm:p-8">
-              <h2 className="text-xl font-semibold text-ink">
-                Condiciones del proyecto
-              </h2>
-              <ul className="flex flex-col gap-3 text-sm">
-                {project.revisado_at && (
-                  <Condicion
-                    titulo="Revisado por CampusLab."
-                    texto="El alcance del proyecto se revisó antes de publicarse."
-                  />
+            <div className="order-2 flex min-w-0 flex-col gap-5 lg:order-1 lg:gap-6">
+              <div className="flex flex-col gap-5 rounded-2xl border border-border bg-white p-5 sm:gap-6 sm:p-7">
+                <Section titulo="El desafío" contenido={project.problema} />
+                <Section titulo="Alcance" contenido={project.alcance} />
+                {project.entregable && (
+                  <section className="flex flex-col gap-1 rounded-xl border border-electric/20 bg-electric/5 px-4 py-3.5 sm:px-5 sm:py-4">
+                    <h2 className="text-sm font-semibold uppercase tracking-wide text-electric">
+                      Entregable
+                    </h2>
+                    <p className="whitespace-pre-line text-sm text-ink sm:text-base">
+                      {project.entregable}
+                    </p>
+                  </section>
                 )}
-                <Condicion
-                  titulo="Acompañamiento por hitos."
-                  texto="La organización sigue el avance y valida las entregas por etapas."
-                />
-                {project.duracion_semanas && (
-                  <Condicion
-                    titulo={`Plazo estimado: ${project.duracion_semanas} semanas.`}
-                    texto="Definido al publicar, para expectativas claras de tiempo."
-                  />
-                )}
-                <Condicion
-                  titulo="Portafolio y confidencialidad."
-                  texto="El resultado puede sumarse al portafolio del estudiante, salvo acuerdo distinto; la confidencialidad se coordina entre las partes antes de comenzar."
-                />
-              </ul>
-              <p className="text-xs text-muted">
-                Condiciones orientativas del piloto; no constituyen un contrato.
-              </p>
-            </div>
-
-            {/* Equipo ya seleccionado: antes no había forma de ver quién
-                trabaja en el proyecto una vez formado (M27 habilita la
-                lectura pública). Un integrante con perfil privado se muestra
-                sin nombre, no se omite. */}
-            {equipo.length > 0 && (
-              <section>
-                <h2 className="text-xl font-semibold text-ink">
-                  Equipo seleccionado
-                </h2>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {equipo.map((m) => (
-                    <Badge key={m.userId} tone="outline">
-                      {m.nombre ?? "Integrante"}
-                      {m.rol && <span className="text-muted/70"> · {m.rol}</span>}
-                    </Badge>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Roles */}
-            {roles.length > 0 && (
-              <section id="roles" className="scroll-mt-6">
-                <h2 className="text-xl font-semibold text-ink">
-                  Roles disponibles
-                </h2>
-                <div className="mt-4 flex flex-col gap-4">
-                  {roles.map((rol) => (
-                    <RoleCard
-                      key={rol.id}
-                      rol={rol}
-                      projectId={project.id}
-                      miPostulacion={miPostulacion}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
-
-          {/* Tarjeta lateral: estado, compromiso y CTA a los roles. */}
-          <aside className="lg:col-span-1">
-            <div className="sticky top-24 flex flex-col gap-4 rounded-2xl border border-border bg-white p-6">
-              <span className="font-semibold text-sprout">
-                Abierto{cuposRestantes > 0 && ` · ${cuposRestantes} ${cuposRestantes === 1 ? "cupo" : "cupos"}`}
-              </span>
-              <p className="text-sm text-muted">
-                Tu rol puede generar evidencia real para tu portafolio.
-              </p>
-
-              {/* Compromiso: duración, dedicación semanal, modalidad y equipo. */}
-              <div className="flex flex-wrap gap-2">
-                {project.duracion_semanas && (
-                  <Badge>{project.duracion_semanas} semanas</Badge>
-                )}
-                {horasMin !== null && (
-                  <Badge>
-                    ~{horasMin === horasMax ? horasMin : `${horasMin}–${horasMax}`} h/semana
-                  </Badge>
-                )}
-                {project.modalidad && (
-                  <Badge tone="brand">
-                    {MODALIDAD_LABEL[project.modalidad] ?? project.modalidad}
-                  </Badge>
-                )}
-                {cuposTotales > 0 && (
-                  <Badge tone="outline">Equipo de {cuposTotales}</Badge>
-                )}
+                <Section titulo="Expectativas" contenido={project.expectativas} />
               </div>
 
               {roles.length > 0 && (
-                <a
-                  href="#roles"
-                  className={cn(buttonClasses({ variant: "primary" }), "w-full")}
-                >
-                  Ver roles disponibles
-                </a>
+                <section id="roles" className="scroll-mt-24">
+                  <h2 className="text-lg font-semibold text-ink sm:text-xl">
+                    Roles disponibles
+                  </h2>
+                  <RolesScroller>
+                    {roles.map((rol) => (
+                      <RoleCard
+                        key={rol.id}
+                        rol={rol}
+                        projectId={project.id}
+                        miPostulacion={miPostulacion}
+                      />
+                    ))}
+                  </RolesScroller>
+                </section>
               )}
-            </div>
-          </aside>
-        </div>
 
-        <div className="mt-8">
-          <ReportButton targetType="proyecto" targetId={project.id} />
+              <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-5 sm:p-7">
+                <h2 className="text-lg font-semibold text-ink sm:text-xl">
+                  Condiciones del proyecto
+                </h2>
+                <ul className="flex flex-col gap-2.5 text-sm">
+                  {project.revisado_at && (
+                    <Condicion
+                      titulo="Revisado por CampusLab."
+                      texto="El alcance se revisó antes de publicarse."
+                    />
+                  )}
+                  <Condicion
+                    titulo="Acompañamiento por hitos."
+                    texto="La organización valida el avance por etapas."
+                  />
+                  {project.duracion_semanas && (
+                    <Condicion
+                      titulo={`Plazo estimado: ${project.duracion_semanas} semanas.`}
+                      texto="Definido al publicar, para expectativas claras."
+                    />
+                  )}
+                  <Condicion
+                    titulo="Portafolio y confidencialidad."
+                    texto="El resultado puede ir al portafolio, salvo acuerdo distinto."
+                  />
+                </ul>
+                <p className="text-xs text-muted">
+                  Orientativas del piloto; no constituyen un contrato.
+                </p>
+              </div>
+
+              {equipo.length > 0 && (
+                <section>
+                  <h2 className="text-lg font-semibold text-ink sm:text-xl">
+                    Equipo seleccionado
+                  </h2>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {equipo.map((m) => (
+                      <Badge key={m.userId} tone="outline">
+                        {m.nombre ?? "Integrante"}
+                        {m.rol && (
+                          <span className="text-muted/70"> · {m.rol}</span>
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+            </div>
+          </div>
+
+          {similares.length > 0 && (
+            <section className="mt-10 border-t border-border pt-10 sm:mt-12 sm:pt-12">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <h2 className="text-lg font-semibold text-ink sm:text-xl">
+                  Proyectos similares
+                </h2>
+                <Link
+                  href="/proyectos"
+                  className="group inline-flex items-center gap-1 text-sm font-medium text-electric transition-colors hover:text-electric/80"
+                >
+                  Ver catálogo
+                  <span
+                    aria-hidden
+                    className="inline-block transition-transform group-hover:translate-x-0.5"
+                  >
+                    →
+                  </span>
+                </Link>
+              </div>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {similares.map((p) => (
+                  <ProjectCard key={p.id} project={p} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          <div className="mt-10 border-t border-border pt-8">
+            <ReportButton targetType="proyecto" targetId={project.id} />
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+
+      <RevealFooter>
+        <SiteFooter />
+      </RevealFooter>
+    </>
   );
 }
 
-// ---------------------------------------------------------------------------
-
-/** Ítem de "Condiciones del proyecto": check + título en foco y detalle atenuado. */
 function Condicion({ titulo, texto }: { titulo: string; texto: string }) {
   return (
-    <li className="flex gap-3">
+    <li className="flex gap-2.5">
       <svg
         viewBox="0 0 24 24"
         className="mt-0.5 size-4 shrink-0 text-sprout"
@@ -293,7 +295,6 @@ function Condicion({ titulo, texto }: { titulo: string; texto: string }) {
   );
 }
 
-/** Bloque de la plantilla; no se muestra si el campo viene vacío. */
 function Section({
   titulo,
   contenido,
@@ -303,126 +304,11 @@ function Section({
 }) {
   if (!contenido) return null;
   return (
-    <section className="flex flex-col gap-1.5">
-      <h2 className="text-lg font-semibold text-ink">{titulo}</h2>
-      <p className="whitespace-pre-line text-muted">{contenido}</p>
+    <section className="flex flex-col gap-1 border-b border-border pb-5 last:border-b-0 last:pb-0">
+      <h2 className="text-base font-semibold text-ink sm:text-lg">{titulo}</h2>
+      <p className="whitespace-pre-line text-sm leading-relaxed text-muted sm:text-base">
+        {contenido}
+      </p>
     </section>
-  );
-}
-
-// Estado de la postulación activa → etiqueta para el rol postulado.
-const ESTADO_ROL: Record<string, string> = {
-  enviada: "Ya postulaste a este rol",
-  aceptada: "Aceptado en este rol",
-};
-
-// Máximo de habilidades visibles antes de resumir en "+N más" — con un
-// proyecto de muchos roles, cada uno con varias habilidades, la lista de
-// chips era lo que más alargaba la tarjeta.
-const SKILLS_VISIBLES = 3;
-
-/**
- * Tarjeta de un rol, apilada (nombre → meta → habilidades → CTA), no en fila.
- * Compacta sin cambiar de forma: la descripción y la dedicación semanal
- * comparten una sola línea, y las habilidades se resumen en unas pocas + "+N
- * más" — eso es lo que más alargaba la tarjeta con roles de muchas skills.
- */
-function RoleCard({
-  rol,
-  projectId,
-  miPostulacion,
-}: {
-  rol: ProjectDetail["roles"][number];
-  projectId: string;
-  miPostulacion: MyProjectApplication | null;
-}) {
-  const skills = rol.skills ?? [];
-  const skillsVisibles = skills.slice(0, SKILLS_VISIBLES);
-  const skillsRestantes = skills.length - skillsVisibles.length;
-  // ¿Este rol es al que postulé, o postulé a otro del mismo proyecto?
-  const esMiRol = miPostulacion?.roleId === rol.id;
-  const tieneOtra = Boolean(miPostulacion) && !esMiRol;
-  // Cupos restantes de ESTE rol (M72): ya hay tantas postulaciones aceptadas
-  // como cupos tiene. La guarda real vive en la RLS de
-  // `applications_insert_own` — esto es para no ofrecer un botón que la base
-  // de todas formas va a rechazar.
-  const cuposRestantesRol = rol.cupos - rol.aceptadas;
-  const rolLleno = cuposRestantesRol <= 0;
-
-  // Meta en una sola línea, unida con "·" (mismo separador que el resto del
-  // panel admin) — descripción y dedicación ya no ocupan una línea cada una.
-  const meta = [rol.descripcion, rol.horas_semanales && `~${rol.horas_semanales} h/semana`]
-    .filter(Boolean)
-    .join(" · ");
-
-  return (
-    <article className="rounded-lg border border-border bg-white p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          {/* "Apto sin experiencia" junto al nombre: es la señal que más rápido
-              ayuda a autoseleccionarse, no algo para descubrir más abajo. */}
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-semibold text-ink">{rol.nombre}</h3>
-            {esAptoSinExperiencia(skills) && (
-              <span className="inline-flex items-center rounded-full bg-sprout/15 px-2.5 py-0.5 text-xs font-medium text-sprout">
-                Apto sin experiencia
-              </span>
-            )}
-          </div>
-          {meta && <p className="text-sm text-muted">{meta}</p>}
-        </div>
-        <Badge tone={rolLleno ? "neutral" : "brand"}>
-          {rolLleno
-            ? "Cupos llenos"
-            : `${cuposRestantesRol} ${cuposRestantesRol === 1 ? "cupo" : "cupos"}`}
-        </Badge>
-      </div>
-
-      {skills.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          {skillsVisibles.map((s) => (
-            <Badge key={s.skill?.id ?? s.nivel_minimo} tone="outline">
-              {s.skill?.nombre}
-              {s.nivel_minimo && (
-                <span className="text-muted/70">
-                  · {NIVEL_LABEL[s.nivel_minimo] ?? s.nivel_minimo}
-                </span>
-              )}
-            </Badge>
-          ))}
-          {skillsRestantes > 0 && (
-            <span className="text-xs text-muted">+{skillsRestantes} más</span>
-          )}
-        </div>
-      )}
-
-      {/* CTA según el estado. La regla es un rol por proyecto: si ya hay una
-          postulación activa, el rol postulado muestra su estado y el resto
-          queda deshabilitado. El botón siempre nombra el rol (no un genérico
-          "Ingresar para postular"): sin sesión, la propia página de postular
-          ya redirige a /ingresar con `?next=` de vuelta a este rol. */}
-      <div className="mt-4">
-        {esMiRol ? (
-          <Badge tone="success">
-            {ESTADO_ROL[miPostulacion!.status] ?? "Ya postulaste a este rol"}
-          </Badge>
-        ) : tieneOtra ? (
-          <p className="text-sm text-muted">
-            Ya tienes una postulación activa en este proyecto.
-          </p>
-        ) : rolLleno ? (
-          <p className="text-sm text-muted">
-            Ya se cubrieron los cupos de este rol.
-          </p>
-        ) : (
-          <Link
-            href={`/proyectos/${projectId}/postular/${rol.id}`}
-            className={buttonClasses({ variant: "primary", size: "sm" })}
-          >
-            Postular a {rol.nombre}
-          </Link>
-        )}
-      </div>
-    </article>
   );
 }

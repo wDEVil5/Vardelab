@@ -12,3 +12,16 @@ export function esAptoSinExperiencia(
 ): boolean {
   return skills.every((s) => s.nivel_minimo !== "avanzado");
 }
+
+/**
+ * Cupos realmente restantes de un proyecto (M72): suma por rol
+ * `cupos - aceptadas`, sin negativos. Sirve para filtrar el hero y el catálogo.
+ */
+export function cuposRestantesProyecto(project: {
+  roles?: { cupos: number; aceptadas: number }[] | null;
+}): number {
+  return (project.roles ?? []).reduce(
+    (total, rol) => total + Math.max(0, rol.cupos - rol.aceptadas),
+    0,
+  );
+}

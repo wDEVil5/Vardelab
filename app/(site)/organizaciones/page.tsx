@@ -3,11 +3,15 @@ import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/reveal";
+import { FadeContent } from "@/components/fade-content";
+import { GlowCard } from "@/components/glow-card";
 import { Faq } from "@/components/faq";
 import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 import { DesafiosExplorer } from "@/components/desafios-explorer";
 import { ProcessStack, type ProcesoPaso } from "@/components/process-stack";
+import { OrganizacionHeroVisual } from "@/components/organizacion-hero-visual";
+import { EJEMPLOS_ORGANIZACION } from "@/features/organizations/necesidades-ejemplo";
 
 export const metadata: Metadata = {
   title: "Para organizaciones · CampusLab",
@@ -29,35 +33,35 @@ export const metadata: Metadata = {
 export default function OrganizacionesPage() {
   return (
     <>
-      <main className="relative z-10 md:mb-(--footer-h,0px) min-h-[calc(100dvh-3.5rem)] flex-1 bg-white md:shadow-[0_8px_24px_-16px_rgba(13,37,59,0.12)]">
+      <main className="relative z-10 min-h-[calc(100dvh-3.5rem)] flex-1 overflow-x-clip bg-white md:mb-(--footer-h,0px) md:shadow-[0_8px_24px_-16px_rgba(13,37,59,0.12)]">
         {/* 1 · HERO */}
-        <section className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-24">
-          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-            <div className="flex animate-rise flex-col items-start gap-6">
-              <span className="text-xs font-semibold uppercase tracking-wide text-electric">
+        <section className="mx-auto w-full max-w-6xl overflow-x-clip px-5 py-8 sm:px-6 sm:py-24 lg:pb-32">
+          <div className="grid items-center gap-8 md:grid-cols-2 md:gap-10 lg:gap-12">
+            <div className="flex animate-rise flex-col items-start gap-5 sm:gap-7">
+              <span className="text-xs font-semibold uppercase tracking-wide text-electric sm:text-sm">
                 Para organizaciones
               </span>
-              <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+              <h1 className="text-[1.85rem] font-bold leading-[1.15] tracking-tight text-ink sm:text-4xl sm:leading-tight md:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
                 Ese proyecto pendiente puede empezar a avanzar.
               </h1>
-              <p className="max-w-md text-lg text-muted">
+              <p className="max-w-lg text-base text-muted sm:text-lg sm:leading-relaxed md:text-xl">
                 Convierte una necesidad concreta en un microproyecto con alcance
                 definido, estudiantes interesados y seguimiento visible de
                 principio a fin.
               </p>
-              <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-3">
+              <div className="flex w-full flex-col items-start gap-4">
                 <Link
                   href="/contacto"
                   className={cn(
                     buttonClasses({ variant: "primary" }),
-                    "h-11 w-full whitespace-nowrap px-6 text-base sm:w-auto",
+                    "h-12 justify-center px-7 text-base sm:text-lg",
                   )}
                 >
                   Cuéntanos qué necesitas resolver
                 </Link>
                 <Link
                   href="/proyectos"
-                  className="group inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors hover:text-electric"
+                  className="group inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-electric"
                 >
                   Ver ejemplos de desafíos
                   <span className="transition-transform group-hover:translate-x-0.5">
@@ -67,50 +71,64 @@ export default function OrganizacionesPage() {
               </div>
             </div>
 
-            {/* Composición: transformación de una necesidad en un proyecto.
-                Información útil (antes → desafío → resultado), no ilustración. */}
-            <TransformacionHero />
+            {/* Composición pasiva: ficha de desafío + chips flotantes.
+                Inspirada en firstjob.me (capa central + flotantes), adaptada
+                a CampusLab. Si no convence, volver a TransformacionHero. */}
+            <div className="animate-rise hidden md:block" style={{ animationDelay: "150ms" }}>
+              <OrganizacionHeroVisual />
+            </div>
+            {/* Mobile: la composición flotante pierde legibilidad; se mantiene
+                la transformación en bloques, más clara en columna. */}
+            <div className="md:hidden">
+              <TransformacionHero />
+            </div>
           </div>
         </section>
 
-        {/* 2 · PROPUESTA DE VALOR */}
+        {/* 2 · PROPUESTA DE VALOR — GlowCard + Fade Content (React Bits, sin cursor) */}
         <section className="bg-surface">
-          <div className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
-            <Reveal>
+          <div className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-6 sm:py-16">
+            <FadeContent>
               <h2 className="max-w-2xl text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-                Avanza una necesidad sin perder claridad.
+                De una necesidad difusa a un microproyecto claro.
               </h2>
               <p className="mt-3 max-w-xl text-muted">
-                CampusLab está pensado para retos acotados que necesitan una
-                primera solución, una mirada nueva o una entrega concreta.
+                Para{" "}
+                <strong className="font-semibold text-ink">organizaciones</strong>,{" "}
+                <strong className="font-semibold text-ink">pymes</strong>,{" "}
+                <strong className="font-semibold text-ink">fundaciones</strong> e{" "}
+                <strong className="font-semibold text-ink">instituciones</strong>{" "}
+                con retos acotados que necesitan una primera solución o una
+                entrega concreta.
               </p>
-            </Reveal>
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
+            </FadeContent>
+            <div className="mt-10 grid gap-4 md:grid-cols-3 md:items-stretch">
               {PROPUESTA.map((item, i) => {
-                // La del medio es el diferenciador real: cualquiera promete
-                // "define bien" o "recibe algo útil"; el seguimiento durante
-                // el proceso es lo que distingue a CampusLab de encargar el
-                // trabajo y desaparecer hasta el final.
+                // La del medio es el diferenciador real: el seguimiento durante
+                // el proceso, no solo "define bien" o "recibe algo útil".
                 const destacada = i === 1;
                 return (
-                  <Reveal key={item.titulo} delayMs={i * 80} className="h-full">
-                    <div
-                      className={cn(
-                        "relative flex h-full flex-col gap-3 overflow-hidden rounded-2xl border bg-white p-6 transition-all duration-200",
-                        destacada
-                          ? "border-electric/40 shadow-[0_8px_24px_-12px_rgba(56,103,255,0.3)] md:-translate-y-2 md:hover:-translate-y-2.5 hover:shadow-[0_12px_28px_-12px_rgba(56,103,255,0.4)]"
-                          : "border-border hover:-translate-y-1 hover:border-electric/30 hover:shadow-[0_10px_20px_-12px_rgba(56,103,255,0.25)]",
+                  <FadeContent
+                    key={item.titulo}
+                    delay={0.06 * i}
+                    className="h-full"
+                  >
+                    <GlowCard featured={destacada}>
+                      {destacada ? (
+                        <span className="w-fit rounded-full bg-electric/10 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-electric uppercase">
+                          Diferenciador
+                        </span>
+                      ) : (
+                        <span className="text-xs font-semibold tabular-nums text-muted">
+                          0{i + 1}
+                        </span>
                       )}
-                    >
-                      <span className="relative flex size-9 items-center justify-center rounded-lg bg-electric/10 text-electric">
-                        {item.icono}
-                      </span>
-                      <h3 className="relative font-semibold text-ink">{item.titulo}</h3>
-                      <p className="relative text-sm leading-relaxed text-muted">
+                      <h3 className="text-lg font-semibold text-ink">{item.titulo}</h3>
+                      <p className="text-sm leading-relaxed text-muted">
                         {item.texto}
                       </p>
-                    </div>
-                  </Reveal>
+                    </GlowCard>
+                  </FadeContent>
                 );
               })}
             </div>
@@ -118,25 +136,24 @@ export default function OrganizacionesPage() {
         </section>
 
         {/* 3 · QUÉ TIPO DE DESAFÍOS FUNCIONAN */}
-        <section className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
+        <section className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-6 sm:py-20">
           <Reveal>
             <h2 className="max-w-2xl text-2xl font-bold tracking-tight text-ink sm:text-3xl">
               Los mejores desafíos son concretos y alcanzables.
             </h2>
             <p className="mt-3 max-w-2xl text-muted">
-              No necesitas tener un proyecto completamente resuelto. Basta con
-              una necesidad clara que pueda trabajarse con un objetivo, una
-              duración y un entregable definido.
+              Basta con una necesidad clara: objetivo, duración (2–8 semanas) y
+              entregable definidos. El equipo suele ser de 1 a 5 estudiantes.
             </p>
           </Reveal>
 
           <Reveal delayMs={80}>
-            <p className="mt-10 text-sm font-medium text-ink">
-              Si tu necesidad se parece a alguno de estos ejemplos, probablemente puede
-              convertirse en un microproyecto.
+            <p className="mt-10 max-w-2xl text-sm font-medium leading-relaxed text-ink">
+              Si tu necesidad se parece a alguno de estos ejemplos, probablemente
+              puede convertirse en un microproyecto.
             </p>
             <div className="mt-4">
-              <DesafiosExplorer items={EJEMPLOS} />
+              <DesafiosExplorer items={[...EJEMPLOS_ORGANIZACION]} />
             </div>
           </Reveal>
 
@@ -145,16 +162,58 @@ export default function OrganizacionesPage() {
             <div className="mt-8 rounded-2xl bg-ink px-6 py-8 text-white sm:px-10">
               <p className="max-w-3xl text-lg leading-relaxed">
                 CampusLab no reemplaza un puesto de trabajo ni sirve para
-                proyectos indefinidos. Funciona mejor cuando existe una necesidad
-                concreta, un alcance claro y una entrega que se pueda validar.
+                proyectos indefinidos. Calza cuando el alcance y la entrega se
+                pueden validar.
               </p>
             </div>
           </Reveal>
         </section>
 
+        {/* 3.5 · CONCIENCIA / IMPACTO EN ESTUDIANTES
+            El resto de la landing habla del valor para la org. Este bloque
+            hace explícito el otro lado: al publicar un microproyecto acotado
+            abren una primera experiencia real de colaboración. Sin certificados
+            ni métricas inventadas. */}
+        <section className="bg-surface">
+          <div className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-6 sm:py-16">
+            <FadeContent>
+              <p className="text-xs font-semibold uppercase tracking-wide text-electric">
+                El otro lado del microproyecto
+              </p>
+              <h2 className="mt-2.5 max-w-2xl text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                Cuando publicas un desafío, también abres una puerta.
+              </h2>
+              <p className="mt-3 max-w-2xl text-muted">
+                Muchos estudiantes de primeros años aún no han colaborado en algo
+                real con alcance, plazos y feedback. Un microproyecto tuyo puede
+                ser esa primera práctica segura antes de la práctica formal o el
+                primer trabajo.
+              </p>
+            </FadeContent>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              {IMPACTO_ESTUDIANTES.map((item, i) => (
+                <FadeContent key={item.titulo} delay={0.05 * i}>
+                  <div className="h-full rounded-2xl border border-border bg-white p-5">
+                    <span className="text-xs font-semibold tabular-nums text-muted">
+                      0{i + 1}
+                    </span>
+                    <h3 className="mt-2 text-base font-semibold text-ink">
+                      {item.titulo}
+                    </h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                      {item.texto}
+                    </p>
+                  </div>
+                </FadeContent>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* 4 · CÓMO FUNCIONA */}
-        <section id="como-funciona" className="scroll-mt-28 bg-surface">
-          <div className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
+        <section id="como-funciona" className="scroll-mt-28 bg-white">
+          <div className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-6 sm:py-20">
             {/* El título vive dentro de `ProcessStack` (no acá aparte): tiene
                 que taparse con la tarjeta 1 y quedarse tapado el resto del
                 scroll, y eso lo controla el mismo JS que anima las tarjetas —
@@ -169,7 +228,7 @@ export default function OrganizacionesPage() {
         </section>
 
         {/* 5 · CONFIANZA Y CONTROL */}
-        <section className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
+        <section className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-6 sm:py-20">
           <Reveal>
             <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
               Lo que probablemente te preguntas antes de publicar.
@@ -205,8 +264,22 @@ export default function OrganizacionesPage() {
           </div>
         </section>
 
-        {/* 6 · BLOQUE PILOTO (cercano y humano) */}
-        <section className="mx-auto w-full max-w-5xl px-6 pb-16 sm:pb-20">
+        {/* 6 · FAQ */}
+        <section className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-6 sm:py-20">
+          <Reveal>
+            <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+              Preguntas frecuentes
+            </h2>
+          </Reveal>
+          <Reveal delayMs={80}>
+            <div className="mt-8">
+              <Faq items={FAQ} />
+            </div>
+          </Reveal>
+        </section>
+
+        {/* 7 · BLOQUE PILOTO (CTA final, cercano) */}
+        <section className="mx-auto w-full max-w-5xl px-5 pb-16 sm:px-6 sm:pb-28">
           <Reveal>
             <div className="flex flex-col gap-4 rounded-3xl border border-electric/20 bg-electric/5 p-8 sm:p-12">
               <h2 className="max-w-2xl text-2xl font-bold tracking-tight text-ink sm:text-3xl">
@@ -215,7 +288,7 @@ export default function OrganizacionesPage() {
               <p className="max-w-xl text-muted">
                 Cuéntanos la necesidad tal como la tienes hoy, aunque sea una idea
                 suelta. En esta etapa piloto te acompañamos a acotarla en un desafío
-                concreto antes de publicarlo — sin costo y sin compromiso.
+                concreto antes de publicarlo, sin costo y sin compromiso.
               </p>
               <div className="mt-2">
                 <Link
@@ -232,54 +305,6 @@ export default function OrganizacionesPage() {
           </Reveal>
         </section>
 
-        {/* 7 · FAQ */}
-        <section className="mx-auto w-full max-w-3xl px-6 pb-16 sm:pb-20">
-          <Reveal>
-            <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-              Preguntas frecuentes
-            </h2>
-          </Reveal>
-          <Reveal delayMs={80}>
-            <div className="mt-8">
-              <Faq items={FAQ} />
-            </div>
-          </Reveal>
-        </section>
-
-        {/* 8 · CTA FINAL */}
-        <section className="mx-auto w-full max-w-5xl px-6 pb-20 sm:pb-28">
-          <Reveal>
-            <div className="rounded-3xl border border-border bg-surface px-6 py-16 text-center sm:px-12">
-              <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-                Una necesidad concreta puede convertirse en un avance real.
-              </h2>
-              <p className="mx-auto mt-4 max-w-xl text-muted">
-                Cuéntanos qué necesitas resolver y descubre si puede transformarse
-                en un desafío para CampusLab.
-              </p>
-              <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:flex-wrap sm:gap-6">
-                <Link
-                  href="/contacto"
-                  className={cn(
-                    buttonClasses({ variant: "primary" }),
-                    "h-11 w-full whitespace-nowrap px-6 text-base sm:w-auto",
-                  )}
-                >
-                  Cuéntanos qué necesitas resolver
-                </Link>
-                <Link
-                  href="/proyectos"
-                  className="group inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors hover:text-electric"
-                >
-                  Explorar proyectos
-                  <span className="transition-transform group-hover:translate-x-0.5">
-                    →
-                  </span>
-                </Link>
-              </div>
-            </div>
-          </Reveal>
-        </section>
       </main>
 
       <RevealFooter>
@@ -376,77 +401,43 @@ const TRANSFORMACION = [
   },
 ];
 
-// Propuesta de valor (tres bloques). Iconos lineales simples.
+// Propuesta de valor (tres bloques). Sin iconos: tipografía + chip en la central.
 const PROPUESTA = [
   {
     titulo: "Convierte una necesidad en un desafío claro",
     texto:
-      "Define objetivo, alcance, habilidades y resultado esperado antes de publicar.",
-    icono: (
-      <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-      </svg>
-    ),
+      "Sales con un desafío publicable: objetivo, alcance, habilidades pedidas y resultado esperado.",
   },
   {
     titulo: "Conserva visibilidad durante el proceso",
     texto:
-      "Revisa postulaciones, acompaña hitos y valida el avance cuando corresponde.",
-    icono: (
-      <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    ),
+      "Ves postulaciones, avances por hitos y validaciones en el momento que corresponde, sin improvisar el seguimiento.",
   },
   {
     titulo: "Obtén un resultado utilizable",
     texto:
-      "Recibe un prototipo, análisis, propuesta o entrega concreta para seguir avanzando.",
-    icono: (
-      <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M20 6L9 17l-5-5" />
-      </svg>
-    ),
+      "Cierras con un entregable concreto (prototipo, análisis, propuesta o proceso documentado) alineado a lo que definiste.",
   },
 ];
 
-// Ejemplos de desafíos que funcionan bien. El entregable ilustra el resultado
-// acotado que la organización puede esperar (sin prometer capacidades no
-// implementadas).
-const EJEMPLOS = [
+// Ejemplos: ver `features/organizations/necesidades-ejemplo.ts`
+
+// Impacto en estudiantes: conciencia para la org (sin vender certificado).
+const IMPACTO_ESTUDIANTES = [
   {
-    titulo: "Visualizar datos operativos",
-    texto: "Crear un dashboard inicial para identificar oportunidades.",
-    entregable:
-      "Un tablero con los indicadores clave y una guía breve de lectura.",
+    titulo: "Primera colaboración real",
+    texto:
+      "Practican trabajar con un objetivo, un plazo y alguien del otro lado que valida el avance.",
   },
   {
-    titulo: "Entender la experiencia de clientes",
-    texto: "Investigar puntos de fricción y proponer mejoras.",
-    entregable:
-      "Un mapa de fricciones priorizado con recomendaciones accionables.",
+    titulo: "Ritmo de un proyecto vivo",
+    texto:
+      "Hitos, minutas y feedback puntual: la misma dinámica que después encontrarán en una práctica o un equipo.",
   },
   {
-    titulo: "Diseñar un prototipo digital",
-    texto: "Convertir una idea en un flujo o interfaz inicial.",
-    entregable: "Un flujo navegable o wireframes de las pantallas principales.",
-  },
-  {
-    titulo: "Ordenar un proceso",
-    texto: "Mapear tareas, detectar problemas y proponer una mejora.",
-    entregable:
-      "Un diagrama del proceso actual y una propuesta de mejora concreta.",
-  },
-  {
-    titulo: "Crear una estrategia de contenido",
-    texto: "Definir una base de comunicación para una iniciativa.",
-    entregable: "Un plan base con temas, formatos y un calendario inicial.",
-  },
-  {
-    titulo: "Transformar información en decisiones",
-    texto: "Organizar datos y presentar hallazgos accionables.",
-    entregable: "Un informe con hallazgos y próximos pasos sugeridos.",
+    titulo: "Confianza para el siguiente paso",
+    texto:
+      "Llegan a su práctica o primer trabajo habiendo cerrado algo concreto, no solo ejercicios de clase.",
   },
 ];
 
@@ -454,23 +445,26 @@ const EJEMPLOS = [
 const PASOS: ProcesoPaso[] = [
   {
     titulo: "Cuéntanos tu necesidad",
-    texto: "Describe el problema, contexto y resultado que buscas.",
+    texto:
+      "Describe el problema, el contexto y el resultado que te serviría, aunque aún esté difuso.",
     icon: "mensaje",
   },
   {
     titulo: "Define un desafío acotado",
-    texto: "Aterriza habilidades, duración, modalidad y entregables.",
+    texto:
+      "Aterriza habilidades, duración (2–8 semanas), modalidad y entregables. Antes de publicarse, se revisa el alcance.",
     icon: "objetivo",
   },
   {
     titulo: "Revisa perfiles interesados",
-    texto: "Conoce postulaciones y selecciona según tu necesidad.",
+    texto:
+      "Recibes postulaciones a roles concretos y eliges quién forma el equipo.",
     icon: "personas",
   },
   {
     titulo: "Acompaña y valida",
     texto:
-      "Sigue hitos, entrega retroalimentación y revisa el resultado final.",
+      "Sigues hitos, das retroalimentación puntual y cierras con la validación del entregable.",
     icon: "check",
   },
 ];
@@ -490,7 +484,7 @@ const CONFIANZA = [
   {
     titulo: "Qué recibes al final",
     texto:
-      "Un entregable concreto y usable —un prototipo, un análisis, una propuesta o un proceso documentado— coherente con lo que definiste al publicar.",
+      "Un entregable concreto y usable (un prototipo, un análisis, una propuesta o un proceso documentado), coherente con lo que definiste al publicar.",
   },
   {
     titulo: "Cómo se protege tu información",
@@ -513,34 +507,18 @@ const CONFIANZA = [
 const FAQ = [
   {
     q: "¿Qué tipo de organizaciones pueden participar?",
-    a: "Organizaciones, pymes, emprendimientos, fundaciones e instituciones con una necesidad concreta que pueda trabajarse como un microproyecto acotado.",
+    a: "Organizaciones, pymes, emprendimientos, fundaciones e instituciones con una necesidad concreta que pueda trabajarse como microproyecto.",
   },
   {
     q: "¿Qué tipo de desafíos puedo publicar?",
-    a: "Retos acotados con un objetivo y un entregable claros: análisis de datos, prototipos, investigación, contenido o mejoras de proceso, entre otros.",
+    a: "Retos acotados con objetivo y entregable claros: dashboards, prototipos, investigación, contenido, mejoras de proceso u otros problemas pequeños que no justifiquen una contratación.",
   },
   {
     q: "¿Cuánto puede durar un microproyecto?",
-    a: "Son cortos y acotados, del orden de pocas semanas. Tú defines la duración según el alcance del desafío.",
-  },
-  {
-    q: "¿Qué necesito preparar antes de publicar?",
-    a: "Una necesidad clara: el problema, el contexto, las habilidades que imaginas y el resultado que esperas. No hace falta tener la solución.",
-  },
-  {
-    q: "¿Cómo se revisan las postulaciones?",
-    a: "Recibes las postulaciones de estudiantes interesados con su presentación y habilidades, y seleccionas según tu necesidad.",
-  },
-  {
-    q: "¿Qué ocurre durante el proyecto?",
-    a: "El trabajo avanza por hitos: puedes seguir el progreso, entregar retroalimentación y validar el avance cuando corresponde.",
+    a: "Entre 2 y 8 semanas. Cada estudiante suele dedicar unas 3 a 6 horas semanales; tú defines el alcance al publicar.",
   },
   {
     q: "¿CampusLab reemplaza una contratación?",
-    a: "No. Es una experiencia acotada para resolver un desafío puntual y generar evidencia; no sustituye un empleo ni una contratación.",
-  },
-  {
-    q: "¿Qué pasa si necesito ayuda para definir mi desafío?",
-    a: "En esta etapa piloto podemos ayudarte a identificar si tu necesidad calza con un microproyecto y a definir una primera versión del desafío.",
+    a: "No. Es una experiencia acotada para un desafío puntual con estudiantes; no sustituye un empleo ni una contratación.",
   },
 ];
