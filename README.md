@@ -104,7 +104,7 @@ Corre en local contra Supabase. Falta el **despliegue a producción**, terminar 
 | Backend administrado | **Supabase** | Autenticación, PostgreSQL, almacenamiento y políticas de acceso |
 | Base de datos | **PostgreSQL** | Modelo relacional (proyectos, roles, postulaciones, equipos…) |
 | Seguridad | **Row Level Security** | Permisos por rol y por propiedad del registro, en la base |
-| Correo transaccional | **Supabase Auth** (confirmación/recuperación) + **Brevo** | Confirmación de cuentas, recuperación de contraseña y notificaciones (postulaciones, mensajes, hitos, verificación) |
+| Correo transaccional | **Supabase Auth** (confirmación/recuperación) + **Brevo** | Confirmación de cuentas, recuperación de contraseña y notificaciones (postulaciones, mensajes, hitos, verificación). El envío está encapsulado en un único módulo (`features/notifications/email.ts`), pensado para migrar a **Amazon SES** sin tocar el resto del código |
 | Despliegue | **Vercel** | Entrega continua + dominio propio (HTTPS) |
 | CI/CD | **GitHub Actions** | Despliegue automático de migraciones al mergear a `main` |
 | Diseño | **Figma** | Prototipos y pruebas antes de programar |
