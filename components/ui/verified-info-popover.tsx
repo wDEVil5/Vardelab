@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 
 /**
@@ -25,6 +26,8 @@ const TIPO_EXPLICACION: Record<string, string> = {
 const TIPO_EXPLICACION_DEFAULT =
   "CampusLab confirmó la identidad de esta organización.";
 
+type PopoverPosition = { top: number; left: number };
+
 /**
  * Sello verificado + panel de "qué significa esto" al hacer clic, al estilo
  * del ícono azul de Instagram/X que abre una tarjeta explicativa en vez de
@@ -42,20 +45,48 @@ export function VerifiedInfoBadge({
 }) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLSpanElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<PopoverPosition | null>(null);
 
   useEffect(() => {
     if (!open) return;
+
+    function updatePosition() {
+      const trigger = wrapperRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      // Conserva el ancho original del panel (`w-72`); solo se reduce en
+      // pantallas demasiado angostas para no desbordar el viewport.
+      const width = Math.min(288, window.innerWidth - 32);
+      const center = Math.min(
+        Math.max(rect.left + rect.width / 2, width / 2 + 16),
+        window.innerWidth - width / 2 - 16,
+      );
+      setPosition({ top: rect.bottom + 8, left: center });
+    }
+
     function onPointerDown(e: PointerEvent) {
-      if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (
+        !wrapperRef.current?.contains(target) &&
+        !popoverRef.current?.contains(target)
+      ) {
+        setOpen(false);
+      }
     }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
     }
+    updatePosition();
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, { capture: true, passive: true });
     return () => {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
     };
   }, [open]);
 
@@ -71,21 +102,26 @@ export function VerifiedInfoBadge({
         <VerifiedBadge className={className} />
       </button>
 
-      {open && (
-        <div
-          role="dialog"
-          aria-label="Acerca del sello de verificación"
-          className="absolute left-1/2 top-full z-20 mt-2 w-72 -translate-x-1/2 rounded-xl border border-border bg-white p-4 text-left shadow-lg"
-        >
-          <div className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-            <VerifiedBadge className="pointer-events-none" />
-            Organización verificada
-          </div>
-          <p className="mt-2 text-xs leading-relaxed text-muted">
-            {TIPO_EXPLICACION[tipo] ?? TIPO_EXPLICACION_DEFAULT}
-          </p>
-        </div>
-      )}
+      {open && position && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              ref={popoverRef}
+              role="dialog"
+              aria-label="Acerca del sello de verificación"
+              className="fixed z-100 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl border border-border bg-white p-4 text-left shadow-lg"
+              style={{ top: position.top, left: position.left }}
+            >
+              <div className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+                <VerifiedBadge className="pointer-events-none" />
+                Organización verificada
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-muted">
+                {TIPO_EXPLICACION[tipo] ?? TIPO_EXPLICACION_DEFAULT}
+              </p>
+            </div>,
+            document.body,
+          )
+        : null}
     </span>
   );
 }

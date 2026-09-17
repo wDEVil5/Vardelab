@@ -161,9 +161,18 @@ export default function OrganizacionesPage() {
           <Reveal>
             <div className="mt-8 rounded-2xl bg-ink px-6 py-8 text-white sm:px-10">
               <p className="max-w-3xl text-lg leading-relaxed">
+                Un buen desafío parte de una necesidad real, tiene un beneficiario
+                concreto y termina en un entregable que alguien puede utilizar.
+              </p>
+              <div className="mt-5 grid gap-3 text-sm text-white/75 sm:grid-cols-3 sm:gap-5">
+                <span>Una necesidad que existe.</span>
+                <span>Alguien que usará o revisará el resultado.</span>
+                <span>Un alcance que se puede completar.</span>
+              </div>
+              <p className="mt-5 max-w-3xl border-t border-white/15 pt-5 text-sm leading-relaxed text-white/65">
                 CampusLab no reemplaza un puesto de trabajo ni sirve para
-                proyectos indefinidos. Calza cuando el alcance y la entrega se
-                pueden validar.
+                proyectos indefinidos. El desafío debe poder completarse en un
+                marco formativo de 2 a 8 semanas.
               </p>
             </div>
           </Reveal>
@@ -195,10 +204,7 @@ export default function OrganizacionesPage() {
               {IMPACTO_ESTUDIANTES.map((item, i) => (
                 <FadeContent key={item.titulo} delay={0.05 * i}>
                   <div className="h-full rounded-2xl border border-border bg-white p-5">
-                    <span className="text-xs font-semibold tabular-nums text-muted">
-                      0{i + 1}
-                    </span>
-                    <h3 className="mt-2 text-base font-semibold text-ink">
+                    <h3 className="text-base font-semibold text-ink">
                       {item.titulo}
                     </h3>
                     <p className="mt-1.5 text-sm leading-relaxed text-muted">
@@ -225,6 +231,44 @@ export default function OrganizacionesPage() {
               pasos={PASOS}
             />
           </div>
+        </section>
+
+        {/* 4.5 · SIGUIENTE PASO
+            Hace explícito qué ocurre después del primer contacto sin crear una
+            nueva ruta ni aumentar la fricción del formulario. */}
+        <section className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-6 sm:py-14">
+          <Reveal>
+            <div className="rounded-2xl border border-border bg-surface px-6 py-7 sm:px-8 sm:py-8">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                <div className="max-w-xl">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-electric">
+                    Después de contactarnos
+                  </p>
+                  <h2 className="mt-2 text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                    Te ayudamos a convertir la idea en un desafío publicable.
+                  </h2>
+                </div>
+                <p className="max-w-md text-sm leading-relaxed text-muted">
+                  No tienes que llegar con todo resuelto. Revisamos la necesidad,
+                  conversamos el alcance y te orientamos antes de publicar.
+                </p>
+              </div>
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                {[
+                  "Cuéntanos la necesidad tal como existe hoy.",
+                  "Aterrizamos objetivo, alcance y resultado esperado.",
+                  "Confirmamos si está listo para abrirse a estudiantes.",
+                ].map((item, i) => (
+                  <div key={item} className="flex gap-3 text-sm text-ink">
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-electric/10 text-xs font-semibold text-electric">
+                      {i + 1}
+                    </span>
+                    <span className="pt-0.5">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Reveal>
         </section>
 
         {/* 5 · CONFIANZA Y CONTROL */}
@@ -262,6 +306,25 @@ export default function OrganizacionesPage() {
               </Reveal>
             ))}
           </div>
+          <Reveal delayMs={180}>
+            <div className="mt-10 flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold text-ink">¿Eres docente o mentor?</p>
+                <p className="mt-1 text-sm text-muted">
+                  Ayuda a conectar una necesidad real con una experiencia de aprendizaje.
+                </p>
+              </div>
+              <Link
+                href="/contacto"
+                className="group inline-flex min-h-11 items-center gap-1 text-sm font-medium text-electric transition-colors hover:text-ink"
+              >
+                Conversemos
+                <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
+                  →
+                </span>
+              </Link>
+            </div>
+          </Reveal>
         </section>
 
         {/* 6 · FAQ */}

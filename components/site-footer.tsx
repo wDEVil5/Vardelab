@@ -21,7 +21,7 @@ export function SiteFooter() {
         className="animate-breathe pointer-events-none absolute -top-28 right-0 size-72 rounded-full bg-electric/20 blur-3xl"
         aria-hidden
       />
-      <div className="relative mx-auto w-full max-w-5xl px-5 py-10 sm:px-6 sm:py-12">
+      <div className="relative mx-auto w-full max-w-5xl px-5 py-8 sm:px-6 sm:py-9">
         <div className="flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between sm:gap-12">
           <div className="flex max-w-xs flex-col gap-2">
             <Link href="/" className="font-bold text-white">
@@ -56,12 +56,21 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-10 flex items-center justify-between gap-4 border-t border-white/10 pt-6 text-[11px] text-white/50">
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+        <div className="mt-10 flex flex-col gap-5 border-t border-white/10 pt-6 text-[11px] text-white/50 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-3">
+            <Link
+              href="/terminos"
+              className="transition-colors hover:text-white"
+            >
+              Términos y condiciones
+            </Link>
+            <Link
+              href="/privacidad"
+              className="transition-colors hover:text-white"
+            >
+              Política de privacidad
+            </Link>
             <span>© {new Date().getFullYear()} CampusLab</span>
-            <span aria-hidden className="text-white/25">
-              ·
-            </span>
             <span>Piloto independiente</span>
           </div>
           <span className="flex shrink-0 items-center gap-1 sm:gap-2">
