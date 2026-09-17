@@ -102,12 +102,13 @@ export function RoleCard({
               )}
             </div>
           </div>
-          {apto && (
-            <span className="inline-flex shrink-0 items-center rounded-full bg-sprout/15 px-2.5 py-0.5 text-[11px] font-medium text-sprout sm:text-xs">
-              Apto sin experiencia
-            </span>
-          )}
         </div>
+
+        {apto && (
+          <span className="inline-flex w-fit max-w-full items-center rounded-full bg-sprout/15 px-2.5 py-0.5 text-[11px] font-medium text-sprout sm:text-xs">
+            Apto sin experiencia
+          </span>
+        )}
 
         {rol.descripcion && (
           <p className="line-clamp-2 flex-1 text-sm leading-relaxed text-muted lg:text-xs">
