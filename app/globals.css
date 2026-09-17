@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Cuando se abre el avatar o la hamburguesa, el menú pasa a ser el foco
+   visual: la barra deja temporalmente la forma de píldora. `aria-expanded`
+   también mantiene el comportamiento accesible y al cerrar restaura todo. */
+.site-header-pill:has(button[aria-expanded="true"]) {
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
 /* Oculta la barra de scroll (manteniendo el scroll) en todos los navegadores. */
 @utility scrollbar-none {
   scrollbar-width: none;
@@ -182,4 +191,3 @@ body {
     animation: principio-reveal 620ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
 }
-
