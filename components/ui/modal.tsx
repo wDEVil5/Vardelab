@@ -84,16 +84,22 @@ export function Modal({
 
   return createPortal(
     <AnimatePresence>
-    {open && <motion.div key="modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      transition={{ duration: reduce ? 0 : 0.18 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    {open && <motion.div key="modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Fondo atenuado y difuminado; un clic cierra. */}
-      <button
+      <motion.button
         type="button"
         aria-label="Cerrar"
         onClick={onClose}
         disabled={busy}
         tabIndex={-1}
-        className="absolute inset-0 cursor-default bg-ink/40 backdrop-blur-sm"
+        initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+        animate={{
+          opacity: 1,
+          backdropFilter: reduce ? "blur(0px)" : "blur(4px)",
+        }}
+        exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+        transition={{ duration: reduce ? 0 : 0.18, ease: "easeOut" }}
+        className="absolute inset-0 cursor-default bg-ink/40 will-change-[opacity,backdrop-filter]"
       />
 
       {/* Recuadro */}
