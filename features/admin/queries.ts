@@ -1,29 +1,7 @@
+import type { User } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-
-const ESTADOS_PROYECTO = [
-  "borrador",
-  "en_revision",
-  "publicado",
-  "seleccion",
-  "activo",
-  "revision_final",
-  "completado",
-  "suspendido",
-  "cancelado",
-] as const;
-
-const ETIQUETA_ESTADO: Record<(typeof ESTADOS_PROYECTO)[number], string> = {
-  borrador: "Borrador",
-  en_revision: "En revisión",
-  publicado: "Publicado",
-  seleccion: "Selección",
-  activo: "Activo",
-  revision_final: "Revisión final",
-  completado: "Completado",
-  suspendido: "Suspendido",
-  cancelado: "Cancelado",
-};
+import { ESTADOS_PROYECTO, ETIQUETA_ESTADO } from "@/features/admin/project-status";
 
 /** Meta orientativa del piloto (PRD §15): 7+ proyectos completados. */
 const META_NORTH_STAR = 7;
@@ -126,23 +104,35 @@ function estaSuspendido(bannedUntil: string | null | undefined): boolean {
  * `applicant`/`user_id` en estas tablas apunta a `auth.users`, no a una tabla
  * con la que PostgREST pueda anidar el `select`.
  *
- * `auth.admin.listUsers` pagina de a 1000; a escala de piloto alcanza con una
- * página. Con más usuarios habría que iterar páginas.
+ * `auth.admin.listUsers` pagina de a 1000 como máximo por request — con más
+ * de 1000 cuentas (hallazgo de la prueba de carga: 3.005 usuarios sintéticos)
+ * una sola llamada truncaba en silencio, sin error, mostrando/contando solo
+ * las primeras 1000. Se itera hasta agotar las páginas.
  */
 export async function getUsersForAdmin() {
   const supabase = createAdminClient();
 
-  const [{ data: authData, error: authError }, { data: perfiles }, { data: roles }] =
-    await Promise.all([
-      supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-      supabase.from("profiles").select("id, nombre, carrera"),
-      supabase.from("user_roles").select("user_id, role"),
-    ]);
-
-  if (authError) {
-    console.error("[getUsersForAdmin]", authError.message);
-    return [];
+  // Mapa por id, no arreglo: `listUsers` pagina por offset sobre un orden que
+  // puede tener empates (varias cuentas con el mismo `created_at` exacto, ej.
+  // una siembra masiva) — sin una clave de desempate estable, el mismo id
+  // puede repetirse entre páginas. Deduplicar acá evita esa fila duplicada
+  // (y el "two children with the same key" que React tira con ids repetidos).
+  const authUsersPorId = new Map<string, User>();
+  for (let page = 1; ; page++) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) {
+      console.error("[getUsersForAdmin]", error.message);
+      return [];
+    }
+    for (const u of data.users) authUsersPorId.set(u.id, u);
+    if (data.users.length < 1000) break;
   }
+  const authUsers = Array.from(authUsersPorId.values());
+
+  const [{ data: perfiles }, { data: roles }] = await Promise.all([
+    supabase.from("profiles").select("id, nombre, carrera"),
+    supabase.from("user_roles").select("user_id, role"),
+  ]);
 
   const perfilPorId = new Map((perfiles ?? []).map((p) => [p.id, p]));
   const rolesPorUsuario = new Map<string, string[]>();
@@ -152,7 +142,7 @@ export async function getUsersForAdmin() {
     rolesPorUsuario.set(r.user_id, lista);
   }
 
-  return authData.users
+  return authUsers
     .map((u) => {
       const perfil = perfilPorId.get(u.id);
       const rolesUsuario = rolesPorUsuario.get(u.id) ?? [];
@@ -421,31 +411,94 @@ export type ConfigChangeHistory = Awaited<ReturnType<typeof getConfigChangeHisto
  * incluye `has_role(auth.uid(), 'admin')` desde M3. Cliente normal: no hace
  * falta `service_role`, la RLS ya alcanza.
  */
-export async function getProjectsForAdmin() {
+// La tabla llena el alto disponible con scroll interno propio (ver
+// `ProjectsTable`/`admin/proyectos/page.tsx`), así que un tamaño generoso no
+// rompe el layout: en pantallas altas se ven más filas sin scrollear, en
+// pantallas bajas scrollea dentro de su caja sin mover la paginación.
+export const ADMIN_PROJECTS_PAGE_SIZE = 30;
+
+/**
+ * Página de la lista de proyectos del piloto para el admin (D-01), con
+ * búsqueda (título u organización) y filtro de estado resueltos en SQL
+ * (`admin_projects_page`, M79) — reemplaza traer TODOS los proyectos y
+ * filtrar/renderizar la tabla completa en el cliente, que con volumen real
+ * se vuelve una lista interminable (ver prueba de carga, BACKEND.md).
+ */
+export async function getProjectsForAdminPage(
+  page: number,
+  filters: { q?: string; status?: string },
+) {
   const supabase = await createClient();
+  const offset = Math.max(page - 1, 0) * ADMIN_PROJECTS_PAGE_SIZE;
+
+  const { data: matches, error: matchError } = await supabase.rpc(
+    "admin_projects_page",
+    {
+      _q: filters.q?.trim() || undefined,
+      _status: filters.status || undefined,
+      _limit: ADMIN_PROJECTS_PAGE_SIZE,
+      _offset: offset,
+    },
+  );
+
+  if (matchError) {
+    console.error("[admin_projects_page]", matchError.message);
+    return { proyectos: [], total: 0, pageSize: ADMIN_PROJECTS_PAGE_SIZE };
+  }
+
+  const orderedIds = (matches ?? []).map((m) => m.id);
+  if (orderedIds.length === 0) {
+    // Igual que en el catálogo público (M78): el total viaja en las filas
+    // devueltas, así que una página fuera de rango (0 filas) necesita una
+    // segunda consulta liviana para no reportar "0 resultados" de más.
+    if (offset > 0) {
+      const { data: primera } = await supabase.rpc("admin_projects_page", {
+        _q: filters.q?.trim() || undefined,
+        _status: filters.status || undefined,
+        _limit: 1,
+        _offset: 0,
+      });
+      return {
+        proyectos: [],
+        total: primera?.[0] ? Number(primera[0].total_count) : 0,
+        pageSize: ADMIN_PROJECTS_PAGE_SIZE,
+      };
+    }
+    return { proyectos: [], total: 0, pageSize: ADMIN_PROJECTS_PAGE_SIZE };
+  }
+
+  const total = Number(matches?.[0]?.total_count ?? 0);
 
   const { data, error } = await supabase
     .from("projects")
     .select("id, titulo, status, created_at, org:organizations ( nombre )")
-    .order("created_at", { ascending: false });
+    .in("id", orderedIds);
 
   if (error) {
-    console.error("[getProjectsForAdmin]", error.message);
-    return [];
+    console.error("[getProjectsForAdminPage]", error.message);
+    return { proyectos: [], total: 0, pageSize: ADMIN_PROJECTS_PAGE_SIZE };
   }
 
-  return (data ?? []).map((p) => ({
-    id: p.id,
-    titulo: p.titulo,
-    status: p.status,
-    etiquetaEstado:
-      ETIQUETA_ESTADO[p.status as (typeof ESTADOS_PROYECTO)[number]] ?? p.status,
-    orgNombre: p.org?.nombre ?? "(sin organización)",
-    createdAt: p.created_at,
-  }));
+  const porId = new Map((data ?? []).map((p) => [p.id, p]));
+  const proyectos = orderedIds
+    .map((id) => porId.get(id))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p))
+    .map((p) => ({
+      id: p.id,
+      titulo: p.titulo,
+      status: p.status,
+      etiquetaEstado:
+        ETIQUETA_ESTADO[p.status as (typeof ESTADOS_PROYECTO)[number]] ?? p.status,
+      orgNombre: p.org?.nombre ?? "(sin organización)",
+      createdAt: p.created_at,
+    }));
+
+  return { proyectos, total, pageSize: ADMIN_PROJECTS_PAGE_SIZE };
 }
 
-export type AdminProjectRow = Awaited<ReturnType<typeof getProjectsForAdmin>>[number];
+export type AdminProjectRow = Awaited<
+  ReturnType<typeof getProjectsForAdminPage>
+>["proyectos"][number];
 
 /**
  * Detalle de un proyecto para `/admin/proyectos/[id]`: solo lectura + acceso
@@ -563,38 +616,115 @@ export const VERIFICACION_LABEL: Record<string, string> = {
   sin_verificar: "Sin verificar",
 };
 
+// Igual que en /admin/proyectos (M79): la tabla llena el alto disponible con
+// scroll interno propio, así que un tamaño generoso no rompe el layout.
+export const ADMIN_ORGS_PAGE_SIZE = 30;
+
 /**
- * Todas las organizaciones del piloto, para `/admin/organizaciones`. Mismo
- * hallazgo que con proyectos: la RLS `organizations_select_all` ya deja ver
- * cualquier organización a cualquiera (son datos públicos), pero no había
- * ninguna pantalla de admin que las listara — mucho menos una forma de
- * aprobar o rechazar una solicitud de verificación (M62).
+ * Página de organizaciones del piloto para `/admin/organizaciones` (M80), con
+ * búsqueda (nombre) y filtro de verificación resueltos en SQL
+ * (`admin_organizations_page`) — reemplaza traer TODAS las organizaciones y
+ * filtrarlas en el cliente. Mismo hallazgo que con proyectos (M79): la RLS
+ * `organizations_select_all` ya deja ver cualquier organización a cualquiera
+ * (son datos públicos), pero no había ninguna pantalla de admin que las
+ * listara — mucho menos una forma de aprobar o rechazar una solicitud de
+ * verificación (M62).
  */
-export async function getOrganizationsForAdmin() {
+export async function getOrganizationsForAdminPage(
+  page: number,
+  filters: { q?: string; verificacion?: string },
+) {
   const supabase = await createClient();
+  const offset = Math.max(page - 1, 0) * ADMIN_ORGS_PAGE_SIZE;
+
+  const { data: matches, error: matchError } = await supabase.rpc(
+    "admin_organizations_page",
+    {
+      _q: filters.q?.trim() || undefined,
+      _verificacion: filters.verificacion || undefined,
+      _limit: ADMIN_ORGS_PAGE_SIZE,
+      _offset: offset,
+    },
+  );
+
+  if (matchError) {
+    console.error("[admin_organizations_page]", matchError.message);
+    return { orgs: [], total: 0, pageSize: ADMIN_ORGS_PAGE_SIZE };
+  }
+
+  const orderedIds = (matches ?? []).map((m) => m.id);
+  if (orderedIds.length === 0) {
+    // Igual que en catálogo/proyectos admin: el total viaja en las filas
+    // devueltas, así que una página fuera de rango necesita una segunda
+    // consulta liviana para no reportar "0 resultados" de más.
+    if (offset > 0) {
+      const { data: primera } = await supabase.rpc("admin_organizations_page", {
+        _q: filters.q?.trim() || undefined,
+        _verificacion: filters.verificacion || undefined,
+        _limit: 1,
+        _offset: 0,
+      });
+      return {
+        orgs: [],
+        total: primera?.[0] ? Number(primera[0].total_count) : 0,
+        pageSize: ADMIN_ORGS_PAGE_SIZE,
+      };
+    }
+    return { orgs: [], total: 0, pageSize: ADMIN_ORGS_PAGE_SIZE };
+  }
+
+  const total = Number(matches?.[0]?.total_count ?? 0);
 
   const { data, error } = await supabase
     .from("organizations")
     .select("id, nombre, tipo, verificacion, created_at")
-    .order("created_at", { ascending: false });
+    .in("id", orderedIds);
 
   if (error) {
-    console.error("[getOrganizationsForAdmin]", error.message);
-    return [];
+    console.error("[getOrganizationsForAdminPage]", error.message);
+    return { orgs: [], total: 0, pageSize: ADMIN_ORGS_PAGE_SIZE };
   }
 
-  return (data ?? []).map((o) => ({
-    id: o.id,
-    nombre: o.nombre,
-    tipo: o.tipo,
-    etiquetaTipo: ORG_TIPO_LABEL[o.tipo] ?? o.tipo,
-    verificacion: o.verificacion,
-    etiquetaVerificacion: VERIFICACION_LABEL[o.verificacion] ?? o.verificacion,
-    createdAt: o.created_at,
-  }));
+  const porId = new Map((data ?? []).map((o) => [o.id, o]));
+  const orgs = orderedIds
+    .map((id) => porId.get(id))
+    .filter((o): o is NonNullable<typeof o> => Boolean(o))
+    .map((o) => ({
+      id: o.id,
+      nombre: o.nombre,
+      tipo: o.tipo,
+      etiquetaTipo: ORG_TIPO_LABEL[o.tipo] ?? o.tipo,
+      verificacion: o.verificacion,
+      etiquetaVerificacion: VERIFICACION_LABEL[o.verificacion] ?? o.verificacion,
+      createdAt: o.created_at,
+    }));
+
+  return { orgs, total, pageSize: ADMIN_ORGS_PAGE_SIZE };
 }
 
-export type AdminOrgRow = Awaited<ReturnType<typeof getOrganizationsForAdmin>>[number];
+export type AdminOrgRow = Awaited<
+  ReturnType<typeof getOrganizationsForAdminPage>
+>["orgs"][number];
+
+/**
+ * Cantidad de organizaciones esperando verificación, para el aviso de arriba
+ * de `/admin/organizaciones` — independiente de la página/filtro actual de
+ * la tabla (antes salía de contar en memoria sobre TODAS las organizaciones
+ * ya traídas; con paginación real no hay "todas" en memoria para eso).
+ */
+export async function getPendingOrgVerificationCount() {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("organizations")
+    .select("id", { count: "exact", head: true })
+    .eq("verificacion", "en_revision");
+
+  if (error) {
+    console.error("[getPendingOrgVerificationCount]", error.message);
+    return 0;
+  }
+  return count ?? 0;
+}
 
 /**
  * Detalle de una organización para `/admin/organizaciones/[id]`: solo
