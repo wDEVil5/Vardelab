@@ -32,7 +32,10 @@ export const metadata: Metadata = {
  * métricas, testimonios ni logos ficticios.
  */
 export default async function Home() {
-  const publicados = await getPublishedProjects();
+  // Acotado a 30 (no el catálogo entero): esta página solo muestra hasta 3
+  // destacados y hasta 3 con cupo abierto — traer los 6000+ del catálogo real
+  // para descartar casi todo era el mismo anti-patrón ya resuelto en /proyectos.
+  const publicados = await getPublishedProjects(30);
   // Destacados: hasta 3 tarjetas, consistentes con el catálogo (P-02).
   const destacados = publicados.slice(0, 3);
   // Hero: pocos proyectos con cupo abierto real (calmo; máx. 3).

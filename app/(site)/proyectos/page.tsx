@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getPublishedProjects } from "@/features/projects/queries";
 import {
-  filterProjects,
-  projectSkillFacets,
-  type ProjectFilters,
-} from "@/features/projects/filters";
+  getCatalogSkillFacets,
+  getPublishedProjectsPage,
+} from "@/features/projects/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { CatalogSearch } from "@/features/projects/components/catalog-search";
+import { Pagination } from "@/components/pagination";
 import { ChipScroller } from "@/components/chip-scroller";
 import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 import { cn } from "@/lib/utils";
+
+type ProjectFilters = { q?: string; skill?: string; modalidad?: string };
 
 export const metadata: Metadata = {
   title: "Proyectos · CampusLab",
@@ -32,29 +33,54 @@ const MODALIDADES: { value: string; label: string }[] = [
 ];
 
 type PageProps = {
-  searchParams: Promise<{ q?: string; skill?: string; modalidad?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    skill?: string;
+    modalidad?: string;
+    page?: string;
+  }>;
 };
 
 /**
- * P-02 · Catálogo público de proyectos, con búsqueda y filtros.
- * Server Component: los proyectos se resuelven por SSR (la RLS limita a
- * publicados) y el filtrado se aplica sobre los `searchParams` de la URL.
+ * P-02 · Catálogo público de proyectos, con búsqueda, filtros y paginación
+ * real (M78): búsqueda/filtros/orden/paginación se resuelven en SQL
+ * (`getPublishedProjectsPage`), no trayendo el catálogo completo a memoria.
  */
 export default async function ProyectosPage({ searchParams }: PageProps) {
-  const filters = (await searchParams) as ProjectFilters;
-  const todos = await getPublishedProjects();
+  const rawParams = await searchParams;
+  const filters: ProjectFilters = {
+    q: rawParams.q,
+    skill: rawParams.skill,
+    modalidad: rawParams.modalidad,
+  };
+  const page = Math.max(1, Number.parseInt(rawParams.page ?? "1", 10) || 1);
 
-  const skills = projectSkillFacets(todos);
-  const projects = filterProjects(todos, filters);
+  const [skills, { projects, total, pageSize }] = await Promise.all([
+    getCatalogSkillFacets(),
+    getPublishedProjectsPage(page, filters),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const filtrando = Boolean(filters.q || filters.skill || filters.modalidad);
 
-  // Arma un href de /proyectos conservando el resto de filtros y alternando uno.
+  // Arma un href de /proyectos conservando el resto de filtros y alternando
+  // uno — cambiar cualquier filtro vuelve a la página 1.
   const hrefCon = (cambios: Partial<ProjectFilters>) => {
     const merged = { ...filters, ...cambios };
     const sp = new URLSearchParams();
     if (merged.q) sp.set("q", merged.q);
     if (merged.skill) sp.set("skill", merged.skill);
     if (merged.modalidad) sp.set("modalidad", merged.modalidad);
+    const qs = sp.toString();
+    return qs ? `/proyectos?${qs}` : "/proyectos";
+  };
+
+  const hrefForPage = (n: number) => {
+    const sp = new URLSearchParams();
+    if (filters.q) sp.set("q", filters.q);
+    if (filters.skill) sp.set("skill", filters.skill);
+    if (filters.modalidad) sp.set("modalidad", filters.modalidad);
+    if (n > 1) sp.set("page", String(n));
     const qs = sp.toString();
     return qs ? `/proyectos?${qs}` : "/proyectos";
   };
@@ -135,10 +161,7 @@ export default async function ProyectosPage({ searchParams }: PageProps) {
           {/* Conteo + limpiar filtros */}
           <div className="mt-8 flex items-center justify-between gap-3">
             <p className="text-lg font-semibold text-ink">
-              {projects.length}{" "}
-              {projects.length === 1
-                ? "oportunidad abierta"
-                : "oportunidades abiertas"}
+              {total} {total === 1 ? "oportunidad abierta" : "oportunidades abiertas"}
             </p>
             {filtrando && (
               <Link
@@ -181,11 +204,19 @@ export default async function ProyectosPage({ searchParams }: PageProps) {
               )}
             </div>
           ) : (
-            <section className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {projects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
-            </section>
+            <>
+              <section className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {projects.map((project) => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </section>
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                hrefForPage={hrefForPage}
+                label="Paginación del catálogo"
+              />
+            </>
           )}
         </div>
       </main>

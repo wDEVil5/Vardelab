@@ -1010,9 +1010,39 @@ export type Database = {
           project_role_id: string
         }[]
       }
+      admin_organizations_page: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _q?: string
+          _verificacion?: string
+        }
+        Returns: {
+          id: string
+          total_count: number
+        }[]
+      }
+      admin_projects_page: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _q?: string
+          _status?: string
+        }
+        Returns: {
+          id: string
+          total_count: number
+        }[]
+      }
       can_manage_project: { Args: { _project_id: string }; Returns: boolean }
       can_manage_role: { Args: { _role_id: string }; Returns: boolean }
       can_manage_team: { Args: { _team_id: string }; Returns: boolean }
+      catalog_skill_facets: {
+        Args: never
+        Returns: {
+          nombre: string
+        }[]
+      }
       completed_projects_count: {
         Args: { _profile_id: string }
         Returns: number
@@ -1030,6 +1060,26 @@ export type Database = {
       is_project_member: { Args: { _project_id: string }; Returns: boolean }
       is_team_member: { Args: { _team_id: string }; Returns: boolean }
       manages_applicant: { Args: { _applicant_id: string }; Returns: boolean }
+      moderation_queue_page: {
+        Args: {
+          _limit?: number
+          _modalidad?: string
+          _offset?: number
+          _q?: string
+        }
+        Returns: {
+          id: string
+          total_count: number
+        }[]
+      }
+      moderation_queue_stats: {
+        Args: never
+        Returns: {
+          cupos_abiertos: number
+          organizaciones: number
+          pendientes: number
+        }[]
+      }
       notificar_hitos_por_vencer: { Args: never; Returns: undefined }
       org_recipient_ids: { Args: { _org_id: string }; Returns: string[] }
       organization_member_roles: {
@@ -1044,6 +1094,19 @@ export type Database = {
       pilot_moderacion_obligatoria: { Args: never; Returns: boolean }
       pilot_permite_patrocinadores_externos: { Args: never; Returns: boolean }
       pilot_registro_abierto: { Args: never; Returns: boolean }
+      search_published_projects: {
+        Args: {
+          _limit?: number
+          _modalidad?: string
+          _offset?: number
+          _q?: string
+          _skill?: string
+        }
+        Returns: {
+          id: string
+          total_count: number
+        }[]
+      }
       set_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
