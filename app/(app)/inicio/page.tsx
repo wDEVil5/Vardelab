@@ -51,9 +51,8 @@ export default async function InicioPage() {
   const evaluaciones = dashboard?.evaluaciones ?? [];
 
   // Recomendados solo cuando no hay proyecto activo (para no cargar de más).
-  const recomendados = activo
-    ? []
-    : (await getPublishedProjects()).slice(0, 3);
+  // `getPublishedProjects(30)`, no el catálogo entero: solo se muestran 3.
+  const recomendados = activo ? [] : (await getPublishedProjects(30)).slice(0, 3);
 
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-8 lg:py-10">
