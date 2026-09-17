@@ -5,10 +5,11 @@ import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/reveal";
 import { Faq } from "@/components/faq";
 import { FadeContent } from "@/components/fade-content";
+import { ProcessStack, type ProcesoPaso } from "@/components/process-stack";
 import {
-  ScrollPrinciples,
-  type Principio,
-} from "@/components/scroll-principles-horizontal";
+  PrinciplesShowcase,
+  type PrincipleShowcaseItem,
+} from "@/components/principles-showcase";
 import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 import { getPublishedProjects } from "@/features/projects/queries";
@@ -138,36 +139,10 @@ export default async function Home() {
       {/* 4 · CÓMO FUNCIONA (flujo del estudiante como protagonista) */}
       <section id="como-funciona" className="scroll-mt-20 bg-white sm:scroll-mt-32">
         <div className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-6 sm:py-16">
-          <Reveal>
-            <span className="text-xs font-semibold uppercase tracking-wide text-electric">
-              Para estudiantes
-            </span>
-            <h2 className="mt-3 max-w-2xl text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-              Así empiezas, paso a paso.
-            </h2>
-            <p className="mt-3 max-w-xl text-muted">
-              Perfil, postulación a un rol y trabajo por hitos junto a la
-              organización.
-            </p>
-          </Reveal>
-
-          <div className="mt-10 grid gap-4 md:grid-cols-3 md:gap-5">
-            {PASOS_ESTUDIANTE.map((paso, i) => (
-              <Reveal key={paso.titulo} delayMs={i * 60} className="h-full">
-                <div className="group flex h-full flex-col rounded-2xl border border-border bg-surface/80 p-6 transition-colors duration-200 hover:bg-white sm:p-7">
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-electric/10 text-sm font-bold text-electric transition-colors duration-200 group-hover:bg-electric group-hover:text-white">
-                    {i + 1}
-                  </span>
-                  <h3 className="mt-5 text-lg font-semibold text-ink">
-                    {paso.titulo}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">
-                    {paso.texto}
-                  </p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+          <ProcessStack
+            titulo="Así empiezas, paso a paso."
+            pasos={PASOS_ESTUDIANTE}
+          />
         </div>
       </section>
 
@@ -284,7 +259,56 @@ export default async function Home() {
       </section>
 
       {/* 5 · PRINCIPIOS (espacio diferenciador, anclado con scroll storytelling) */}
-      <ScrollPrinciples items={PRINCIPIOS} />
+      <PrinciplesShowcase items={PRINCIPIOS} />
+
+      {/* 5.5 · RESULTADO PARA EL ESTUDIANTE
+          Refuerza qué queda al finalizar sin sumar otra sección pesada. */}
+      <section className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-6 sm:py-14">
+        <Reveal>
+          <div className="rounded-2xl border border-border bg-surface px-6 py-7 sm:px-8 sm:py-8">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-wide text-electric">
+                Al terminar
+              </p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                Qué puedes mostrar después de colaborar.
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
+                No te llevas solo una experiencia: terminas con evidencia concreta
+                de lo que hiciste y aprendiste.
+              </p>
+            </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                "Un entregable real para mostrar.",
+                "Tu contribución descrita con claridad.",
+                "Retroalimentación sobre el proceso.",
+                "Una experiencia documentada para tu portafolio.",
+              ].map((item) => (
+                <div key={item} className="flex gap-2.5 text-sm text-ink">
+                  <span
+                    className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-sprout/20 text-sprout"
+                    aria-hidden
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="size-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                  </span>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Reveal>
+      </section>
 
       {/* 6 · PREGUNTAS FRECUENTES */}
       <section className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-6 sm:py-16">
@@ -370,7 +394,7 @@ const FAQ = [
 
 // Principios de CampusLab (sección diferenciadora). Cada uno con un ejemplo
 // concreto y verdadero ("en la práctica"), atado a una funcionalidad real.
-const PRINCIPIOS: Principio[] = [
+const PRINCIPIOS: PrincipleShowcaseItem[] = [
   {
     icon: "alcance",
     titulo: "Alcance definido",
@@ -405,20 +429,23 @@ const PRINCIPIOS: Principio[] = [
 ];
 
 // Pasos del flujo del estudiante (protagonista de "Cómo funciona").
-const PASOS_ESTUDIANTE = [
+const PASOS_ESTUDIANTE: ProcesoPaso[] = [
   {
     titulo: "Crea tu perfil",
     texto:
       "Regístrate y completa lo básico: carrera, habilidades e intereses, para poder postular.",
+    icon: "personas",
   },
   {
     titulo: "Postula a un rol abierto",
     texto:
       "Elige un desafío acotado y un rol concreto; hay opciones marcadas apto sin experiencia.",
+    icon: "objetivo",
   },
   {
     titulo: "Colabora por hitos",
     texto:
       "Trabajas con el equipo y la organización: avances por etapas, con seguimiento visible.",
+    icon: "check",
   },
 ];
