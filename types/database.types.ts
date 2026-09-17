@@ -792,6 +792,24 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          intentos: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          intentos?: number
+          key: string
+          window_start?: string
+        }
+        Update: {
+          intentos?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           created_at: string
@@ -1042,6 +1060,10 @@ export type Database = {
         Returns: {
           nombre: string
         }[]
+      }
+      check_rate_limit: {
+        Args: { _key: string; _max_intentos: number; _window_seconds: number }
+        Returns: boolean
       }
       completed_projects_count: {
         Args: { _profile_id: string }

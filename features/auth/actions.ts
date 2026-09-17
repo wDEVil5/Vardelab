@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isPasswordValid } from "@/features/auth/password";
 import { SITE_URL } from "@/lib/site";
+import { checkRateLimit, getClientIp, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit";
 
 /**
  * Acciones de autenticación (Server Actions).
@@ -45,6 +46,13 @@ export async function signUp(
   }
   if (!ROLES_AUTOSERVICIO.includes(rol as (typeof ROLES_AUTOSERVICIO)[number])) {
     return { error: "Selecciona un tipo de cuenta válido." };
+  }
+
+  // 5 registros por IP cada hora: acota la creación masiva de cuentas sin
+  // afectar a alguien que se equivoca un par de veces con su propio correo.
+  const ip = await getClientIp();
+  if (!(await checkRateLimit("signup:ip", ip, 5, 3600))) {
+    return { error: RATE_LIMIT_MESSAGE };
   }
 
   const supabase = await createClient();
@@ -95,6 +103,16 @@ export async function signIn(
     return { error: "Ingresa tu correo y contraseña." };
   }
 
+  // Doble límite: por IP (frena ataques distribuidos) y por correo (frena
+  // fuerza bruta dirigida a una sola cuenta desde muchas IPs distintas).
+  const ip = await getClientIp();
+  if (!(await checkRateLimit("login:ip", ip, 20, 900))) {
+    return { error: RATE_LIMIT_MESSAGE };
+  }
+  if (!(await checkRateLimit("login:email", email, 8, 900))) {
+    return { error: RATE_LIMIT_MESSAGE };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
@@ -127,6 +145,18 @@ export async function requestPasswordReset(
 ): Promise<ResetRequestState> {
   const email = String(formData.get("email") ?? "").trim();
   if (!email) return { error: "Ingresa tu correo." };
+
+  // Por IP y por correo: evita tanto que alguien reviente el límite de envíos
+  // de Supabase probando muchos correos, como que "bombardeen" una cuenta
+  // ajena de recuperaciones. El mensaje sigue siendo el mismo `{ ok: true }`
+  // de siempre — no delata si el límite saltó por rate limit o por éxito.
+  const ip = await getClientIp();
+  if (!(await checkRateLimit("reset:ip", ip, 10, 900))) {
+    return { ok: true };
+  }
+  if (!(await checkRateLimit("reset:email", email, 3, 900))) {
+    return { ok: true };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
