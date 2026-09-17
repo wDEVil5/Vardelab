@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { evaluateMember, type EvaluateState } from "@/features/evaluations/actions";
 import { Badge } from "@/components/ui/badge";
+import { ActionSuccess } from "@/components/ui/action-success";
 import { Textarea } from "@/components/ui/textarea";
 import { SubmitButton } from "@/features/auth/components/submit-button";
 import { cn } from "@/lib/utils";
@@ -40,10 +41,10 @@ function StarRating({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-sm text-ink">{label}</span>
         <div
-          className="flex items-center gap-0.5"
+          className="flex max-w-full flex-wrap items-center gap-0.5"
           onMouseLeave={() => setHover(null)}
         >
           <input type="hidden" name={name} value={value} />
@@ -55,9 +56,9 @@ function StarRating({
                 type="button"
                 onClick={() => onChange(n)}
                 onMouseEnter={() => setHover(n)}
-                aria-label={`${n} de 5`}
+                aria-label={`${label}: ${n} de 5`}
                 aria-pressed={value >= n}
-                className="p-0.5 transition-transform hover:scale-110"
+                className="flex size-11 items-center justify-center rounded-md transition-transform motion-safe:hover:scale-110 focus-visible:outline-2 focus-visible:outline-electric"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -102,7 +103,7 @@ export function MemberEvaluationForm({
   const [open, setOpen] = useState(false);
 
   return (
-    <li className="flex flex-col rounded-lg border border-border bg-white transition-all hover:border-electric/30 hover:shadow-sm">
+    <li className="flex min-w-0 flex-col rounded-lg border border-border bg-white transition-colors hover:border-electric/30">
       {/* Fila resumen: con muchos integrantes, mostrar el formulario completo
           de cada uno haría la lista interminable — colapsada por defecto,
           se abre una a la vez al hacer clic. */}
@@ -117,13 +118,13 @@ export function MemberEvaluationForm({
           }
         }}
         aria-expanded={open}
-        className="flex cursor-pointer items-center justify-between gap-4 p-7 text-left"
+        className="flex min-w-0 cursor-pointer flex-col gap-3 rounded-lg p-4 text-left focus-visible:outline-2 focus-visible:outline-electric"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-ink">
             {iniciales(member.nombre)}
           </span>
-          <div className="flex flex-col gap-0.5">
+          <div className="flex min-w-0 flex-col gap-0.5 break-words">
             {/* Este integrante llegó al equipo aceptando una postulación a
                 este mismo proyecto, así que el gestor que evalúa ya tiene
                 permiso de ver su perfil completo por RLS (M13) sea público
@@ -140,8 +141,8 @@ export function MemberEvaluationForm({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2.5">
-          {member.rol && <Badge tone="brand">{member.rol}</Badge>}
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          {member.rol && <Badge tone="brand" className="max-w-full shrink whitespace-normal break-words">{member.rol}</Badge>}
           <Badge tone={yaEvaluado ? "success" : "neutral"}>
             {yaEvaluado ? "Evaluado" : "Pendiente"}
           </Badge>
@@ -166,12 +167,12 @@ export function MemberEvaluationForm({
           open ? "grid-rows-[1fr] border-border" : "grid-rows-[0fr] border-transparent",
         )}
       >
-      <div className="overflow-hidden">
-      <form action={formAction} className="flex flex-col gap-5 p-7">
+      <div className="overflow-hidden" inert={!open}>
+      <form action={formAction} className="flex min-w-0 flex-col gap-5 p-4">
         <input type="hidden" name="projectId" value={projectId} />
         <input type="hidden" name="evaluateeId" value={member.userId} />
 
-        <div className="flex flex-col gap-5 rounded-md bg-surface/60 px-5 py-5">
+        <div className="flex min-w-0 flex-col gap-5 rounded-md bg-surface/60 p-3">
           <StarRating
             name="calidad"
             label="Calidad del entregable"
@@ -208,7 +209,7 @@ export function MemberEvaluationForm({
           </p>
         )}
         {state.ok && (
-          <p className="text-xs text-sprout">Evaluación guardada.</p>
+          <ActionSuccess title="Evaluación guardada" description="La retroalimentación ya está disponible para el estudiante." />
         )}
 
         <SubmitButton pendingText="Guardando…">

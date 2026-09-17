@@ -1,10 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { ActionSuccess } from "@/components/ui/action-success";
+import { Button } from "@/components/ui/button";
 import { addRole, type AddRoleState } from "@/features/projects/actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { SubmitButton } from "@/features/auth/components/submit-button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { NewRoleSkillsPicker } from "@/features/projects/components/new-role-skills-picker";
 import { cn } from "@/lib/utils";
 import type { Skill } from "@/features/skills/queries";
@@ -18,41 +20,46 @@ const SIN_SPINNERS =
 
 /**
  * Formulario para agregar un rol a un proyecto, con sus habilidades exigidas
- * de una (antes había que crear el rol y recién ahí, aparte, agregarle cada
- * habilidad). Al agregarse con éxito (sin error tras un envío) limpia los
- * campos para cargar el siguiente rol — `resetKey` fuerza a remontar
- * `NewRoleSkillsPicker` en ese momento, porque su estado es local y un
- * `form.reset()` normal no lo toca.
+ * de una. Tras guardar muestra una confirmación y permite iniciar otro rol
+ * con campos y habilidades vacíos.
  */
 export function AddRoleForm({
   projectId,
   catalog,
+  onDone,
+  onPendingChange,
 }: {
   projectId: string;
   catalog: Skill[];
+  onDone?: () => void;
+  onPendingChange?: (pending: boolean) => void;
 }) {
-  const [state, formAction] = useActionState(addRole, INITIAL);
-  const formRef = useRef<HTMLFormElement>(null);
-  const [resetKey, setResetKey] = useState(0);
+  const [entry, setEntry] = useState(0);
+  return <RoleEntry key={entry} projectId={projectId} catalog={catalog} onDone={onDone} onPendingChange={onPendingChange} onAgain={() => setEntry(entry + 1)} />;
+}
 
-  // `state !== INITIAL` es verdadero solo tras un envío real — no una ref
-  // "ya hubo un envío" marcada dentro del propio efecto: ese patrón se rompe
-  // con el doble-invocado de efectos de React Strict Mode en desarrollo (la
-  // segunda invocación la vería ya en `true` desde la primera y limpiaría el
-  // formulario apenas se monta, sin que hubiera ningún envío).
-  useEffect(() => {
-    if (state !== INITIAL && !state.error) {
-      formRef.current?.reset();
-      queueMicrotask(() => setResetKey((k) => k + 1));
-    }
-  }, [state]);
+function RoleEntry({ projectId, catalog, onDone, onAgain, onPendingChange }: { projectId: string; catalog: Skill[]; onDone?: () => void; onAgain: () => void; onPendingChange?: (pending: boolean) => void }) {
+  const [state, formAction, pending] = useActionState(addRole, INITIAL);
+  useEffect(() => { onPendingChange?.(pending); }, [pending, onPendingChange]);
+
+  if (state.created) return (
+    <div className="space-y-6">
+      <ActionSuccess title="Rol agregado" description={`«${state.created}» ya forma parte del proyecto.`} />
+      {state.warning && <p role="alert" className="text-sm text-ink">{state.warning}</p>}
+      <div className="flex flex-wrap justify-end gap-3">
+        <Button autoFocus variant="outline" className="min-h-11" onClick={onAgain}>Agregar otro rol</Button>
+        {onDone && <Button className="min-h-11" onClick={onDone}>Listo</Button>}
+      </div>
+    </div>
+  );
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} aria-busy={pending}>
+      <fieldset disabled={pending} className="flex min-w-0 flex-col gap-4">
       <input type="hidden" name="projectId" value={projectId} />
 
-      <div className="grid gap-4 sm:grid-cols-[1fr_6rem_11rem]">
-        <label className="flex flex-col gap-1.5">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
           <span className="text-xs font-medium text-muted">Nombre del rol</span>
           <Input name="nombre" required placeholder="Ej: Frontend" />
         </label>
@@ -96,18 +103,19 @@ export function AddRoleForm({
         <span className="text-xs font-medium text-muted">
           Habilidades requeridas <span className="text-muted/70">(opcional)</span>
         </span>
-        <NewRoleSkillsPicker key={resetKey} catalog={catalog} />
+        <NewRoleSkillsPicker catalog={catalog} />
       </div>
 
       {state.error && (
-        <p role="alert" className="text-sm text-coral">
+        <p role="alert" className="text-sm text-red-700">
           {state.error}
         </p>
       )}
 
       <div>
-        <SubmitButton pendingText="Agregando…">Agregar rol</SubmitButton>
+        <SubmitButton className="min-h-11 w-full" pendingText="Agregando…">Agregar rol</SubmitButton>
       </div>
+      </fieldset>
     </form>
   );
 }
