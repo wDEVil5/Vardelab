@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
   // Evita que `next dev` regenere AGENTS.md / CLAUDE.md en la raíz del repo.
   agentRules: false,
   devIndicators: false,
+  // El bundle del navegador seguirá siendo visible, pero no publicamos mapas
+  // fuente que reconstruyan los archivos originales en producción.
+  productionBrowserSourceMaps: false,
+  poweredByHeader: false,
   async headers() {
     return [
       {

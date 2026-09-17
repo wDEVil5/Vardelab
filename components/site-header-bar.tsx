@@ -119,7 +119,7 @@ export function SiteHeaderBar({ children }: { children: ReactNode }) {
         // el efecto de scroll ya calcula para t=0 (tope de página), fijado acá
         // como clase para que el primer paint (antes de que corra el useEffect)
         // no se vea "full bleed" de punta a punta por una fracción de segundo.
-        className="w-full border border-transparent bg-white backdrop-blur-md md:mx-auto md:max-w-7xl"
+        className="site-header-pill w-full border border-transparent bg-white backdrop-blur-md md:mx-auto md:max-w-7xl"
       >
         {children}
       </div>
