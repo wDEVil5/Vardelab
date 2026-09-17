@@ -65,10 +65,12 @@ export async function addSubmission(
   // proyecto del primer segmento para decidir quién puede subir/ver/borrar,
   // sin necesitar un join contra `submissions` (que todavía no existe en el
   // insert). El nombre lleva la hora para no pisar un archivo con el mismo
-  // nombre subido antes.
+  // nombre subido antes. Se sanea el nombre original: no debe poder inyectar
+  // segmentos de ruta (`/`, `..`) hacia otro hito dentro del mismo proyecto.
   let archivoUrl: string | null = null;
   if (tieneArchivo) {
-    const ruta = `${projectId}/${milestoneId}/${Date.now()}-${archivo.name}`;
+    const nombreSeguro = archivo.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100);
+    const ruta = `${projectId}/${milestoneId}/${Date.now()}-${nombreSeguro}`;
     const { error: uploadError } = await supabase.storage
       .from("submission-files")
       .upload(ruta, archivo, { contentType: archivo.type });
