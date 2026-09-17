@@ -35,7 +35,7 @@ export default function OrganizacionesPage() {
     <>
       <main className="relative z-10 min-h-[calc(100dvh-3.5rem)] flex-1 overflow-x-clip bg-white md:mb-(--footer-h,0px) md:shadow-[0_8px_24px_-16px_rgba(13,37,59,0.12)]">
         {/* 1 · HERO */}
-        <section className="mx-auto w-full max-w-6xl overflow-x-clip px-5 py-8 sm:px-6 sm:py-24 lg:pb-32">
+        <section className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-6 sm:py-24 lg:pb-32">
           <div className="grid items-center gap-8 md:grid-cols-2 md:gap-10 lg:gap-12">
             <div className="flex animate-rise flex-col items-start gap-5 sm:gap-7">
               <span className="text-xs font-semibold uppercase tracking-wide text-electric sm:text-sm">

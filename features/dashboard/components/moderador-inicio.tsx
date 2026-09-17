@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { getProjectsForReview } from "@/features/projects/queries";
+import {
+  getModerationQueueStats,
+  getProjectsForReviewPage,
+  type ProjectForReview,
+} from "@/features/projects/queries";
 import { getPendingLeads } from "@/features/leads/queries";
 import { getOpenReports } from "@/features/reports/queries";
 
@@ -17,8 +21,11 @@ const LEAD_TIPO_LABEL: Record<string, string> = {
  * todavía). Cada vista rápida enlaza a su panel completo.
  */
 export async function ModeradorInicio({ nombre }: { nombre: string }) {
-  const [pendientes, leads, reportes] = await Promise.all([
-    getProjectsForReview(),
+  const [{ proyectos: pendientes }, queueStats, leads, reportes] = await Promise.all([
+    // Solo la primera página (ordenada por más antiguo primero, igual que
+    // /moderacion): esta vista es una vitrina de hasta 5, no la cola completa.
+    getProjectsForReviewPage(1, {}),
+    getModerationQueueStats(),
     getPendingLeads(),
     getOpenReports(),
   ]);
@@ -37,7 +44,7 @@ export async function ModeradorInicio({ nombre }: { nombre: string }) {
         <StatCard
           href="/moderacion"
           label="Pendientes de revisión"
-          value={pendientes.length}
+          value={queueStats.pendientes}
           tone="electric"
         />
         <StatCard href="/leads" label="Leads pendientes" value={leads.length} />
@@ -65,7 +72,7 @@ export async function ModeradorInicio({ nombre }: { nombre: string }) {
 
           {pendientes.length > 0 ? (
             <ul className="mt-3 flex flex-col gap-2">
-              {pendientes.slice(0, 5).map((p) => (
+              {pendientes.slice(0, 5).map((p: ProjectForReview) => (
                 <li key={p.id}>
                   <Link
                     href={`/moderacion/${p.id}`}

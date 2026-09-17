@@ -32,6 +32,7 @@ export function CatalogSearch({ placeholder }: { placeholder?: string }) {
       const next = new URLSearchParams(Array.from(params.entries()));
       if (value.trim()) next.set("q", value);
       else next.delete("q");
+      next.delete("page");
       const qs = next.toString();
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     }, 250);

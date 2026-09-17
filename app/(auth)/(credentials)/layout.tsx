@@ -13,7 +13,8 @@ export default async function CredentialsLayout({
 }) {
   let projects: Awaited<ReturnType<typeof getPublishedProjects>> = [];
   try {
-    projects = await getPublishedProjects();
+    // Acotado a 30, no el catálogo entero: el panel solo muestra 3.
+    projects = await getPublishedProjects(30);
   } catch {
     projects = [];
   }

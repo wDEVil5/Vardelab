@@ -31,29 +31,67 @@ export async function getOpenReports() {
 
 export type OpenReport = Awaited<ReturnType<typeof getOpenReports>>[number];
 
-/**
- * Todos los reportes (cualquier estado), del más reciente al más antiguo. Para
- * el panel de gestión, que filtra por estado en la interfaz.
- */
-export async function getAllReports() {
-  const supabase = await createClient();
+const REPORTS_SELECT =
+  "id, target_type, target_id, motivo, descripcion, status, resolucion, created_at, reporter_id";
 
-  const { data, error } = await supabase
+export const REPORTS_PAGE_SIZE = 20;
+
+type ReportStatusFiltro = "abiertos" | "en_revision" | "resueltos" | "todos";
+
+/**
+ * Página de reportes para el panel de gestión (`/moderacion/reportes`),
+ * filtrada por estado y paginada en SQL — reemplaza traer TODOS los reportes
+ * históricos y filtrarlos en memoria. Además, al acotar a una página, la
+ * página que la consume solo resuelve el destino (`getReportTarget`) de las
+ * filas visibles en vez de hacerlo para cada reporte que existe en el
+ * sistema — antes era un N+1 sin límite (una consulta extra por reporte).
+ */
+export async function getReportsPage(page: number, filtro: ReportStatusFiltro) {
+  const supabase = await createClient();
+  const from = Math.max(page - 1, 0) * REPORTS_PAGE_SIZE;
+  const to = from + REPORTS_PAGE_SIZE - 1;
+
+  let query = supabase
     .from("reports")
-    .select(
-      "id, target_type, target_id, motivo, descripcion, status, resolucion, created_at, reporter_id",
-    )
-    .order("created_at", { ascending: false });
+    .select(REPORTS_SELECT, { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (filtro === "abiertos") query = query.eq("status", "abierto");
+  else if (filtro === "en_revision") query = query.eq("status", "en_revision");
+  else if (filtro === "resueltos") query = query.eq("status", "resuelto");
+
+  const { data, error, count } = await query;
 
   if (error) {
-    console.error("[getAllReports]", error.message);
-    return [];
+    console.error("[getReportsPage]", error.message);
+    return { reports: [], total: 0, pageSize: REPORTS_PAGE_SIZE };
   }
 
-  return data;
+  return { reports: data ?? [], total: count ?? 0, pageSize: REPORTS_PAGE_SIZE };
 }
 
-export type Report = Awaited<ReturnType<typeof getAllReports>>[number];
+/** Cuántos reportes hay por estado, para los KPIs y los contadores del filtro. */
+export async function getReportCountsByStatus() {
+  const supabase = await createClient();
+  const estados = ["abierto", "en_revision", "resuelto"] as const;
+
+  const [total, ...porEstado] = await Promise.all([
+    supabase.from("reports").select("id", { count: "exact", head: true }),
+    ...estados.map((e) =>
+      supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", e),
+    ),
+  ]);
+
+  return {
+    todos: total.count ?? 0,
+    abiertos: porEstado[0]?.count ?? 0,
+    en_revision: porEstado[1]?.count ?? 0,
+    resueltos: porEstado[2]?.count ?? 0,
+  };
+}
+
+export type Report = Awaited<ReturnType<typeof getReportsPage>>["reports"][number];
 
 /**
  * Reportes que el usuario actual presentó, del más reciente al más antiguo

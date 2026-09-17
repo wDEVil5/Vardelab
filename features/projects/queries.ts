@@ -67,14 +67,17 @@ async function aceptadasPorRol(
   return mapa;
 }
 
-async function fetchPublishedProjects() {
+async function fetchPublishedProjects(limit?: number) {
   const supabase = createPublicClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("projects")
     .select(PROJECT_CARD_SELECT)
     .in("status", ["publicado", "seleccion"])
     .order("created_at", { ascending: false });
+  if (limit) query = query.limit(limit);
+
+  const { data, error } = await query;
 
   if (error) {
     // La página que consume esto decide cómo mostrar el fallo; aquí solo se
@@ -115,6 +118,137 @@ export type ProjectCard = Awaited<
   ReturnType<typeof getPublishedProjects>
 >[number];
 
+export const CATALOG_PAGE_SIZE = 12;
+
+export type CatalogFilters = {
+  q?: string;
+  skill?: string;
+  modalidad?: string;
+};
+
+export type CatalogPage = {
+  projects: ProjectCard[];
+  total: number;
+  pageSize: number;
+};
+
+async function fetchPublishedProjectsPage(
+  page: number,
+  filters: CatalogFilters,
+): Promise<CatalogPage> {
+  const supabase = createPublicClient();
+  const offset = Math.max(page - 1, 0) * CATALOG_PAGE_SIZE;
+
+  // Búsqueda, modalidad, habilidad y paginación se resuelven en SQL
+  // (`search_published_projects`, M78) — no traemos el catálogo entero para
+  // filtrarlo en memoria como antes.
+  const { data: matches, error: matchError } = await supabase.rpc(
+    "search_published_projects",
+    {
+      _q: filters.q?.trim() || undefined,
+      _skill: filters.skill || undefined,
+      _modalidad: filters.modalidad || undefined,
+      _limit: CATALOG_PAGE_SIZE,
+      _offset: offset,
+    },
+  );
+
+  if (matchError) {
+    console.error("[search_published_projects]", matchError.message);
+    throw matchError;
+  }
+
+  const orderedIds = (matches ?? []).map((m) => m.id);
+  if (orderedIds.length === 0) {
+    // `count(*) over()` viaja en las filas devueltas: si el offset pedido
+    // (ej. una URL con ?page= fuera de rango) no devuelve ninguna, no hay de
+    // dónde leer el total real — se pide de nuevo desde el principio (limit 1,
+    // liviano) solo para saber cuántos resultados hay en total.
+    if (offset > 0) {
+      const { data: primera } = await supabase.rpc("search_published_projects", {
+        _q: filters.q?.trim() || undefined,
+        _skill: filters.skill || undefined,
+        _modalidad: filters.modalidad || undefined,
+        _limit: 1,
+        _offset: 0,
+      });
+      return {
+        projects: [],
+        total: primera?.[0] ? Number(primera[0].total_count) : 0,
+        pageSize: CATALOG_PAGE_SIZE,
+      };
+    }
+    return { projects: [], total: 0, pageSize: CATALOG_PAGE_SIZE };
+  }
+
+  const total = Number(matches?.[0]?.total_count ?? 0);
+
+  const { data, error } = await supabase
+    .from("projects")
+    .select(PROJECT_CARD_SELECT)
+    .in("id", orderedIds);
+
+  if (error) {
+    console.error("[fetchPublishedProjectsPage]", error.message);
+    throw error;
+  }
+
+  // `.in()` no garantiza el orden: se reordena según lo que ya decidió
+  // `search_published_projects` (created_at desc).
+  const porId = new Map((data ?? []).map((p) => [p.id, p]));
+  const proyectos = orderedIds
+    .map((id) => porId.get(id))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p));
+
+  const mapa = await aceptadasPorRol(
+    supabase,
+    proyectos.flatMap((p) => (p.roles ?? []).map((r) => r.id)),
+  );
+  return {
+    projects: proyectos.map((p) => ({
+      ...p,
+      roles: (p.roles ?? []).map((r) => ({ ...r, aceptadas: mapa.get(r.id) ?? 0 })),
+    })),
+    total,
+    pageSize: CATALOG_PAGE_SIZE,
+  };
+}
+
+/**
+ * Página del catálogo público (P-02), con búsqueda/filtros resueltos en SQL y
+ * paginación real — reemplaza el patrón anterior de traer `getPublishedProjects()`
+ * completo y filtrar/paginar en memoria, que escalaba mal (ver M78).
+ *
+ * Cacheado por combinación exacta de page+filtros (60 s, igual que
+ * `getPublishedProjects`): `unstable_cache` deriva la clave de estos
+ * argumentos, así que cada página/búsqueda tiene su propia entrada.
+ */
+export const getPublishedProjectsPage = unstable_cache(
+  fetchPublishedProjectsPage,
+  ["published-projects-page"],
+  { revalidate: 60 },
+);
+
+/**
+ * Habilidades para los chips del catálogo — independiente de la página y del
+ * filtro de habilidad activo (si no, elegir un chip haría desaparecer al
+ * resto). Ver `catalog_skill_facets` (M78): acotada por la cantidad de
+ * habilidades distintas del catálogo, no por la cantidad de proyectos.
+ */
+export const getCatalogSkillFacets = unstable_cache(
+  async () => {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase.rpc("catalog_skill_facets");
+    if (error) {
+      console.error("[catalog_skill_facets]", error.message);
+      return [] as string[];
+    }
+    return (data ?? []).map((d) => d.nombre);
+  },
+  ["catalog-skill-facets"],
+  { revalidate: 60 },
+);
+
 /**
  * Proyectos publicados de una organización puntual, para su perfil público.
  * Sin cachear (a diferencia de `getPublishedProjects`): es una vista de bajo
@@ -153,6 +287,10 @@ export async function getPublishedProjectsByOrg(orgId: string) {
  * misma organización, skills en común y misma modalidad — y luego por
  * antigüedad. Devuelve como máximo `limit` (default 3); lista vacía si no hay
  * candidatos.
+ *
+ * El universo de candidatos se acota a los 200 más recientes (no el catálogo
+ * completo): traer los 6000+ del catálogo real solo para puntuar y quedarse
+ * con 3 era el mismo anti-patrón ya resuelto en /proyectos (M78).
  */
 export async function getSimilarPublishedProjects(
   current: {
@@ -163,7 +301,7 @@ export async function getSimilarPublishedProjects(
   },
   limit = 3,
 ): Promise<ProjectCard[]> {
-  const all = await getPublishedProjects();
+  const all = await getPublishedProjects(200);
   const skillSet = new Set(current.skillIds);
 
   const scored = all
@@ -219,31 +357,125 @@ const PROJECT_REVIEW_SELECT = `
   roles:project_roles ( id, nombre, cupos, horas_semanales )
 ` as const;
 
+export const MODERATION_QUEUE_PAGE_SIZE = 20;
+
 /**
- * Devuelve los proyectos en revisión, del más antiguo al más reciente (la cola
- * se atiende por orden de llegada). La RLS limita el acceso a moderador/admin;
- * una página que la consuma debe además guardar el acceso por rol.
+ * Página de la cola de moderación (M81), del más antiguo al más reciente (se
+ * atiende por orden de llegada), con búsqueda (proyecto/organización) y
+ * filtro de modalidad resueltos en SQL (`moderation_queue_page`) —
+ * reemplaza traer TODOS los proyectos en revisión y filtrarlos en memoria.
+ * La RLS de `projects` (`security invoker`) sigue exigiendo moderador/admin.
  */
-export async function getProjectsForReview() {
+export async function getProjectsForReviewPage(
+  page: number,
+  filters: { q?: string; modalidad?: string },
+) {
   const supabase = await createClient();
+  const offset = Math.max(page - 1, 0) * MODERATION_QUEUE_PAGE_SIZE;
+
+  const { data: matches, error: matchError } = await supabase.rpc(
+    "moderation_queue_page",
+    {
+      _q: filters.q?.trim() || undefined,
+      _modalidad: filters.modalidad || undefined,
+      _limit: MODERATION_QUEUE_PAGE_SIZE,
+      _offset: offset,
+    },
+  );
+
+  if (matchError) {
+    console.error("[moderation_queue_page]", matchError.message);
+    return { proyectos: [], total: 0, pageSize: MODERATION_QUEUE_PAGE_SIZE };
+  }
+
+  const orderedIds = (matches ?? []).map((m) => m.id);
+  if (orderedIds.length === 0) {
+    if (offset > 0) {
+      const { data: primera } = await supabase.rpc("moderation_queue_page", {
+        _q: filters.q?.trim() || undefined,
+        _modalidad: filters.modalidad || undefined,
+        _limit: 1,
+        _offset: 0,
+      });
+      return {
+        proyectos: [],
+        total: primera?.[0] ? Number(primera[0].total_count) : 0,
+        pageSize: MODERATION_QUEUE_PAGE_SIZE,
+      };
+    }
+    return { proyectos: [], total: 0, pageSize: MODERATION_QUEUE_PAGE_SIZE };
+  }
+
+  const total = Number(matches?.[0]?.total_count ?? 0);
 
   const { data, error } = await supabase
     .from("projects")
     .select(PROJECT_REVIEW_SELECT)
-    .eq("status", "en_revision")
-    .order("created_at", { ascending: true });
+    .in("id", orderedIds);
 
   if (error) {
-    console.error("[getProjectsForReview]", error.message);
-    throw error;
+    console.error("[getProjectsForReviewPage]", error.message);
+    return { proyectos: [], total: 0, pageSize: MODERATION_QUEUE_PAGE_SIZE };
   }
 
-  return data;
+  const porId = new Map((data ?? []).map((p) => [p.id, p]));
+  // orden de llegada (más antiguo primero), como decidió moderation_queue_page
+  const proyectos = orderedIds
+    .map((id) => porId.get(id))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p));
+
+  return { proyectos, total, pageSize: MODERATION_QUEUE_PAGE_SIZE };
+}
+
+/**
+ * KPIs de la cola completa (M81) — independientes del filtro/página actual.
+ */
+export async function getModerationQueueStats() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("moderation_queue_stats");
+
+  if (error || !data?.[0]) {
+    console.error("[moderation_queue_stats]", error?.message);
+    return { pendientes: 0, organizaciones: 0, cuposAbiertos: 0 };
+  }
+
+  return {
+    pendientes: Number(data[0].pendientes),
+    organizaciones: Number(data[0].organizaciones),
+    cuposAbiertos: Number(data[0].cupos_abiertos),
+  };
+}
+
+/**
+ * Cuántos proyectos en revisión hay por modalidad, para los contadores del
+ * filtro — independiente de la búsqueda/página actual de la tabla.
+ */
+export async function getModerationModalidadCounts() {
+  const supabase = await createClient();
+  const modalidades = ["remoto", "presencial", "hibrido"] as const;
+
+  const [total, ...porModalidad] = await Promise.all([
+    supabase.from("projects").select("id", { count: "exact", head: true }).eq("status", "en_revision"),
+    ...modalidades.map((m) =>
+      supabase
+        .from("projects")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "en_revision")
+        .eq("modalidad", m),
+    ),
+  ]);
+
+  return {
+    todas: total.count ?? 0,
+    remoto: porModalidad[0]?.count ?? 0,
+    presencial: porModalidad[1]?.count ?? 0,
+    hibrido: porModalidad[2]?.count ?? 0,
+  };
 }
 
 export type ProjectForReview = Awaited<
-  ReturnType<typeof getProjectsForReview>
->[number];
+  ReturnType<typeof getProjectsForReviewPage>
+>["proyectos"][number];
 
 // Detalle completo para revisar un proyecto puntual (M-02): suma `expectativas`
 // y `descripcion` de cada rol, que la vista de cola no necesita.
