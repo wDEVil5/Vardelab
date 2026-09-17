@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
  * (M5) exige gestionar el proyecto; aquí se validan los datos.
  */
 
-export type AddMilestoneState = { error?: string };
+export type AddMilestoneState = { error?: string; created?: string };
 
 export async function addMilestone(
   _prevState: AddMilestoneState,
@@ -44,7 +44,7 @@ export async function addMilestone(
   }
 
   revalidatePath(`/mis-proyectos/${projectId}`);
-  return {};
+  return { created: titulo };
 }
 
 /**

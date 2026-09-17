@@ -73,8 +73,8 @@ export default async function ValidarProyectoPage({ params }: PageProps) {
         </div>
       )}
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px] lg:items-start">
-        <div className="rounded-2xl border border-border bg-white p-8">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] lg:items-start">
+        <div className="min-w-0 rounded-2xl border border-border bg-white p-6 sm:p-8">
           {!hitoFinal ? (
             <p className="text-sm text-muted">
               Este proyecto todavía no tiene hitos definidos.
@@ -148,7 +148,7 @@ export default async function ValidarProyectoPage({ params }: PageProps) {
           )}
         </div>
 
-        <div className="flex flex-col gap-5 rounded-2xl border border-border bg-white p-6">
+        <div className="flex min-w-0 flex-col gap-5 rounded-2xl border border-border bg-white p-4 sm:p-6">
           <h2 className="text-sm font-semibold text-ink">Evaluación</h2>
 
           {!equipo || equipo.length === 0 ? (
@@ -166,6 +166,7 @@ export default async function ValidarProyectoPage({ params }: PageProps) {
               projectId={project.id}
               milestoneId={hitoFinal?.id ?? null}
               puedeCerrar={listoParaValidar}
+              completado={project.status === "completado"}
             />
             {hitoFinal && hitoFinal.estado === "entregado" && (
               <form action={returnMilestone}>

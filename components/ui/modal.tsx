@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useRef, type ReactNode } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { createPortal } from "react-dom";
-import { cn } from "@/lib/utils";
 
 // Selectores de elementos que pueden recibir foco por teclado, para el trap.
 const FOCUSABLE =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
 
 /**
  * Ventana modal accesible. Se monta en un portal sobre el resto de la página, con
@@ -14,31 +14,28 @@ const FOCUSABLE =
  * de cierre o un clic fuera del recuadro. Mientras está abierta, bloquea el
  * desplazamiento del cuerpo, atrapa el foco de teclado dentro del diálogo (Tab no
  * se escapa hacia el fondo) y, al cerrar, devuelve el foco a quien la abrió. No
- * renderiza nada cuando `open` es falso.
+ * desmonta el contenido al terminar la animación de salida.
  */
 export function Modal({
   open,
   onClose,
   title,
   children,
+  busy = false,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
+  busy?: boolean;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const disparadorRef = useRef<HTMLElement | null>(null);
-  // Controla la animación de entrada: nace en `false` (fondo/recuadro
-  // invisibles) y pasa a `true` un frame después, para que el navegador anime
-  // la transición en vez de pintar directo el estado final — de golpe se
-  // sentía muy seco al abrir.
-  const [visible, setVisible] = useState(false);
+  const reduce = useReducedMotion();
+  const closeFromKeyboard = useEffectEvent(() => { if (!busy) onClose(); });
 
   useEffect(() => {
     if (!open) return;
-
-    const raf = requestAnimationFrame(() => setVisible(true));
 
     // Recuerda quién tenía el foco para devolvérselo al cerrar.
     disparadorRef.current = document.activeElement as HTMLElement | null;
@@ -50,7 +47,7 @@ export function Modal({
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        closeFromKeyboard();
         return;
       }
       // Trap de foco: Tab/Shift+Tab no salen del diálogo.
@@ -58,13 +55,13 @@ export function Modal({
         const focusables = Array.from(
           dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE),
         );
-        if (focusables.length === 0) return;
+        if (focusables.length === 0) { e.preventDefault(); dialogRef.current.focus(); return; }
         const primero = focusables[0];
         const ultimo = focusables[focusables.length - 1];
-        if (e.shiftKey && document.activeElement === primero) {
+        if (e.shiftKey && (document.activeElement === primero || document.activeElement === dialogRef.current || !dialogRef.current.contains(document.activeElement))) {
           e.preventDefault();
           ultimo.focus();
-        } else if (!e.shiftKey && document.activeElement === ultimo) {
+        } else if (!e.shiftKey && (document.activeElement === ultimo || !dialogRef.current.contains(document.activeElement))) {
           e.preventDefault();
           primero.focus();
         }
@@ -76,60 +73,62 @@ export function Modal({
     document.body.style.overflow = "hidden";
 
     return () => {
-      cancelAnimationFrame(raf);
-      // Vuelve a "invisible" para la próxima vez que se abra: sin esto, un
-      // segundo `open` reaparecería directo en el estado final, sin animar.
-      setVisible(false);
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = previo;
       // Devuelve el foco a quien abrió el modal (si el elemento sigue en el DOM).
       disparadorRef.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
-  if (!open) return null;
+  if (typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <AnimatePresence>
+    {open && <motion.div key="modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      transition={{ duration: reduce ? 0 : 0.18 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Fondo atenuado y difuminado; un clic cierra. */}
       <button
         type="button"
         aria-label="Cerrar"
         onClick={onClose}
-        className={cn(
-          "absolute inset-0 cursor-default bg-ink/40 backdrop-blur-sm transition-opacity duration-200",
-          visible ? "opacity-100" : "opacity-0",
-        )}
+        disabled={busy}
+        tabIndex={-1}
+        className="absolute inset-0 cursor-default bg-ink/40 backdrop-blur-sm"
       />
 
       {/* Recuadro */}
-      <div
+      <motion.div
+        layout={reduce ? false : "size"}
+        initial={{ opacity: 0, y: reduce ? 0 : 12, scale: reduce ? 1 : 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: reduce ? 0 : 6, scale: reduce ? 1 : 0.98 }}
+        transition={{ duration: reduce ? 0 : 0.2 }}
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className={cn(
-          "relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-xl transition-all duration-200 focus:outline-none",
-          visible ? "scale-100 opacity-100" : "scale-95 opacity-0",
-        )}
+        aria-busy={busy}
+        className="relative z-10 flex max-h-[85dvh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-xl focus:outline-none"
       >
-        <div className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
+        <motion.div layout={reduce ? false : "position"} className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
           <h2 className="text-lg font-semibold text-ink">{title}</h2>
           <button
             type="button"
             onClick={onClose}
+            disabled={busy}
             aria-label="Cerrar"
-            className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface hover:text-ink"
+            className="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface hover:text-ink focus-visible:outline-2 focus-visible:outline-electric disabled:opacity-40"
           >
             <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
           </button>
-        </div>
-        <div className="overflow-y-auto px-6 py-5">{children}</div>
-      </div>
-    </div>,
+        </motion.div>
+        <motion.div layout={reduce ? false : "position"} className="overflow-y-auto px-6 py-5">{children}</motion.div>
+      </motion.div>
+    </motion.div>}
+    </AnimatePresence>,
     document.body,
   );
 }

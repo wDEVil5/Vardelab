@@ -9,8 +9,8 @@ import type { Skill } from "@/features/skills/queries";
  * Botón "Agregar rol" que abre el formulario en un modal, en vez de dejarlo
  * siempre visible al pie de la lista de roles — con varios roles ya cargados,
  * ese formulario permanente empujaba todo hacia abajo sin aportar nada la
- * mayor parte del tiempo. El modal se queda abierto tras agregar uno (el
- * formulario se limpia solo) para cargar varios roles seguidos sin reabrirlo.
+ * mayor parte del tiempo. Tras agregar muestra una confirmación y permite
+ * cargar otro rol sin reabrir el modal.
  */
 export function AddRoleModal({
   projectId,
@@ -20,6 +20,7 @@ export function AddRoleModal({
   catalog: Skill[];
 }) {
   const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
 
   return (
     <>
@@ -48,8 +49,8 @@ export function AddRoleModal({
         </span>
       </button>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Agregar un rol">
-        <AddRoleForm projectId={projectId} catalog={catalog} />
+      <Modal open={open} busy={pending} onClose={() => setOpen(false)} title="Agregar un rol">
+        <AddRoleForm projectId={projectId} catalog={catalog} onDone={() => setOpen(false)} onPendingChange={setPending} />
       </Modal>
     </>
   );
