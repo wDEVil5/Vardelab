@@ -143,24 +143,24 @@ export default async function PerfilOrganizacionPage({ params }: PageProps) {
               tres celdas con ícono separadas por líneas — lo primero que
               necesita ver un estudiante antes de leer el resto de la ficha. */}
           <div className="mt-6 flex w-full divide-x divide-border rounded-xl border border-border bg-surface/50">
-            <div className="flex flex-1 flex-col items-center gap-1 px-3 py-3.5">
-              <IconProyecto className="size-4 text-electric" />
-              <span className="text-lg font-bold text-ink">{proyectos.length}</span>
-              <span className="text-xs text-muted">
+            <div className="flex min-w-0 flex-1 flex-col items-center gap-1 px-2.5 py-3.5 text-center sm:px-3">
+              <IconProyecto className="size-5 text-electric" />
+              <span className="text-lg font-bold leading-tight text-ink">{proyectos.length}</span>
+              <span className="text-xs leading-tight text-muted">
                 {proyectos.length === 1 ? "proyecto publicado" : "proyectos publicados"}
               </span>
             </div>
-            <div className="flex flex-1 flex-col items-center gap-1 px-3 py-3.5">
-              <IconEquipo className="size-4 text-electric" />
-              <span className="text-lg font-bold text-ink">{cuposAbiertos}</span>
-              <span className="text-xs text-muted">
+            <div className="flex min-w-0 flex-1 flex-col items-center gap-1 px-2.5 py-3.5 text-center sm:px-3">
+              <IconEquipo className="size-5 text-electric" />
+              <span className="text-lg font-bold leading-tight text-ink">{cuposAbiertos}</span>
+              <span className="text-xs leading-tight text-muted">
                 {cuposAbiertos === 1 ? "cupo abierto" : "cupos abiertos"}
               </span>
             </div>
-            <div className="flex flex-1 flex-col items-center gap-1 px-3 py-3.5">
-              <IconCalendario className="size-4 text-electric" />
-              <span className="text-xs font-semibold text-ink">{mesYAnio(org.created_at)}</span>
-              <span className="text-xs text-muted">En CampusLab desde</span>
+            <div className="flex min-w-0 flex-1 flex-col items-center gap-1 px-2.5 py-3.5 text-center sm:px-3">
+              <IconCalendario className="size-5 text-electric" />
+              <span className="text-sm font-semibold leading-tight text-ink">{mesYAnio(org.created_at)}</span>
+              <span className="text-xs leading-tight text-muted">En CampusLab desde</span>
             </div>
           </div>
 
