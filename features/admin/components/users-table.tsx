@@ -26,10 +26,18 @@ const ROL_TONE: Record<string, BadgeTone> = {
 type FiltroRol = "todos" | "estudiante" | "patrocinador" | "mentor" | "moderador" | "admin";
 type FiltroEstado = "todos" | "activo" | "suspendido";
 
+// Cuántas filas se renderizan a la vez. Búsqueda/filtro siguen siendo en
+// memoria sobre `users` completo (barato: son objetos livianos), pero
+// renderizar las 3.000+ filas de golpe —cada una con selects y botones
+// interactivos— es lo que de verdad se pone pesado y puede trabar la pestaña
+// con volumen real (hallazgo de la prueba de carga). Paginar solo el render
+// resuelve eso sin tocar la búsqueda/filtro que ya funcionaban bien.
+const FILAS_POR_PAGINA = 30;
+
 /**
- * Tabla de usuarios y permisos (D-03). Búsqueda y filtros en memoria — a
- * escala de piloto (decenas de cuentas) no hace falta paginar ni ir al
- * servidor por cada tecla.
+ * Tabla de usuarios y permisos (D-03). Búsqueda y filtros en memoria (barato
+ * sobre objetos livianos); el RENDER se pagina para no montar miles de filas
+ * interactivas de golpe.
  *
  * `flex-1 min-h-0` + encabezado `sticky`: mismo patrón que `AuditLogTable`
  * (auditoría, D-04). El padre (`/admin/usuarios`) le da a este componente el
@@ -47,6 +55,7 @@ export function UsersTable({
   const [query, setQuery] = useState("");
   const [filtroRol, setFiltroRol] = useState<FiltroRol>("todos");
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>("todos");
+  const [pagina, setPagina] = useState(1);
 
   const visibles = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -63,6 +72,25 @@ export function UsersTable({
       a.id === currentUserId ? -1 : b.id === currentUserId ? 1 : 0,
     );
   }, [users, query, filtroRol, filtroEstado, currentUserId]);
+
+  // Buscar/filtrar siempre vuelve a la página 1 del resultado — comparación
+  // durante el render (no un efecto) para no encadenar renders de más.
+  const [filtroPrevio, setFiltroPrevio] = useState({ query, filtroRol, filtroEstado });
+  if (
+    filtroPrevio.query !== query ||
+    filtroPrevio.filtroRol !== filtroRol ||
+    filtroPrevio.filtroEstado !== filtroEstado
+  ) {
+    setFiltroPrevio({ query, filtroRol, filtroEstado });
+    setPagina(1);
+  }
+
+  const totalPaginas = Math.max(1, Math.ceil(visibles.length / FILAS_POR_PAGINA));
+  const paginaActual = Math.min(pagina, totalPaginas);
+  const filasRenderizadas = visibles.slice(
+    (paginaActual - 1) * FILAS_POR_PAGINA,
+    paginaActual * FILAS_POR_PAGINA,
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-5">
@@ -105,6 +133,7 @@ export function UsersTable({
           <p className="text-sm text-muted">Ningún usuario coincide con la búsqueda.</p>
         </div>
       ) : (
+        <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-border bg-white">
           {/* `table-fixed` + un ancho por columna: con layout automático, un
               `min-width` en "Acciones" no alcanzaba — el navegador igual le
@@ -127,7 +156,7 @@ export function UsersTable({
               </tr>
             </thead>
             <tbody>
-              {visibles.map((u) => (
+              {filasRenderizadas.map((u) => (
                 <tr
                   key={u.id}
                   className={cn(
@@ -168,6 +197,37 @@ export function UsersTable({
               ))}
             </tbody>
           </table>
+        </div>
+
+        {totalPaginas > 1 && (
+          <div className="flex shrink-0 items-center justify-between gap-3 text-sm text-muted">
+            <p>
+              {(paginaActual - 1) * FILAS_POR_PAGINA + 1}–
+              {Math.min(paginaActual * FILAS_POR_PAGINA, visibles.length)} de {visibles.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                disabled={paginaActual === 1}
+                className="rounded-lg border border-border px-3 py-1.5 font-medium text-ink transition-colors hover:border-electric/40 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                ← Anterior
+              </button>
+              <span className="tabular-nums">
+                {paginaActual} / {totalPaginas}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+                disabled={paginaActual === totalPaginas}
+                className="rounded-lg border border-border px-3 py-1.5 font-medium text-ink transition-colors hover:border-electric/40 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Siguiente →
+              </button>
+            </div>
+          </div>
+        )}
         </div>
       )}
     </div>
