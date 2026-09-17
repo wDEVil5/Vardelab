@@ -71,6 +71,40 @@ const PESTANAS: { id: Pestana; label: string }[] = [
  * diferencia real (Modalidades no tiene "Agregar" ni "Editar": son valores de
  * esquema, no filas).
  */
+// Notas laterales por pestaña — solo "Habilidades" y "Modalidades" tienen una
+// (Categorías no, es una vista derivada sin acciones propias que explicar).
+// Viven acá arriba (no dentro de cada tabla) para que compartan una sola
+// grilla con la barra de tabs+botón: así el panel arranca alineado con el
+// tope de la pantalla, no con el tope de la tabla de abajo.
+function AsideHabilidades() {
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-5">
+      <p className="text-sm font-medium text-ink">Al desactivar una habilidad</p>
+      <p className="mt-2 text-sm text-muted">
+        Deja de ofrecerse en formularios nuevos, pero nada se borra: los perfiles y
+        proyectos que ya la tienen cargada la conservan.
+      </p>
+      <p className="mt-3 border-t border-border pt-3 text-sm text-muted">
+        <span className="font-medium text-ink">Excepción conocida: </span>
+        si quien la tiene cargada no es admin, puede dejar de ver el nombre en su propio
+        perfil. Es una limitación pendiente de resolver, no el comportamiento esperado.
+      </p>
+    </div>
+  );
+}
+
+function AsideModalidades() {
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-5">
+      <p className="text-sm font-medium text-ink">Por qué esta lista no se edita</p>
+      <p className="mt-2 text-sm text-muted">
+        Las modalidades son parte fija del sistema, no una tabla de la base de datos:
+        agregar o quitar una requiere un cambio de código, no un botón.
+      </p>
+    </div>
+  );
+}
+
 export function CatalogosTabs({
   skills,
   modalidades,
@@ -80,34 +114,50 @@ export function CatalogosTabs({
 }) {
   const [pestana, setPestana] = useState<Pestana>("habilidades");
 
+  const aside =
+    pestana === "habilidades" ? (
+      <AsideHabilidades />
+    ) : pestana === "modalidades" ? (
+      <AsideModalidades />
+    ) : null;
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div role="tablist" aria-label="Tipo de catálogo" className="inline-flex gap-1 self-start rounded-full bg-surface p-1">
-          {PESTANAS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              role="tab"
-              aria-selected={pestana === p.id}
-              onClick={() => setPestana(p.id)}
-              className={cn(
-                "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-                pestana === p.id ? "bg-white text-ink shadow-sm" : "text-muted hover:text-ink",
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
+    <div
+      className={cn(
+        "grid grid-cols-1 items-start gap-5",
+        aside && "lg:grid-cols-[3fr_1fr] lg:gap-12",
+      )}
+    >
+      <div className="flex min-w-0 flex-col gap-6">
+        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div role="tablist" aria-label="Tipo de catálogo" className="inline-flex gap-1 self-start rounded-full bg-surface p-1">
+            {PESTANAS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                role="tab"
+                aria-selected={pestana === p.id}
+                onClick={() => setPestana(p.id)}
+                className={cn(
+                  "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                  pestana === p.id ? "bg-white text-ink shadow-sm" : "text-muted hover:text-ink",
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          {pestana === "habilidades" && (
+            <SkillFormDialog trigger="Agregar habilidad" triggerClassName={buttonClasses({ variant: "primary", size: "md" })} />
+          )}
         </div>
-        {pestana === "habilidades" && (
-          <SkillFormDialog trigger="Agregar habilidad" triggerClassName={buttonClasses({ variant: "primary", size: "md" })} />
-        )}
+
+        {pestana === "habilidades" && <HabilidadesTable skills={skills} />}
+        {pestana === "categorias" && <CategoriasTable skills={skills} />}
+        {pestana === "modalidades" && <ModalidadesTable modalidades={modalidades} />}
       </div>
 
-      {pestana === "habilidades" && <HabilidadesTable skills={skills} />}
-      {pestana === "categorias" && <CategoriasTable skills={skills} />}
-      {pestana === "modalidades" && <ModalidadesTable modalidades={modalidades} />}
+      {aside}
     </div>
   );
 }
@@ -132,83 +182,68 @@ function HabilidadesTable({ skills }: { skills: SkillCatalogRow[] }) {
   );
 
   return (
-    <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[3fr_1fr] lg:gap-12">
-      <div className="flex min-w-0 flex-col gap-5">
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setPagina(1);
-          }}
-          placeholder="Buscar por nombre o categoría"
-          aria-label="Buscar por nombre o categoría"
-          className="h-11 rounded-lg border border-border bg-white px-4 text-sm text-ink placeholder:text-muted focus:border-electric focus:outline-none sm:w-80"
-        />
+    <div className="flex min-w-0 flex-col gap-5">
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setPagina(1);
+        }}
+        placeholder="Buscar por nombre o categoría"
+        aria-label="Buscar por nombre o categoría"
+        className="h-11 rounded-lg border border-border bg-white px-4 text-sm text-ink placeholder:text-muted focus:border-electric focus:outline-none sm:w-80"
+      />
 
-        {visibles.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-white px-6 py-16 text-center">
-            <p className="text-sm text-muted">
-              {skills.length === 0 ? "Todavía no hay habilidades." : "Ninguna habilidad coincide con la búsqueda."}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-2xl border border-border bg-white">
-            <table className="w-full min-w-180 text-left text-sm">
-              <thead>
-                <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
-                  <th className="px-8 py-5 font-medium">Nombre</th>
-                  <th className="px-8 py-5 font-medium">Categoría</th>
-                  <th className="px-8 py-5 font-medium">Uso</th>
-                  <th className="px-8 py-5 font-medium">Estado</th>
-                  <th className="px-8 py-5 font-medium">Acciones</th>
+      {visibles.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-white px-6 py-16 text-center">
+          <p className="text-sm text-muted">
+            {skills.length === 0 ? "Todavía no hay habilidades." : "Ninguna habilidad coincide con la búsqueda."}
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-2xl border border-border bg-white">
+          <table className="w-full min-w-180 text-left text-sm">
+            <thead>
+              <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
+                <th className="px-8 py-5 font-medium">Nombre</th>
+                <th className="px-8 py-5 font-medium">Categoría</th>
+                <th className="px-8 py-5 font-medium">Uso</th>
+                <th className="px-8 py-5 font-medium">Estado</th>
+                <th className="px-8 py-5 font-medium">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibles.map((s) => (
+                <tr key={s.id} className="border-b border-border/60 last:border-0">
+                  <td className="px-8 py-6 font-medium text-ink">{s.nombre}</td>
+                  <td className="px-8 py-6 text-muted">{s.categoria}</td>
+                  <td className="px-8 py-6 text-muted">
+                    {s.perfiles} {s.perfiles === 1 ? "perfil" : "perfiles"}
+                  </td>
+                  <td className="px-8 py-6">
+                    <Badge tone={s.activo ? "success" : "neutral"}>
+                      {s.activo ? "Activo" : "Inactivo"}
+                    </Badge>
+                  </td>
+                  <td className="px-8 py-6">
+                    <div className="flex items-center justify-end gap-3">
+                      <SkillFormDialog
+                        trigger="Editar"
+                        triggerClassName="text-sm font-medium text-electric hover:underline"
+                        skill={s}
+                      />
+                      <ToggleSkillButton skillId={s.id} nombre={s.nombre} activo={s.activo} />
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {visibles.map((s) => (
-                  <tr key={s.id} className="border-b border-border/60 last:border-0">
-                    <td className="px-8 py-6 font-medium text-ink">{s.nombre}</td>
-                    <td className="px-8 py-6 text-muted">{s.categoria}</td>
-                    <td className="px-8 py-6 text-muted">
-                      {s.perfiles} {s.perfiles === 1 ? "perfil" : "perfiles"}
-                    </td>
-                    <td className="px-8 py-6">
-                      <Badge tone={s.activo ? "success" : "neutral"}>
-                        {s.activo ? "Activo" : "Inactivo"}
-                      </Badge>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center justify-end gap-3">
-                        <SkillFormDialog
-                          trigger="Editar"
-                          triggerClassName="text-sm font-medium text-electric hover:underline"
-                          skill={s}
-                        />
-                        <ToggleSkillButton skillId={s.id} nombre={s.nombre} activo={s.activo} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-        <Paginacion pagina={paginaSegura} totalPaginas={totalPaginas} onCambiar={setPagina} />
-      </div>
-
-      <div className="rounded-2xl border border-border bg-surface p-5">
-        <p className="text-sm font-medium text-ink">Al desactivar una habilidad</p>
-        <p className="mt-2 text-sm text-muted">
-          Deja de ofrecerse en formularios nuevos, pero nada se borra: los perfiles y
-          proyectos que ya la tienen cargada la conservan.
-        </p>
-        <p className="mt-3 border-t border-border pt-3 text-sm text-muted">
-          <span className="font-medium text-ink">Excepción conocida: </span>
-          si quien la tiene cargada no es admin, puede dejar de ver el nombre en su propio
-          perfil. Es una limitación pendiente de resolver, no el comportamiento esperado.
-        </p>
-      </div>
+      <Paginacion pagina={paginaSegura} totalPaginas={totalPaginas} onCambiar={setPagina} />
     </div>
   );
 }
@@ -282,33 +317,23 @@ function CategoriasTable({ skills }: { skills: SkillCatalogRow[] }) {
 
 function ModalidadesTable({ modalidades }: { modalidades: ModalidadUsage[] }) {
   return (
-    <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[3fr_1fr] lg:gap-12">
-      <div className="min-w-0 overflow-x-auto rounded-2xl border border-border bg-white">
-        <table className="w-full min-w-100 text-left text-sm">
-          <thead>
-            <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
-              <th className="px-8 py-5 font-medium">Modalidad</th>
-              <th className="px-8 py-5 font-medium">Proyectos</th>
+    <div className="min-w-0 overflow-x-auto rounded-2xl border border-border bg-white">
+      <table className="w-full min-w-100 text-left text-sm">
+        <thead>
+          <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
+            <th className="px-8 py-5 font-medium">Modalidad</th>
+            <th className="px-8 py-5 font-medium">Proyectos</th>
+          </tr>
+        </thead>
+        <tbody>
+          {modalidades.map((m) => (
+            <tr key={m.valor} className="border-b border-border/60 last:border-0">
+              <td className="px-8 py-6 font-medium text-ink">{m.etiqueta}</td>
+              <td className="px-8 py-6 text-muted">{m.total}</td>
             </tr>
-          </thead>
-          <tbody>
-            {modalidades.map((m) => (
-              <tr key={m.valor} className="border-b border-border/60 last:border-0">
-                <td className="px-8 py-6 font-medium text-ink">{m.etiqueta}</td>
-                <td className="px-8 py-6 text-muted">{m.total}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-surface p-5">
-        <p className="text-sm font-medium text-ink">Por qué esta lista no se edita</p>
-        <p className="mt-2 text-sm text-muted">
-          Las modalidades son parte fija del sistema, no una tabla de la base de datos:
-          agregar o quitar una requiere un cambio de código, no un botón.
-        </p>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

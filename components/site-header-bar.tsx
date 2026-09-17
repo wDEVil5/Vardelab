@@ -115,7 +115,11 @@ export function SiteHeaderBar({ children }: { children: ReactNode }) {
     <header className="sticky top-0 z-50 flex justify-center">
       <div
         ref={pillRef}
-        className="w-full border border-transparent bg-white backdrop-blur-md"
+        // md:max-w-[1280px] debe coincidir con ANCHO_COMPLETO: es el valor que
+        // el efecto de scroll ya calcula para t=0 (tope de página), fijado acá
+        // como clase para que el primer paint (antes de que corra el useEffect)
+        // no se vea "full bleed" de punta a punta por una fracción de segundo.
+        className="w-full border border-transparent bg-white backdrop-blur-md md:mx-auto md:max-w-7xl"
       >
         {children}
       </div>

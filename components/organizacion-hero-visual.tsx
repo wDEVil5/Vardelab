@@ -40,7 +40,7 @@ export function OrganizacionHeroVisual() {
           className="animate-breathe absolute -bottom-2 -left-8 size-64 rounded-[58%_42%_55%_45%] bg-sprout/35 blur-3xl sm:size-72"
           style={{ animationDelay: "-3s" }}
         />
-        <div className="absolute top-16 right-0 size-64 rounded-[46%_54%_42%_58%/52%_44%_56%_48%] bg-electric/22 sm:size-72" />
+        <div className="absolute top-16 right-0 size-64 rounded-[46%_54%_42%_58%/52%_44%_56%_48%] bg-electric/22 blur-2xl sm:size-72" />
         <div className="absolute bottom-16 left-8 size-48 rounded-[50%_50%_45%_55%] bg-sprout/18 blur-2xl" />
         <div className="absolute top-1/3 left-1/2 size-56 -translate-x-1/2 rounded-[48%_52%_50%_50%] bg-electric/15 blur-3xl" />
       </div>
