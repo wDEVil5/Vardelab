@@ -156,7 +156,7 @@ export async function updateProject(
   redirect(`/mis-proyectos/${id}`);
 }
 
-export type AddRoleState = { error?: string };
+export type AddRoleState = { error?: string; created?: string; warning?: string };
 
 // Habilidad exigida elegida al crear el rol: id del catálogo + nivel mínimo.
 // Se manda como JSON en un campo oculto, igual que las observaciones del
@@ -249,6 +249,7 @@ export async function addRole(
     return { error: "No se pudo agregar el rol. Inténtalo de nuevo." };
   }
 
+  let warning: string | undefined;
   if (skills.length > 0) {
     const { error: skillsError } = await supabase.from("project_role_skills").insert(
       skills.map((s) => ({
@@ -257,15 +258,15 @@ export async function addRole(
         nivel_minimo: s.nivel as (typeof NIVELES_ROL)[number],
       })),
     );
-    // Falla silenciosa: el rol ya se creó, que es lo mínimo pedido. El gestor
-    // puede agregar las habilidades sueltas después si esto no se guardó.
+    // Conserva el rol creado e informa si hay que volver a agregar habilidades.
     if (skillsError) {
       console.error("[addRole] habilidades", skillsError.message);
+      warning = "El rol se creó, pero no se guardaron sus habilidades. Puedes agregarlas desde la tarjeta del rol.";
     }
   }
 
   revalidatePath(`/mis-proyectos/${projectId}`);
-  return {};
+  return { created: nombre, warning };
 }
 
 export type UpdateRoleState = { error?: string };
@@ -736,7 +737,7 @@ export async function toggleObservationResuelta(formData: FormData): Promise<voi
   revalidatePath(`/mis-proyectos/${projectId}/observaciones`);
 }
 
-export type CloseProjectState = { error?: string };
+export type CloseProjectState = { error?: string; ok?: boolean };
 
 /**
  * Cierra un proyecto (`activo → completado`, M31): valida y aprueba el hito
@@ -763,6 +764,7 @@ export async function closeProject(
     .from("milestones")
     .select("estado")
     .eq("id", milestoneId)
+    .eq("project_id", projectId)
     .maybeSingle();
 
   if (!milestone || (milestone.estado !== "entregado" && milestone.estado !== "aprobado")) {
@@ -799,7 +801,12 @@ export async function closeProject(
   revalidatePath(`/mis-proyectos/${projectId}/validar`);
   revalidatePath(`/mis-proyectos/${projectId}`);
   revalidatePath("/mis-proyectos");
-  return {};
+  revalidatePath("/proyecto");
+  revalidatePath(`/proyecto/${projectId}`, "layout");
+  revalidatePath("/inicio");
+  revalidatePath("/proyectos");
+  revalidatePath(`/proyectos/${projectId}`);
+  return { ok: true };
 }
 
 export type DeleteProjectState = { error?: string };

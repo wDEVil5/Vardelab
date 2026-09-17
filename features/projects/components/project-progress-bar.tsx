@@ -50,14 +50,14 @@ export function ProjectProgressBar({
   return (
     <div className="mt-6 rounded-2xl border border-border bg-white p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-4">
           {/* Ancho fijo (`tabular-nums` + `min-w`): sin esto, el texto cambia
               de tamaño según la cantidad de dígitos (0%, 12%, 100%) durante
               el conteo, y "Progreso general" se corre al lado a cada frame. */}
-          <span className="w-[3ch] shrink-0 text-3xl font-bold tabular-nums tracking-tight text-electric">
+          <span className="w-[4.5ch] shrink-0 text-3xl font-bold tabular-nums tracking-tight text-electric">
             {Math.round(valor)}%
           </span>
-          <div>
+          <div className="min-w-0 break-words">
             <p className="text-sm font-medium text-ink">Progreso general</p>
             {orgName && <p className="text-xs text-muted">{orgName}</p>}
           </div>

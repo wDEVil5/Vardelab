@@ -79,7 +79,7 @@ export async function getMyTeams() {
   const { data: teams } = await supabase
     .from("teams")
     .select(
-      "id, estado, project:projects ( id, titulo, organization:organizations ( nombre ) )",
+      "id, estado, project:projects ( id, titulo, status, organization:organizations ( nombre ) )",
     )
     .in("id", teamIds);
 
@@ -105,6 +105,7 @@ export async function getMyTeams() {
     estado: t.estado,
     projectId: t.project?.id ?? null,
     projectTitulo: t.project?.titulo ?? "Proyecto",
+    projectStatus: t.project?.status ?? null,
     projectOrg: t.project?.organization?.nombre ?? null,
     members: (members ?? [])
       .filter((m) => m.team_id === t.id)
