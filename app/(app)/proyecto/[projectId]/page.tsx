@@ -11,6 +11,7 @@ import { MessageThread } from "@/features/messages/components/message-thread";
 import { getMyEvaluationsByProject } from "@/features/evaluations/queries";
 import { EvaluationSummary } from "@/features/evaluations/components/evaluation-summary";
 import { ProjectProgressBar } from "@/features/projects/components/project-progress-bar";
+import { projectStatusLabel } from "@/features/projects/status";
 
 export const metadata: Metadata = {
   title: "Mi proyecto · CampusLab",
@@ -92,7 +93,7 @@ export default async function ProyectoWorkspacePage({ params }: PageProps) {
           </Link>
         )}
         <h1 className="text-2xl font-bold text-ink">Mi proyecto</h1>
-        <p className="text-sm text-muted">{equipo.projectTitulo} · Activo</p>
+        <p className="text-sm text-muted">{equipo.projectTitulo} · {projectStatusLabel(equipo.projectStatus)}</p>
       </header>
 
       {/* Barra de progreso + equipo, en la misma tarjeta — con equipos chicos,

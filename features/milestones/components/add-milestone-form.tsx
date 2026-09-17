@@ -1,6 +1,8 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { ActionSuccess } from "@/components/ui/action-success";
+import { Button } from "@/components/ui/button";
 import {
   addMilestone,
   type AddMilestoneState,
@@ -8,26 +10,33 @@ import {
 import { Input } from "@/components/ui/input";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { Textarea } from "@/components/ui/textarea";
-import { SubmitButton } from "@/features/auth/components/submit-button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 const INITIAL: AddMilestoneState = {};
 
-/**
- * Formulario para agregar un hito. Limpia los campos tras un alta exitosa.
- * `state !== INITIAL` es verdadero solo tras un envío real — no una ref "ya
- * hubo un envío" marcada dentro del propio efecto, que se rompe con el
- * doble-invocado de efectos de React Strict Mode en desarrollo.
- */
-export function AddMilestoneForm({ projectId }: { projectId: string }) {
-  const [state, formAction] = useActionState(addMilestone, INITIAL);
-  const formRef = useRef<HTMLFormElement>(null);
+/** Conserva la confirmación hasta cerrar o empezar un nuevo hito. */
+export function AddMilestoneForm({ projectId, onDone, onPendingChange }: { projectId: string; onDone?: () => void; onPendingChange?: (pending: boolean) => void }) {
+  const [entry, setEntry] = useState(0);
+  return <MilestoneEntry key={entry} projectId={projectId} onDone={onDone} onPendingChange={onPendingChange} onAgain={() => setEntry(entry + 1)} />;
+}
 
-  useEffect(() => {
-    if (state !== INITIAL && !state.error) formRef.current?.reset();
-  }, [state]);
+function MilestoneEntry({ projectId, onDone, onAgain, onPendingChange }: { projectId: string; onDone?: () => void; onAgain: () => void; onPendingChange?: (pending: boolean) => void }) {
+  const [state, formAction, pending] = useActionState(addMilestone, INITIAL);
+  useEffect(() => { onPendingChange?.(pending); }, [pending, onPendingChange]);
+
+  if (state.created) return (
+    <div className="space-y-6">
+      <ActionSuccess title="Hito agregado" description={`«${state.created}» ya forma parte del plan de trabajo.`} />
+      <div className="flex flex-wrap justify-end gap-3">
+        <Button autoFocus variant="outline" className="min-h-11" onClick={onAgain}>Agregar otro hito</Button>
+        {onDone && <Button className="min-h-11" onClick={onDone}>Listo</Button>}
+      </div>
+    </div>
+  );
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} aria-busy={pending}>
+      <fieldset disabled={pending} className="flex min-w-0 flex-col gap-4">
       <input type="hidden" name="projectId" value={projectId} />
 
       <div className="flex flex-col gap-3 sm:flex-row">
@@ -56,14 +65,15 @@ export function AddMilestoneForm({ projectId }: { projectId: string }) {
       </label>
 
       {state.error && (
-        <p role="alert" className="text-sm text-coral">
+        <p role="alert" className="text-sm text-red-700">
           {state.error}
         </p>
       )}
 
       <div>
-        <SubmitButton pendingText="Agregando…">Agregar hito</SubmitButton>
+        <SubmitButton className="min-h-11 w-full" pendingText="Agregando…">Agregar hito</SubmitButton>
       </div>
+      </fieldset>
     </form>
   );
 }

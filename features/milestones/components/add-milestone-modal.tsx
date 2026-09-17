@@ -12,6 +12,7 @@ import { AddMilestoneForm } from "@/features/milestones/components/add-milestone
  */
 export function AddMilestoneModal({ projectId }: { projectId: string }) {
   const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
 
   return (
     <>
@@ -40,8 +41,8 @@ export function AddMilestoneModal({ projectId }: { projectId: string }) {
         </span>
       </button>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Agregar un hito">
-        <AddMilestoneForm projectId={projectId} />
+      <Modal open={open} busy={pending} onClose={() => setOpen(false)} title="Agregar un hito">
+        <AddMilestoneForm projectId={projectId} onDone={() => setOpen(false)} onPendingChange={setPending} />
       </Modal>
     </>
   );

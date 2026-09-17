@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/features/auth/queries";
 import { getMyTeams } from "@/features/teams/queries";
 import { getProjectMilestones } from "@/features/milestones/queries";
+import { projectStatusLabel } from "@/features/projects/status";
 
 export const metadata: Metadata = {
   title: "Mis proyectos · CampusLab",
@@ -79,6 +80,7 @@ export default async function ProyectosIndexPage() {
       return {
         projectId: t.projectId!,
         titulo: t.projectTitulo,
+        status: t.projectStatus,
         org: t.projectOrg,
         equipo: t.members.length,
         total,
@@ -131,7 +133,7 @@ export default async function ProyectosIndexPage() {
             </div>
 
             <p className="mt-4 text-xs text-muted">
-              {p.aprobados} de {p.total} hitos · Equipo de {p.equipo}
+              {projectStatusLabel(p.status)} · {p.aprobados} de {p.total} hitos · Equipo de {p.equipo}
             </p>
           </Link>
         ))}
