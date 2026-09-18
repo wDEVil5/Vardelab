@@ -2,13 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/features/auth/queries";
 import { getManagedProject } from "@/features/projects/queries";
 import { getTeamForEvaluation } from "@/features/evaluations/queries";
 import { getMilestonesWithSubmissions } from "@/features/milestones/queries";
-import { returnMilestone } from "@/features/milestones/actions";
+import { ReturnMilestoneButton } from "@/features/milestones/components/milestone-actions";
 import { MemberEvaluationForm } from "@/features/evaluations/components/member-evaluation-form";
 import { CloseProjectButton } from "@/features/projects/components/close-project-button";
 
@@ -169,16 +168,15 @@ export default async function ValidarProyectoPage({ params }: PageProps) {
               completado={project.status === "completado"}
             />
             {hitoFinal && hitoFinal.estado === "entregado" && (
-              <form action={returnMilestone}>
-                <input type="hidden" name="milestoneId" value={hitoFinal.id} />
-                <input type="hidden" name="projectId" value={project.id} />
-                <button
-                  type="submit"
-                  className={cn(buttonClasses({ variant: "outline-primary", size: "md" }), "w-full")}
-                >
-                  Solicitar ajustes
-                </button>
-              </form>
+              <ReturnMilestoneButton
+                milestoneId={hitoFinal.id}
+                projectId={project.id}
+                variant="outline-primary"
+                size="md"
+                className="w-full"
+              >
+                Solicitar ajustes
+              </ReturnMilestoneButton>
             )}
           </div>
         </div>

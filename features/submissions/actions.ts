@@ -118,10 +118,15 @@ export async function addSubmission(
  * RLS `submissions_delete_author_or_manager` (fila) y
  * `submission_files_delete_member_or_manager` (Storage, M48).
  */
-export async function deleteSubmission(formData: FormData): Promise<void> {
+export type DeleteSubmissionState = { error?: string };
+
+export async function deleteSubmission(
+  _prevState: DeleteSubmissionState,
+  formData: FormData,
+): Promise<DeleteSubmissionState> {
   const submissionId = String(formData.get("submissionId") ?? "");
   const projectId = String(formData.get("projectId") ?? "");
-  if (!submissionId) return;
+  if (!submissionId) return { error: "Falta la entrega." };
 
   const supabase = await createClient();
 
@@ -138,7 +143,7 @@ export async function deleteSubmission(formData: FormData): Promise<void> {
 
   if (error) {
     console.error("[deleteSubmission]", error.message);
-    return;
+    return { error: "No se pudo eliminar la entrega. Inténtalo de nuevo." };
   }
 
   if (entrega?.archivo_url) {
@@ -150,4 +155,5 @@ export async function deleteSubmission(formData: FormData): Promise<void> {
 
   revalidatePath(`/mis-proyectos/${projectId}`);
   revalidatePath("/mis-postulaciones");
+  return {};
 }

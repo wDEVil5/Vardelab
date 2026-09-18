@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
-import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/features/auth/queries";
 import { getManagedProject } from "@/features/projects/queries";
@@ -12,12 +11,12 @@ import {
   getRecentProjectActivity,
   type MilestoneWithSubmissions,
 } from "@/features/milestones/queries";
-import {
-  approveMilestone,
-  returnMilestone,
-  deleteMilestone,
-} from "@/features/milestones/actions";
 import { AddMilestoneModal } from "@/features/milestones/components/add-milestone-modal";
+import {
+  ApproveMilestoneButton,
+  ReturnMilestoneButton,
+  DeleteMilestoneButton,
+} from "@/features/milestones/components/milestone-actions";
 import { getProjectMessages, getProjectParticipantNames } from "@/features/messages/queries";
 import { MessageThread } from "@/features/messages/components/message-thread";
 
@@ -215,13 +214,9 @@ function MilestoneCard({
 
         <div className="flex shrink-0 items-center gap-2">
           <Badge tone={est.tone}>{est.label}</Badge>
-          <form action={deleteMilestone}>
-            <input type="hidden" name="milestoneId" value={hito.id} />
-            <input type="hidden" name="projectId" value={projectId} />
-            <button type="submit" className={buttonClasses({ variant: "ghost", size: "sm" })}>
-              Eliminar
-            </button>
-          </form>
+          <DeleteMilestoneButton milestoneId={hito.id} projectId={projectId}>
+            Eliminar
+          </DeleteMilestoneButton>
         </div>
       </div>
 
@@ -260,21 +255,13 @@ function MilestoneCard({
       )}
 
       {enRevision && (
-        <div className="flex items-center gap-2 border-t border-border pt-3">
-          <form action={approveMilestone}>
-            <input type="hidden" name="milestoneId" value={hito.id} />
-            <input type="hidden" name="projectId" value={projectId} />
-            <button type="submit" className={buttonClasses({ variant: "primary", size: "sm" })}>
-              Aprobar
-            </button>
-          </form>
-          <form action={returnMilestone}>
-            <input type="hidden" name="milestoneId" value={hito.id} />
-            <input type="hidden" name="projectId" value={projectId} />
-            <button type="submit" className={buttonClasses({ variant: "secondary", size: "sm" })}>
-              Pedir cambios
-            </button>
-          </form>
+        <div className="flex items-start gap-2 border-t border-border pt-3">
+          <ApproveMilestoneButton milestoneId={hito.id} projectId={projectId}>
+            Aprobar
+          </ApproveMilestoneButton>
+          <ReturnMilestoneButton milestoneId={hito.id} projectId={projectId}>
+            Pedir cambios
+          </ReturnMilestoneButton>
         </div>
       )}
     </li>
