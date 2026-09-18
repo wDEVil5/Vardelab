@@ -4,7 +4,8 @@ import vm from 'node:vm';
 import ts from 'typescript';
 
 const CHAIN_METHODS = [
-  'select', 'insert', 'update', 'delete', 'eq', 'neq', 'in', 'limit', 'order', 'maybeSingle', 'single',
+  'select', 'insert', 'update', 'delete', 'eq', 'neq', 'in', 'ilike', 'not',
+  'limit', 'order', 'maybeSingle', 'single',
 ];
 
 /**
@@ -45,6 +46,7 @@ export function load(relativePath, {
   currentUser = null,
   storageResponses = {},
   extraModules = {},
+  adminAuthResponses = [],
 } = {}) {
   const paths = [];
   const queries = [];
@@ -53,6 +55,7 @@ export function load(relativePath, {
   const sendEmailCalls = [];
   const storageUploads = [];
   const storageRemoves = [];
+  const adminAuthCalls = [];
   const uploadResponses = storageResponses.upload ?? [];
   const removeResponses = storageResponses.remove ?? [];
   const db = {
@@ -115,6 +118,21 @@ export function load(relativePath, {
       if (name === '@/lib/supabase/server') return { createClient: async () => db };
       if (name === '@/features/auth/queries') return { getCurrentUser: async () => currentUser };
       if (name === '@/features/organizations/config') return { INVITACIONES_HABILITADAS: true };
+      if (name === '@/features/admin/queries') return { CONFIG_CAMPO_LABEL: {} };
+      if (name === '@/lib/supabase/admin') {
+        return {
+          createAdminClient: () => ({
+            auth: {
+              admin: {
+                async updateUserById(userId, opts) {
+                  adminAuthCalls.push({ userId, opts });
+                  return adminAuthResponses.shift() ?? { error: null };
+                },
+              },
+            },
+          }),
+        };
+      }
       if (name === '@/features/notifications/email') {
         return {
           sendEmailToUser: async (...args) => { emailCalls.push(args); },
@@ -125,7 +143,10 @@ export function load(relativePath, {
       throw new Error(`Import inesperado: ${name}`);
     },
   });
-  return { exports, paths, queries, rpcCalls, emailCalls, sendEmailCalls, storageUploads, storageRemoves };
+  return {
+    exports, paths, queries, rpcCalls, emailCalls, sendEmailCalls,
+    storageUploads, storageRemoves, adminAuthCalls,
+  };
 }
 
 export function form(values) {
