@@ -91,6 +91,15 @@ export async function addSubmission(
 
   if (error) {
     console.error("[addSubmission]", error.message);
+    // El archivo ya se subió a Storage antes de este insert (ver comentario
+    // arriba); si la fila no se pudo crear, hay que borrarlo — si no, queda
+    // huérfano, ocupando espacio sin que ninguna entrega lo referencie.
+    if (archivoUrl) {
+      const { error: cleanupError } = await supabase.storage
+        .from("submission-files")
+        .remove([archivoUrl]);
+      if (cleanupError) console.error("[addSubmission:cleanup]", cleanupError.message);
+    }
     return { error: "No se pudo registrar la entrega. Inténtalo de nuevo." };
   }
 
