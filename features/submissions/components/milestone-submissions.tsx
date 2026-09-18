@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SubmitButton } from "@/features/auth/components/submit-button";
 import { cn } from "@/lib/utils";
 import type { MilestoneWithSubmissions } from "@/features/milestones/queries";
+import { ActionSuccess } from "@/components/ui/action-success";
 
 const INITIAL: SubmissionState = {};
 
@@ -126,6 +127,11 @@ function formatearTamano(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function estaVencido(fechaLimite: string | null, estado: string): boolean {
+  if (!fechaLimite || estado === "aprobado") return false;
+  return new Date(fechaLimite + "T23:59:59").getTime() < Date.now();
+}
+
 /**
  * Un hito con sus entregas (vista del integrante): lista lo entregado y permite
  * subir una entrega (enlace + nota). El modelo es "enlace + contexto", no subir
@@ -166,7 +172,9 @@ export function MilestoneSubmissions({
   }
 
   const submissions = milestone.submissions ?? [];
+  const entregaEnviada = state !== INITIAL && !state.error;
   const aprobado = milestone.estado === "aprobado";
+  const vencido = estaVencido(milestone.fecha_limite, milestone.estado);
   // El gestor devolvió el hito para correcciones (ver acción returnMilestone).
   const pidioCambios = milestone.estado === "en_progreso";
   const est = ESTADO[milestone.estado] ?? ESTADO.pendiente;
@@ -180,15 +188,31 @@ export function MilestoneSubmissions({
             <p className="mt-1 text-sm text-muted">{milestone.descripcion}</p>
           )}
           {milestone.fecha_limite && (
-            <p className="mt-1 text-xs text-muted">
-              Fecha límite: {milestone.fecha_limite}
+            <p className={cn("mt-1 text-xs", vencido ? "font-medium text-coral" : "text-muted")}>
+              {vencido ? "Vencido · " : ""}Fecha límite: {milestone.fecha_limite}
             </p>
           )}
         </div>
-        <Badge tone={est.tone} className="shrink-0">
-          {est.label}
-        </Badge>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <Badge tone={est.tone}>{est.label}</Badge>
+          {vencido && <Badge tone="danger">Vencido</Badge>}
+        </div>
       </div>
+
+      {vencido && (
+        <p className="mt-4 rounded-lg border border-coral/20 bg-coral/5 px-3 py-2 text-xs text-coral">
+          Este hito está vencido, pero todavía puedes enviar tu entrega.
+        </p>
+      )}
+
+      {entregaEnviada && (
+        <div className="mt-5">
+          <ActionSuccess
+            title="¡Entrega enviada!"
+            description="Tu evidencia quedó registrada y ahora está en revisión por la organización."
+          />
+        </div>
+      )}
 
       {/* Entregas ya hechas */}
       {submissions.length > 0 && (

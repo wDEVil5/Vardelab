@@ -26,6 +26,11 @@ function iniciales(nombre: string | null): string {
   return partes.map((p) => p[0]?.toUpperCase() ?? "").join("") || "?";
 }
 
+function estaVencido(fechaLimite: string | null, estado: string): boolean {
+  if (!fechaLimite || estado === "aprobado") return false;
+  return new Date(fechaLimite + "T23:59:59").getTime() < Date.now();
+}
+
 // Estado del hito → etiqueta, color del texto del badge y color del círculo.
 const HITO: Record<
   string,
@@ -159,6 +164,7 @@ export default async function ProyectoWorkspacePage({ params }: PageProps) {
                     queda resaltado siempre, no solo al pasar el mouse. */}
                 <ol className="flex h-full flex-col gap-1 overflow-y-auto pr-3 -mr-3">
                   {hitos.map((h, i) => {
+                    const vencido = estaVencido(h.fecha_limite, h.estado);
                     const est = HITO[h.estado] ?? HITO.pendiente;
                     const aprobado = h.estado === "aprobado";
                     const esActual = accionable?.id === h.id;
@@ -176,7 +182,9 @@ export default async function ProyectoWorkspacePage({ params }: PageProps) {
                             "flex items-start gap-4 rounded-lg px-3 py-4 transition-colors hover:bg-surface/60",
                             aprobado && "opacity-90",
                             esActual &&
-                              "bg-electric/5 ring-1 ring-inset ring-electric/25 hover:bg-electric/10",
+                              (vencido
+                                ? "bg-coral/5 ring-1 ring-inset ring-coral/25 hover:bg-coral/10"
+                                : "bg-electric/5 ring-1 ring-inset ring-electric/25 hover:bg-electric/10"),
                           )}
                         >
                           <span
@@ -190,8 +198,10 @@ export default async function ProyectoWorkspacePage({ params }: PageProps) {
                           <div className="flex-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="font-semibold text-ink">{h.titulo}</p>
-                              {esActual && (
-                                <span className="rounded-full bg-electric/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-electric uppercase">
+                              {esActual && !vencido && (
+                                <span
+                                  className="rounded-full bg-electric/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-electric uppercase"
+                                >
                                   Ahora
                                 </span>
                               )}
@@ -200,19 +210,26 @@ export default async function ProyectoWorkspacePage({ params }: PageProps) {
                               <p className="mt-0.5 text-sm text-muted">{h.descripcion}</p>
                             )}
                             {h.fecha_limite && (
-                              <p className="mt-1 text-xs text-muted">
-                                Fecha límite: {h.fecha_limite}
+                              <p className={cn("mt-1 text-xs", vencido ? "font-medium text-coral" : "text-muted")}>
+                                {vencido ? "Vencido · " : ""}Fecha límite: {h.fecha_limite}
                               </p>
                             )}
                           </div>
-                          <span
-                            className={cn(
-                              "shrink-0 rounded-full px-3 py-1 text-xs font-medium",
-                              est.badge,
+                          <div className="flex shrink-0 flex-col items-end gap-1">
+                            <span
+                              className={cn(
+                                "rounded-full px-3 py-1 text-xs font-medium",
+                                est.badge,
+                              )}
+                            >
+                              {est.label}
+                            </span>
+                            {vencido && (
+                              <span className="rounded-full bg-coral/10 px-3 py-1 text-xs font-medium text-coral">
+                                Vencido
+                              </span>
                             )}
-                          >
-                            {est.label}
-                          </span>
+                          </div>
                         </Link>
                       </li>
                     );
@@ -226,12 +243,19 @@ export default async function ProyectoWorkspacePage({ params }: PageProps) {
             )}
 
             {accionable && (
-              <Link
-                href={`/proyecto/${projectId}/entregar/${accionable.id}`}
-                className={cn(buttonClasses({ variant: "primary" }), "mt-4 shrink-0")}
-              >
-                Registrar avance
-              </Link>
+              <>
+                <Link
+                  href={`/proyecto/${projectId}/entregar/${accionable.id}`}
+                  className={cn(buttonClasses({ variant: "primary" }), "mt-4 shrink-0")}
+                >
+                  Registrar avance
+                </Link>
+                {estaVencido(accionable.fecha_limite, accionable.estado) && (
+                  <p className="mt-2 text-center text-xs text-coral">
+                    Este hito está vencido, pero todavía puedes registrar un avance.
+                  </p>
+                )}
+              </>
             )}
           </section>
 
