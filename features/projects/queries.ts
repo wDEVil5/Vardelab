@@ -626,7 +626,7 @@ export async function getRoleForApplication(projectId: string, roleId: string) {
       nombre,
       descripcion,
       cupos,
-      project:projects!inner ( id, titulo, status ),
+      project:projects!inner ( id, titulo, resumen, modalidad, duracion_semanas, status ),
       skills:project_role_skills (
         nivel_minimo,
         skill:skills ( id, nombre )

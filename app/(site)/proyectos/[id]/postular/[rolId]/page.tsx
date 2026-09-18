@@ -19,7 +19,15 @@ const NIVEL_LABEL: Record<string, string> = {
   avanzado: "Avanzado",
 };
 
-type PageProps = { params: Promise<{ id: string; rolId: string }> };
+const MODALIDAD_LABEL: Record<string, string> = {
+  remoto: "Remoto",
+  hibrido: "Híbrido",
+  presencial: "Presencial",
+};
+
+type PageProps = {
+  params: Promise<{ id: string; rolId: string }>;
+};
 
 /** E-03 · Postulación a un rol. Requiere sesión. */
 export default async function PostularPage({ params }: PageProps) {
@@ -46,41 +54,61 @@ export default async function PostularPage({ params }: PageProps) {
   // formulario que la base de todas formas va a rechazar.
   const rolLleno = !miPostulacion && rol.cupos - rol.aceptadas <= 0;
 
+  const modalidad = rol.project?.modalidad
+    ? MODALIDAD_LABEL[rol.project.modalidad] ?? rol.project.modalidad
+    : null;
+  const duracion = rol.project?.duracion_semanas
+    ? `${rol.project.duracion_semanas} ${rol.project.duracion_semanas === 1 ? "semana" : "semanas"}`
+    : null;
+  const cuposRestantes = Math.max(rol.cupos - rol.aceptadas, 0);
+
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10 lg:py-14">
       <Link
         href={`/proyectos/${id}`}
-        className="text-sm text-muted transition-colors hover:text-electric"
+        className="inline-flex items-center text-sm text-muted transition-colors hover:text-electric"
       >
         ← Volver al proyecto
       </Link>
 
-      {/* Resumen del rol */}
-      <header className="mt-6 flex flex-col gap-2">
-        <span className="text-sm text-muted">{rol.project?.titulo}</span>
-        <h1 className="text-2xl font-bold text-ink">Postular · {rol.nombre}</h1>
-        {rol.descripcion && <p className="text-muted">{rol.descripcion}</p>}
-        {skills.length > 0 && (
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            {skills.map((s) => (
-              <Badge key={s.skill?.id ?? s.nivel_minimo} tone="outline">
-                {s.skill?.nombre}
-                {s.nivel_minimo && (
-                  <span className="text-muted/70">
-                    · {NIVEL_LABEL[s.nivel_minimo] ?? s.nivel_minimo}
-                  </span>
-                )}
-              </Badge>
-            ))}
-          </div>
+      <header className="mt-8 max-w-3xl">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge tone={rolLleno ? "neutral" : "brand"}>
+            {rolLleno ? "Cupos llenos" : "Postulación abierta"}
+          </Badge>
+          <span className="min-w-0 break-words text-sm text-muted">{rol.project?.titulo}</span>
+        </div>
+        <h1 className="mt-4 break-words text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+          Postular al rol de {rol.nombre}
+        </h1>
+        {rol.descripcion && (
+          <p className="mt-3 max-w-2xl break-words text-base leading-relaxed text-muted sm:text-lg">
+            {rol.descripcion}
+          </p>
         )}
       </header>
 
       {/* Formulario, o aviso si ya hay una postulación activa en el proyecto:
           a este mismo rol, o a otro (la regla es un rol por proyecto). */}
-      <div className="mt-8">
+      <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start lg:gap-8">
+        <section className="min-w-0 rounded-2xl border border-border bg-white p-6 shadow-[0_12px_32px_-24px_rgba(15,23,42,0.28)] sm:p-8">
+          <div className="mb-6 flex items-start justify-between gap-4 border-b border-border pb-5">
+            <div>
+              <p className="text-sm font-semibold text-ink">Tu postulación</p>
+              <p className="mt-1 text-sm text-muted">
+                Cuéntanos cómo podrías aportar a este desafío.
+              </p>
+            </div>
+            {!miPostulacion && !rolLleno && (
+              <span className="shrink-0 text-right text-xs text-muted">
+                <strong className="block text-sm text-electric">{cuposRestantes}</strong>
+                {cuposRestantes === 1 ? "cupo disponible" : "cupos disponibles"}
+              </span>
+            )}
+          </div>
+
         {miPostulacion ? (
-          <div className="rounded-lg border border-border bg-surface/50 p-6 text-center">
+          <div className="rounded-xl border border-border bg-surface/50 p-6 text-center">
             <p className="font-medium text-ink">
               {esOtroRol
                 ? "Ya tienes una postulación activa en este proyecto"
@@ -102,7 +130,7 @@ export default async function PostularPage({ params }: PageProps) {
             </Link>
           </div>
         ) : rolLleno ? (
-          <div className="rounded-lg border border-border bg-surface/50 p-6 text-center">
+          <div className="rounded-xl border border-border bg-surface/50 p-6 text-center">
             <p className="font-medium text-ink">Ya se cubrieron los cupos de este rol</p>
             <p className="mt-1 text-sm text-muted">
               Alguien más fue aceptado mientras tanto. Puede que otro rol de este
@@ -121,6 +149,51 @@ export default async function PostularPage({ params }: PageProps) {
         ) : (
           <ApplyForm projectId={id} roleId={rolId} />
         )}
+        </section>
+
+        <aside className="min-w-0 flex flex-col gap-5">
+          <section className="min-w-0 rounded-2xl border border-border bg-surface/60 p-6">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+              El proyecto
+            </p>
+            <h2 className="mt-3 break-words text-lg font-semibold leading-snug text-ink">
+              {rol.project?.titulo}
+            </h2>
+            {rol.project?.resumen && (
+              <p className="mt-2 break-words text-sm leading-relaxed text-muted">
+                {rol.project.resumen}
+              </p>
+            )}
+            <div className="mt-5 flex flex-wrap gap-2">
+              {modalidad && <Badge tone="outline">{modalidad}</Badge>}
+              {duracion && <Badge tone="outline">{duracion}</Badge>}
+            </div>
+          </section>
+
+          {skills.length > 0 && (
+            <section className="min-w-0 rounded-2xl border border-border bg-white p-6">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Lo que se busca
+              </p>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {skills.map((s) => (
+                  <Badge
+                    key={s.skill?.id ?? s.nivel_minimo}
+                    tone="outline"
+                    className="max-w-full whitespace-normal break-words text-left"
+                  >
+                    {s.skill?.nombre}
+                    {s.nivel_minimo && (
+                      <span className="text-muted/70">
+                        · {NIVEL_LABEL[s.nivel_minimo] ?? s.nivel_minimo}
+                      </span>
+                    )}
+                  </Badge>
+                ))}
+              </div>
+            </section>
+          )}
+        </aside>
       </div>
     </main>
   );

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { OrgLogo } from "@/components/ui/org-logo";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { Modal } from "@/components/ui/modal";
+import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { withdrawApplication } from "@/features/applications/actions";
 import type { MyApplication } from "@/features/applications/queries";
@@ -71,7 +73,9 @@ function haceCuanto(iso: string): string {
  */
 export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
   const [filtro, setFiltro] = useState<FiltroId>("todas");
+  const [retirarId, setRetirarId] = useState<string | null>(null);
   const visibles = apps.filter((a) => coincide(a.status, filtro));
+  const postulacionParaRetirar = apps.find((a) => a.id === retirarId);
 
   const conteo = (f: FiltroId) =>
     apps.filter((a) => coincide(a.status, f)).length;
@@ -114,7 +118,7 @@ export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
           <span className="w-32 shrink-0">Rol</span>
           <span className="w-36 shrink-0">Estado</span>
           <span className="w-20 shrink-0 text-right">Postulado</span>
-          <span className="w-8 shrink-0" aria-hidden />
+          <span className="w-20 shrink-0 text-right">Acción</span>
         </div>
 
         {visibles.length === 0 ? (
@@ -134,6 +138,7 @@ export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
             )}
           </div>
         ) : (
+          <>
           <ul>
             {visibles.map((a) => {
               const estado = ESTADO[a.status] ?? {
@@ -179,21 +184,10 @@ export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
                     {a.role?.nombre}
                   </span>
 
-                  {/* Estado (+ retirar si está en revisión). */}
+                  {/* Estado: la acción de retirar vive separada al extremo
+                      derecho para no competir visualmente con el badge. */}
                   <div className="flex w-auto shrink-0 flex-col items-start gap-1.5 md:w-36">
                     <Badge tone={estado.tone}>{estado.label}</Badge>
-                    {a.status === "enviada" && (
-                      <form action={withdrawApplication}>
-                        <input type="hidden" name="applicationId" value={a.id} />
-                        <SubmitButton
-                          variant="ghost"
-                          size="sm"
-                          pendingText="Retirando…"
-                        >
-                          Retirar
-                        </SubmitButton>
-                      </form>
-                    )}
                   </div>
 
                   {/* Fecha (desktop) */}
@@ -201,11 +195,18 @@ export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
                     {haceCuanto(a.created_at)}
                   </span>
 
-                  {/* Acceso directo al espacio de trabajo, si ya está
-                      aceptada — ícono, no texto: acá compite por espacio con
-                      el resto de la fila, un link de texto se veía suelto. */}
-                  <span className="flex w-8 shrink-0 justify-end">
-                    {aceptada && proyecto?.id && (
+                  {/* Acción contextual: retirar queda en la columna final,
+                      junto al acceso al espacio de trabajo cuando corresponde. */}
+                  <span className="flex w-20 shrink-0 justify-end">
+                    {a.status === "enviada" ? (
+                      <button
+                        type="button"
+                        onClick={() => setRetirarId(a.id)}
+                        className={buttonClasses({ variant: "ghost", size: "sm" }) + " px-2 text-xs"}
+                      >
+                        Retirar
+                      </button>
+                    ) : aceptada && proyecto?.id ? (
                       <Link
                         href={`/proyecto/${proyecto.id}`}
                         aria-label="Ir al proyecto"
@@ -214,12 +215,57 @@ export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
                       >
                         <IconFlecha className="size-4" />
                       </Link>
-                    )}
+                    ) : null}
                   </span>
                 </li>
               );
             })}
           </ul>
+          {postulacionParaRetirar && (
+            <Modal
+              open
+              onClose={() => setRetirarId(null)}
+              title="Retirar postulación"
+            >
+              <div className="flex flex-col gap-4">
+                <p className="text-sm leading-relaxed text-ink">
+                  ¿Quieres retirar tu postulación a{" "}
+                  <strong>{postulacionParaRetirar.role?.project?.titulo}</strong>?
+                </p>
+                <p className="text-sm text-muted">
+                  La organización dejará de verla como una postulación activa.
+                  Podrás volver a postular más adelante si el proyecto sigue
+                  abierto.
+                </p>
+                <form
+                  action={withdrawApplication}
+                  onSubmit={() => setRetirarId(null)}
+                  className="flex justify-end gap-2"
+                >
+                  <input
+                    type="hidden"
+                    name="applicationId"
+                    value={postulacionParaRetirar.id}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setRetirarId(null)}
+                    className={buttonClasses({ variant: "ghost", size: "sm" })}
+                  >
+                    Cancelar
+                  </button>
+                  <SubmitButton
+                    variant="danger"
+                    size="sm"
+                    pendingText="Retirando…"
+                  >
+                    Retirar postulación
+                  </SubmitButton>
+                </form>
+              </div>
+            </Modal>
+          )}
+          </>
         )}
       </div>
     </div>
