@@ -57,7 +57,11 @@ export function NotificationBell() {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
     }
-    function onScroll() {
+    function onScroll(e: Event) {
+      // El listener usa captura para cerrar el panel cuando se desplaza la
+      // página, pero no debe confundir el scroll interno de la lista con un
+      // scroll externo.
+      if (panelRef.current?.contains(e.target as Node)) return;
       setOpen(false);
     }
     document.addEventListener("pointerdown", onPointerDown);
@@ -134,7 +138,7 @@ export function NotificationBell() {
                 Todavía no hay notificaciones.
               </p>
             ) : (
-              <div className="flex max-h-96 flex-col gap-2 overflow-y-auto py-1">
+              <div className="flex max-h-96 flex-col gap-2 overflow-y-auto py-1 pr-2 [scrollbar-gutter:stable]">
                 {noLeidasLista.length > 0 && (
                   <div className="flex flex-col gap-0.5">
                     <p className="px-3 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted/70">

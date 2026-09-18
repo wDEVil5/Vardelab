@@ -96,7 +96,7 @@ export function PrinciplesShowcase({
       const expansion = Math.min(nextProgress / 0.28, 1);
       stage.style.width = `${58 + expansion * 42}%`;
       stage.style.height = `${58 + expansion * 22}%`;
-      stage.style.borderRadius = `${28 - expansion * 20}px`;
+      stage.style.borderRadius = `${40 - expansion * 12}px`;
 
       setProgress(nextProgress);
     };
@@ -150,11 +150,11 @@ export function PrinciplesShowcase({
             <div className="relative flex h-[min(62vh,38rem)] items-center justify-center">
               <div
                 ref={stageRef}
-                className="relative flex shrink-0 overflow-hidden border p-7 transition-[width,height,border-radius,background-color,border-color] duration-500 ease-out lg:p-12"
+                className="relative flex shrink-0 overflow-hidden border p-6 transition-[width,height,border-radius,background-color,border-color] duration-500 ease-out lg:p-9"
                 style={{
                   width: "58%",
                   height: "58%",
-                  borderRadius: 28,
+                  borderRadius: 40,
                   backgroundColor: activePalette.background,
                   borderColor: activePalette.border,
                   color: activePalette.foreground,

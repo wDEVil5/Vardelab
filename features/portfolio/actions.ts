@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
  */
 
 export type PortfolioState = { error?: string; success?: boolean };
+export type DeletePortfolioState = { error?: string; success?: boolean };
 
 export async function addPortfolioItem(
   _prevState: PortfolioState,
@@ -51,15 +52,18 @@ export async function addPortfolioItem(
 }
 
 /** Elimina una evidencia propia. La RLS restringe al dueño. */
-export async function deletePortfolioItem(formData: FormData): Promise<void> {
+export async function deletePortfolioItem(
+  _prevState: DeletePortfolioState,
+  formData: FormData,
+): Promise<DeletePortfolioState> {
   const itemId = String(formData.get("itemId") ?? "");
-  if (!itemId) return;
+  if (!itemId) return { error: "No se encontró la evidencia." };
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) return { error: "Tu sesión expiró. Vuelve a iniciar sesión." };
 
   const { error } = await supabase
     .from("portfolio_items")
@@ -67,9 +71,13 @@ export async function deletePortfolioItem(formData: FormData): Promise<void> {
     .eq("id", itemId)
     .eq("profile_id", user.id);
 
-  if (error) console.error("[deletePortfolioItem]", error.message);
+  if (error) {
+    console.error("[deletePortfolioItem]", error.message);
+    return { error: "No se pudo eliminar la evidencia. Inténtalo de nuevo." };
+  }
 
   revalidatePath("/perfil");
+  return { success: true };
 }
 
 /**
