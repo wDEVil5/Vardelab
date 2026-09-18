@@ -9,7 +9,8 @@ import {
   getProjectApplications,
   type ProjectApplications,
 } from "@/features/applications/queries";
-import { acceptApplication, rejectApplication } from "@/features/applications/actions";
+import { rejectApplication } from "@/features/applications/actions";
+import { AcceptApplicationButton } from "@/features/applications/components/accept-application-button";
 import { ConfirmTeamButton } from "@/features/applications/components/confirm-team-button";
 import { RemoveTeamMemberButton } from "@/features/applications/components/remove-team-member-button";
 
@@ -338,18 +339,7 @@ function RoleApplications({
                     </span>
                   ) : (
                     <div className="flex flex-col gap-2 sm:w-32 sm:shrink-0 sm:self-center">
-                      <form action={acceptApplication}>
-                        <input type="hidden" name="applicationId" value={app.id} />
-                        <input type="hidden" name="projectId" value={projectId} />
-                        <SubmitButton
-                          variant="primary"
-                          size="sm"
-                          pendingText="Seleccionando…"
-                          className="w-full"
-                        >
-                          Seleccionar
-                        </SubmitButton>
-                      </form>
+                      <AcceptApplicationButton applicationId={app.id} projectId={projectId} />
                       <form action={rejectApplication}>
                         <input type="hidden" name="applicationId" value={app.id} />
                         <input type="hidden" name="projectId" value={projectId} />

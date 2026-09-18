@@ -229,130 +229,68 @@ async function resolveApplication(
   revalidatePath(`/mis-proyectos/${projectId}/postulaciones`);
 }
 
-/**
- * Suma un usuario al equipo del proyecto (creando el equipo si aún no existe).
- * Idempotente: no duplica si ya es miembro. La RLS `teams_*_manager` y
- * `team_members_write_manager` (M4) exigen gestionar el proyecto.
- */
-async function addToProjectTeam(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  projectId: string,
-  userId: string,
-  roleId: string,
-): Promise<void> {
-  // Equipo del proyecto (uno por proyecto: teams.project_id es UNIQUE).
-  let { data: team } = await supabase
-    .from("teams")
-    .select("id")
-    .eq("project_id", projectId)
-    .maybeSingle();
-
-  if (!team) {
-    // No se usa `.insert().select()`: el RETURNING exige pasar la policy de
-    // SELECT en la misma sentencia y con RLS puede devolver null. Se inserta y
-    // luego se vuelve a consultar por project_id (UNIQUE).
-    const { error } = await supabase
-      .from("teams")
-      .insert({ project_id: projectId });
-    if (error) {
-      console.error("[addToProjectTeam:create]", error.message);
-      return;
-    }
-    const { data } = await supabase
-      .from("teams")
-      .select("id")
-      .eq("project_id", projectId)
-      .maybeSingle();
-    team = data;
-  }
-  if (!team) return;
-
-  // No duplicar la membresía.
-  const { data: existente } = await supabase
-    .from("team_members")
-    .select("id")
-    .eq("team_id", team.id)
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (existente) return;
-
-  const { error } = await supabase
-    .from("team_members")
-    .insert({ team_id: team.id, user_id: userId, project_role_id: roleId });
-  if (error) console.error("[addToProjectTeam:member]", error.message);
-}
+export type AcceptApplicationState = { error?: string };
 
 /**
- * Acepta una postulación respetando los cupos del rol: si el rol ya tiene tantas
- * aceptadas como cupos, no acepta más (guarda de servidor, defensa en profundidad
- * junto con la UI que oculta el botón). Solo actúa sobre postulaciones `enviada`.
- * Al aceptar, suma al estudiante al equipo del proyecto (lo crea si no existe).
+ * Acepta una postulación. El cupo, el cambio de estado y el alta en el
+ * equipo del proyecto ocurren atómicamente en `accept_application` (M84,
+ * `security definer`) — una sola transacción en Postgres, no una secuencia
+ * de consultas desde la app: eso es lo que evita que dos aceptaciones
+ * concurrentes al mismo rol pasen ambas el chequeo de cupo, y lo que
+ * garantiza que nunca quede una postulación `aceptada` sin su fila en
+ * `team_members` si algo falla a mitad de camino.
  */
-export async function acceptApplication(formData: FormData): Promise<void> {
+export async function acceptApplication(
+  _prevState: AcceptApplicationState,
+  formData: FormData,
+): Promise<AcceptApplicationState> {
   const applicationId = String(formData.get("applicationId") ?? "");
   const projectId = String(formData.get("projectId") ?? "");
-  if (!applicationId) return;
+  if (!applicationId) return { error: "Falta la postulación." };
 
   const supabase = await createClient();
 
-  // Postulante, rol y estado de la postulación.
-  const { data: app } = await supabase
-    .from("applications")
-    .select("applicant_id, project_role_id, status")
-    .eq("id", applicationId)
-    .maybeSingle();
+  const { data: resultado, error } = await supabase.rpc("accept_application", {
+    _application_id: applicationId,
+  });
 
-  if (app && app.status === "enviada") {
-    const [{ data: role }, { count }] = await Promise.all([
-      supabase
-        .from("project_roles")
-        .select("cupos, project_id")
-        .eq("id", app.project_role_id)
-        .maybeSingle(),
-      supabase
-        .from("applications")
-        .select("id", { count: "exact", head: true })
-        .eq("project_role_id", app.project_role_id)
-        .eq("status", "aceptada"),
-    ]);
-
-    // Solo acepta si quedan cupos.
-    if (role && (count ?? 0) < role.cupos) {
-      const { error } = await supabase
-        .from("applications")
-        .update({ status: "aceptada" })
-        .eq("id", applicationId)
-        .eq("status", "enviada");
-      if (error) {
-        console.error("[acceptApplication]", error.message);
-      } else {
-        // Aceptada: sumar al estudiante al equipo del proyecto.
-        await addToProjectTeam(
-          supabase,
-          role.project_id,
-          app.applicant_id,
-          app.project_role_id,
-        );
-
-        // Correo al estudiante (M43).
-        const { data: proyecto } = await supabase
-          .from("projects")
-          .select("titulo")
-          .eq("id", role.project_id)
-          .maybeSingle();
-        after(() =>
-          sendEmailToUser(
-            app.applicant_id,
-            "postulacion_aceptada",
-            `Tu postulación a "${proyecto?.titulo ?? "un proyecto"}" fue aceptada.`,
-            "/mis-postulaciones",
-          ),
-        );
-      }
-    }
+  if (error) {
+    console.error("[acceptApplication]", error.message);
+    return { error: "No se pudo aceptar la postulación. Inténtalo de nuevo." };
   }
 
   revalidatePath(`/mis-proyectos/${projectId}/postulaciones`);
+
+  if (resultado === "sin_cupos") {
+    return { error: "Ya no quedan cupos para este rol — alguien más lo aceptó primero." };
+  }
+  if (resultado === "ya_procesada") {
+    return { error: "Esta postulación ya fue procesada." };
+  }
+  if (resultado === "no_encontrada") {
+    return { error: "No se encontró la postulación." };
+  }
+
+  // 'ok': correo al estudiante (M43). Se resuelve el título del proyecto
+  // acá (no lo devuelve la función SQL, que solo confirma el resultado).
+  const { data: app } = await supabase
+    .from("applications")
+    .select("applicant_id, role:project_roles ( project:projects ( titulo ) )")
+    .eq("id", applicationId)
+    .maybeSingle();
+  if (app) {
+    const titulo = app.role?.project?.titulo ?? "un proyecto";
+    after(() =>
+      sendEmailToUser(
+        app.applicant_id,
+        "postulacion_aceptada",
+        `Tu postulación a "${titulo}" fue aceptada.`,
+        "/mis-postulaciones",
+      ),
+    );
+  }
+
+  return {};
 }
 
 export async function rejectApplication(formData: FormData): Promise<void> {
