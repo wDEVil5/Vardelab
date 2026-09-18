@@ -13,7 +13,7 @@ const inter = Inter({
 // de los campos sociales (Open Graph, Twitter Card) los hereda de aquí salvo
 // que la página los redefina. `metadataBase` resuelve `sitemap.ts`/`robots.ts`
 // y las imágenes sociales a URLs absolutas usando la misma `SITE_URL`.
-const TITULO = "CampusLab";
+const TITULO = "Vardelab";
 const DESCRIPCION =
   "Microproyectos reales que conectan a estudiantes con necesidades concretas de organizaciones.";
 
@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: TITULO,
   description: DESCRIPCION,
+  manifest: "/manifest.webmanifest",
   openGraph: {
     title: TITULO,
     description: DESCRIPCION,

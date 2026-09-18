@@ -123,7 +123,7 @@ function Icon({ name }: { name: IconName }) {
   );
 }
 
-const CLAVE_COLAPSADO = "campuslab:sidebar-colapsado";
+const CLAVE_COLAPSADO = "vardelab:sidebar-colapsado";
 
 /**
  * Sidebar del área autenticada (route group `(app)`). En desktop es fijo y
@@ -230,9 +230,15 @@ export function AppSidebar({
           compact ? "flex-col" : "justify-between",
         )}
       >
-        {!compact && (
-          <Link href="/" className="min-w-0 truncate px-1 text-lg font-bold text-ink">
-            CampusLab
+        {!compact ? (
+          <Link href="/" className="min-w-0 px-1" aria-label="Vardelab">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/vardelab-logo-horizontal-negro.svg" alt="Vardelab" className="h-5 w-auto" />
+          </Link>
+        ) : (
+          <Link href="/" aria-label="Vardelab">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/vardelab-simbolo-negro.svg" alt="Vardelab" className="size-7" />
           </Link>
         )}
         <div className={cn("flex items-center gap-1", compact && "flex-col")}>
@@ -422,8 +428,9 @@ export function AppSidebar({
 
       {/* Barra superior (móvil). */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-white px-4 py-3 lg:hidden">
-        <Link href="/" className="font-bold text-ink">
-          CampusLab
+        <Link href="/" aria-label="Vardelab">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/vardelab-logo-horizontal-negro.svg" alt="Vardelab" className="h-5 w-auto" />
         </Link>
         <div className="flex items-center gap-1">
           <NotificationBell />

@@ -16,8 +16,9 @@ export function SiteHeader() {
       <div className="relative flex h-14 w-full items-center justify-between gap-4 px-6">
         {/* En el sitio público la marca lleva siempre a la portada pública. La
             entrada al panel privado es el botón "Ir a mi panel" (ver derecha). */}
-        <Link href="/" className="font-bold text-ink">
-          CampusLab
+        <Link href="/" aria-label="Vardelab">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/vardelab-logo-horizontal-negro.svg" alt="Vardelab" className="h-6 w-auto" />
         </Link>
 
         {/* Navegación desktop CENTRADA (absoluta). Solo enlaces PÚBLICOS (igual
