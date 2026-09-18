@@ -18,8 +18,12 @@ import { getMyActiveApplicationInProject } from "@/features/applications/queries
 import { getPublicProjectTeam } from "@/features/teams/queries";
 import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
+import { ActionSuccess } from "@/components/ui/action-success";
 
-type PageProps = { params: Promise<{ id: string }> };
+type PageProps = {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ postulado?: string }>;
+};
 
 export async function generateMetadata({
   params,
@@ -40,8 +44,9 @@ export async function generateMetadata({
  * Jerarquía: título + estado, CTA/aside temprano en móvil, contenido compacto,
  * roles con ancho usable (no 1/3 forzado).
  */
-export default async function ProyectoPage({ params }: PageProps) {
+export default async function ProyectoPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const query = await searchParams;
   const project = await getPublishedProjectById(id);
 
   if (!project) notFound();
@@ -129,6 +134,29 @@ export default async function ProyectoPage({ params }: PageProps) {
               </p>
             )}
           </header>
+
+          {query?.postulado === "1" && (
+            <section className="mt-6 overflow-hidden rounded-2xl border border-sprout/25 bg-sprout/5 p-4 shadow-[0_14px_32px_-24px_rgba(22,163,74,0.45)] sm:p-5">
+              <ActionSuccess
+                title="¡Postulación enviada!"
+                description="La organización ya puede revisar tu perfil y tu mensaje. Te avisaremos cuando haya novedades."
+              />
+              <div className="mt-4 flex flex-col gap-2 border-t border-sprout/15 pt-4 sm:flex-row sm:items-center">
+                <Link
+                  href="/mis-postulaciones"
+                  className="inline-flex min-h-10 items-center justify-center rounded-md bg-electric px-4 text-sm font-medium text-white transition-colors hover:bg-electric/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-electric"
+                >
+                  Ver mis postulaciones
+                </Link>
+                <Link
+                  href="/proyectos"
+                  className="inline-flex min-h-10 items-center justify-center rounded-md px-4 text-sm font-medium text-electric transition-colors hover:bg-electric/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-electric"
+                >
+                  Seguir explorando proyectos →
+                </Link>
+              </div>
+            </section>
+          )}
 
           {/* Móvil: aside (CTA) primero. Desktop: contenido | aside. */}
           <div className="mt-6 grid gap-5 lg:mt-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">

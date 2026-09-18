@@ -46,17 +46,17 @@ export type PortfolioItem = Awaited<
  * si quien mira no tiene ningún motivo para verlo → la página traduce eso a
  * 404.
  *
- * No filtra por `visibility = 'publico'` en el código: deja que la RLS
- * decida, porque "público" no es el único motivo legítimo para ver un perfil.
+ * La página `/u/[id]` es el contexto público, por lo que acá se filtran las
+ * evidencias a `visibility = 'publico'`. La RLS también permite que un gestor
+ * vea evidencias privadas de sus postulantes para evaluación interna, pero esa
+ * excepción no debe filtrarse a esta vista pública.
  * `profiles_select_public_or_own` (M1) ya cubre público/propio, pero además
  * están `profiles_select_managed_applicant` (M13, el gestor de un proyecto al
  * que esa persona postuló), `profiles_select_teammate` (M14, comparte equipo)
  * y `profiles_select_project_partner` (M50, participa del mismo proyecto).
- * Filtrar acá por `visibility` de más bloqueaba exactamente a esos tres casos
- * aunque la RLS ya les daba permiso — mismo error, corregido una vez acá en
- * vez de sumar una función `getXProfile` distinta por cada motivo de acceso.
- * `portfolio_items` sigue el mismo criterio (agregado en M71 para el caso del
- * gestor); `profile_skills` ya lo tenía desde M34.
+ * El perfil y las habilidades siguen usando las excepciones de acceso
+ * correspondientes para que el gestor pueda evaluar a sus postulantes; el
+ * portafolio público, en cambio, no mezcla datos privados con los públicos.
  */
 export async function getPublicProfile(profileId: string) {
   const supabase = await createClient();
@@ -80,6 +80,7 @@ export async function getPublicProfile(profileId: string) {
       .from("portfolio_items")
       .select("id, titulo, descripcion, url, visibility, project:projects ( id, titulo )")
       .eq("profile_id", profileId)
+      .eq("visibility", "publico")
       .order("created_at", { ascending: false }),
     supabase
       .from("profile_skills")

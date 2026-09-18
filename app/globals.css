@@ -9,6 +9,13 @@
   box-shadow: none !important;
 }
 
+/* Al abrir un menú, el fondo de ancho completo conserva el mismo color que
+   la barra para que no aparezca una división lateral entre la píldora y el
+   viewport. */
+header:has(.site-header-pill button[aria-expanded="true"]) {
+  background-color: var(--background);
+}
+
 /* Oculta la barra de scroll (manteniendo el scroll) en todos los navegadores. */
 @utility scrollbar-none {
   scrollbar-width: none;
