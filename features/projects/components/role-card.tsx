@@ -86,22 +86,17 @@ export function RoleCard({
               {rol.nombre}
             </h3>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted lg:mt-1">
-              <span
-                className={cn(
-                  "font-medium",
-                  rolLleno ? "text-muted" : "text-electric",
-                )}
-              >
-                {cuposLabel}
-              </span>
-              {horas && (
-                <>
-                  <span aria-hidden>·</span>
-                  <span>{horas}</span>
-                </>
-              )}
+              {horas && <span>{horas}</span>}
             </div>
           </div>
+          <span
+            className={cn(
+              "shrink-0 whitespace-nowrap text-sm font-medium lg:text-xs",
+              rolLleno ? "text-muted" : "text-electric",
+            )}
+          >
+            {cuposLabel}
+          </span>
         </div>
 
         {apto && (

@@ -14,7 +14,7 @@ const csp = [
   "default-src 'self'",
   scriptSrc,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https:",
+  `img-src 'self' data: https: ${supabaseUrl}`.trim(),
   `connect-src 'self' ${supabaseUrl}`.trim(),
   "frame-ancestors 'none'",
   "base-uri 'self'",
