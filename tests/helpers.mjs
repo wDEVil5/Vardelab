@@ -8,6 +8,30 @@ const CHAIN_METHODS = [
 ];
 
 /**
+ * `redirect()` real de Next.js corta la ejecución lanzando (no devuelve). Se
+ * imita igual acá: siempre lanza esta señal (nunca falla la prueba por sí
+ * sola) y `expectRedirect` de más abajo es quien decide si eso era lo
+ * esperado o no.
+ */
+class RedirectSignal extends Error {
+  constructor(to) {
+    super(`Redirección inesperada a "${to}"`);
+    this.to = to;
+  }
+}
+
+/** Envuelve una llamada que debería terminar en `redirect(to)`. Devuelve `to`. */
+export async function expectRedirect(promise) {
+  try {
+    await promise;
+  } catch (err) {
+    if (err instanceof RedirectSignal) return err.to;
+    throw err;
+  }
+  assert.fail('Se esperaba una redirección y no ocurrió');
+}
+
+/**
  * Ejecuta una Server Action real (transpilada de TS) con respuestas de base de
  * datos controladas — sin credenciales, sin tocar Postgres. Compartido por
  * todos los `tests/*.test.mjs`: cada acción real importa sus propias
@@ -20,11 +44,13 @@ export function load(relativePath, {
   rpcResponses = [],
   currentUser = null,
   storageResponses = {},
+  extraModules = {},
 } = {}) {
   const paths = [];
   const queries = [];
   const rpcCalls = [];
   const emailCalls = [];
+  const sendEmailCalls = [];
   const storageUploads = [];
   const storageRemoves = [];
   const uploadResponses = storageResponses.upload ?? [];
@@ -64,6 +90,9 @@ export function load(relativePath, {
             storageRemoves.push({ bucket, paths: pathsToRemove });
             return removeResponses.shift() ?? { error: null };
           },
+          getPublicUrl(path) {
+            return { data: { publicUrl: `https://fake.local/storage/${bucket}/${path}` } };
+          },
         };
       },
     },
@@ -81,17 +110,22 @@ export function load(relativePath, {
     File, FormData,
     require(name) {
       if (name === 'next/cache') return { revalidatePath: (path) => paths.push(path) };
-      if (name === 'next/navigation') return { redirect: () => assert.fail('Redirección inesperada') };
+      if (name === 'next/navigation') return { redirect: (to) => { throw new RedirectSignal(to); } };
       if (name === 'next/server') return { after: (fn) => { fn(); } };
       if (name === '@/lib/supabase/server') return { createClient: async () => db };
       if (name === '@/features/auth/queries') return { getCurrentUser: async () => currentUser };
+      if (name === '@/features/organizations/config') return { INVITACIONES_HABILITADAS: true };
       if (name === '@/features/notifications/email') {
-        return { sendEmailToUser: async (...args) => { emailCalls.push(args); } };
+        return {
+          sendEmailToUser: async (...args) => { emailCalls.push(args); },
+          sendEmail: async (...args) => { sendEmailCalls.push(args); },
+        };
       }
+      if (name in extraModules) return extraModules[name];
       throw new Error(`Import inesperado: ${name}`);
     },
   });
-  return { exports, paths, queries, rpcCalls, emailCalls, storageUploads, storageRemoves };
+  return { exports, paths, queries, rpcCalls, emailCalls, sendEmailCalls, storageUploads, storageRemoves };
 }
 
 export function form(values) {
