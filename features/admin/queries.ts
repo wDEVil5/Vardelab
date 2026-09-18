@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ESTADOS_PROYECTO, ETIQUETA_ESTADO } from "@/features/admin/project-status";
+import { isUuid } from "@/lib/utils";
 
 /** Meta orientativa del piloto (PRD §15): 7+ proyectos completados. */
 const META_NORTH_STAR = 7;
@@ -516,6 +517,7 @@ export type AdminProjectRow = Awaited<
  * nada, y quedan en "—" en la práctica.
  */
 export async function getProjectDetailForAdmin(id: string) {
+  if (!isUuid(id)) return null;
   const supabase = await createClient();
 
   const { data: project, error } = await supabase
@@ -735,6 +737,7 @@ export async function getPendingOrgVerificationCount() {
  * en qué estado.
  */
 export async function getOrganizationDetailForAdmin(id: string) {
+  if (!isUuid(id)) return null;
   const supabase = await createClient();
 
   const { data: org, error } = await supabase
