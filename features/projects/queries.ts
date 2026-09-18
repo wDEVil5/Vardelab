@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
 import { getMyOrgIds } from "@/features/organizations/queries";
+import { isUuid } from "@/lib/utils";
 
 /**
  * Capa de datos del catálogo público de proyectos.
@@ -563,6 +564,7 @@ const PROJECT_DETAIL_SELECT = `
 ` as const;
 
 async function fetchPublishedProjectById(id: string) {
+  if (!isUuid(id)) return null;
   const supabase = createPublicClient();
 
   const { data, error } = await supabase
@@ -586,9 +588,11 @@ async function fetchPublishedProjectById(id: string) {
 }
 
 /**
- * Devuelve la ficha de un proyecto publicado por id, o `null` si no existe o no
- * está publicado. `maybeSingle()` no lanza cuando no hay fila: devuelve null y
- * la página decide mostrar 404.
+ * Devuelve la ficha de un proyecto publicado por id, o `null` si el id no
+ * tiene forma de UUID, no existe o no está publicado — en los tres casos la
+ * página decide mostrar 404. `maybeSingle()` no lanza cuando no hay fila; la
+ * validación de formato evita el caso aparte en que un id malformado (URL
+ * escrita a mano) hace que Postgres tire un error real en vez de "sin filas".
  *
  * Cacheado por id (revalida cada 5 min): datos públicos, se evita golpear la
  * base en cada visita a la ficha.
@@ -607,8 +611,8 @@ export type ProjectDetail = NonNullable<
 /**
  * Trae un rol para el flujo de postulación, validando que pertenezca al
  * proyecto indicado y que el proyecto esté publicado. Devuelve `null` si no se
- * cumple (rol inexistente, de otro proyecto, o proyecto no publicado) → la
- * página muestra 404.
+ * cumple (id malformado, rol inexistente, de otro proyecto, o proyecto no
+ * publicado) → la página muestra 404.
  *
  * Incluye `aceptadas` (M72): la página necesita saber si el rol ya está lleno
  * para no ofrecer el formulario — la guarda real vive en la RLS de
@@ -616,6 +620,7 @@ export type ProjectDetail = NonNullable<
  * que de todas formas la base va a rechazar.
  */
 export async function getRoleForApplication(projectId: string, roleId: string) {
+  if (!isUuid(projectId) || !isUuid(roleId)) return null;
   const supabase = await createClient();
 
   const { data, error } = await supabase
