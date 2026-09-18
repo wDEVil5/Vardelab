@@ -25,7 +25,7 @@ import type { Notification } from "@/features/notifications/queries";
  * real, no un catálogo de correos genérico).
  */
 
-const REMITENTE = { name: "Campuslab", email: "wilnesdevil9@gmail.com" };
+const REMITENTE = { name: "Vardelab", email: "wilnesdevil9@gmail.com" };
 
 type Tipo = Notification["tipo"];
 
@@ -128,7 +128,7 @@ function plantilla({ asunto, mensaje, instruccion, cta, link, confianza, to }: P
 
   // Texto de dominio para mostrar (sin protocolo, como "www.brevo.com" en el
   // mockup de referencia): usa `SITE_URL` tal cual, así que en cuanto cambie
-  // el dominio (o el nombre "CampusLab") esta línea se actualiza sola.
+  // el dominio (o el nombre "Vardelab") esta línea se actualiza sola.
   const dominioVisible = SITE_URL.replace(/^https?:\/\//, "");
 
   return `<!DOCTYPE html>
@@ -140,11 +140,14 @@ function plantilla({ asunto, mensaje, instruccion, cta, link, confianza, to }: P
 <meta name="supported-color-schemes" content="light dark">
 <style>
   body { margin:0; padding:0; }
+  .logo-dark { display:none; }
   @media (prefers-color-scheme: dark) {
     .bg-outer { background:#0b0f19 !important; }
     .ink { color:#f3f5f8 !important; }
     .muted { color:#93a1b3 !important; }
     .borde { border-color:#262f3d !important; }
+    .logo-light { display:none !important; }
+    .logo-dark { display:inline-block !important; }
   }
 </style>
 </head>
@@ -154,7 +157,13 @@ function plantilla({ asunto, mensaje, instruccion, cta, link, confianza, to }: P
       <td align="center" style="padding:56px 24px">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;font-family:${fuente};text-align:center">
           <tr>
-            <td class="ink" style="padding:0 0 40px;font-size:22px;font-weight:800;letter-spacing:-.01em;color:#0d253b">CampusLab</td>
+            <td style="padding:0 0 32px">
+              <!-- Dos <img> fijas, no una con src dinámico: un correo no puede
+                   cambiar el src por JS según el tema. El CSS de arriba oculta
+                   una y muestra la otra en dark mode. -->
+              <img class="logo-light" src="${SITE_URL}/brand/email-logo.png" width="105" height="22" alt="Vardelab" style="display:inline-block;border:0;outline:none;height:22px;width:105px">
+              <img class="logo-dark" src="${SITE_URL}/brand/email-logo-dark.png" width="105" height="22" alt="Vardelab" style="border:0;outline:none;height:22px;width:105px">
+            </td>
           </tr>
           <tr>
             <td style="padding:0 0 24px;font-size:26px;line-height:1.3;font-weight:800;letter-spacing:-.01em;color:#3867ff">${asunto}</td>
@@ -174,19 +183,19 @@ function plantilla({ asunto, mensaje, instruccion, cta, link, confianza, to }: P
           </tr>
           <tr>
             <td class="muted" style="padding:20px 0 0;font-size:12px;line-height:1.7;color:#607086">
-              CampusLab · Microproyectos reales entre estudiantes y organizaciones<br>
+              Vardelab · Microproyectos reales entre estudiantes y organizaciones<br>
               Este correo se envió a ${to}.<br>
               <a href="${SITE_URL}/contacto" class="muted" style="color:#607086;text-decoration:underline">Contacto</a>
             </td>
           </tr>
           <tr>
             <td class="muted" style="padding:16px 0 0;font-size:12px;line-height:1.6;color:#607086">
-              ¿No conoces CampusLab? Más información en
+              ¿No conoces Vardelab? Más información en
               <a href="${SITE_URL}" class="muted" style="color:#607086;text-decoration:underline">${dominioVisible}</a>
             </td>
           </tr>
           <tr>
-            <td class="muted" style="padding:28px 0 0;font-size:12px;font-weight:700;color:#607086">CampusLab</td>
+            <td class="muted" style="padding:28px 0 0;font-size:12px;font-weight:700;color:#607086">Vardelab</td>
           </tr>
         </table>
       </td>
