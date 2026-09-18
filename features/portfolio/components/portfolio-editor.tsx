@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import {
   addPortfolioItem,
   deletePortfolioItem,
@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Modal } from "@/components/ui/modal";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { SubmitButton } from "@/features/auth/components/submit-button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import type { PortfolioItem } from "@/features/portfolio/queries";
 import { PortafolioIconSvg } from "@/features/portfolio/components/portfolio-icons";
 
@@ -129,6 +129,21 @@ export function PortfolioEditor({
   projects: ProjectOption[];
 }) {
   const [open, setOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<PortfolioItem | null>(null);
+  const [deleteError, setDeleteError] = useState<string>();
+  const [deletePending, startDelete] = useTransition();
+
+  const confirmDelete = (formData: FormData) => {
+    startDelete(async () => {
+      const result = await deletePortfolioItem({}, formData);
+      if (result.success) {
+        setDeleteTarget(null);
+        setDeleteError(undefined);
+      } else {
+        setDeleteError(result.error ?? "No se pudo eliminar la evidencia.");
+      }
+    });
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -191,17 +206,18 @@ export function PortfolioEditor({
                       <PortafolioIconSvg name={publico ? "ojo" : "ojo_tachado"} />
                     </button>
                   </form>
-                  <form action={deletePortfolioItem}>
-                    <input type="hidden" name="itemId" value={it.id} />
-                    <button
-                      type="submit"
-                      aria-label="Quitar evidencia"
-                      title="Quitar evidencia"
-                      className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-coral/10 hover:text-coral"
-                    >
-                      <PortafolioIconSvg name="papelera" />
-                    </button>
-                  </form>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteError(undefined);
+                      setDeleteTarget(it);
+                    }}
+                    aria-label="Quitar evidencia"
+                    title="Quitar evidencia"
+                    className="flex size-8 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50"
+                  >
+                    <PortafolioIconSvg name="papelera" />
+                  </button>
                 </div>
               </li>
             );
@@ -224,6 +240,50 @@ export function PortfolioEditor({
 
       <Modal open={open} onClose={() => setOpen(false)} title="Agregar evidencia">
         <AddPortfolioItemForm projects={projects} onAdded={() => setOpen(false)} />
+      </Modal>
+
+      <Modal
+        open={deleteTarget !== null}
+        busy={deletePending}
+        onClose={() => setDeleteTarget(null)}
+        title="Eliminar evidencia"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-ink">
+            ¿Eliminar la evidencia <strong>{deleteTarget?.titulo}</strong>? Esta
+            acción no se puede deshacer.
+          </p>
+
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              confirmDelete(new FormData(event.currentTarget));
+            }}
+            className="flex justify-end gap-2"
+          >
+            <input type="hidden" name="itemId" value={deleteTarget?.id ?? ""} />
+            <button
+              type="button"
+              onClick={() => setDeleteTarget(null)}
+              className={buttonClasses({ variant: "ghost", size: "sm" })}
+            >
+              Cancelar
+            </button>
+            <SubmitButton
+              variant="danger"
+              size="sm"
+              pendingText="Eliminando…"
+            >
+              Sí, eliminar
+            </SubmitButton>
+          </form>
+
+          {deleteError && (
+            <p role="alert" className="text-sm text-coral">
+              {deleteError}
+            </p>
+          )}
+        </div>
       </Modal>
     </div>
   );

@@ -256,8 +256,9 @@ function iconoDeTipo(url: string | null): ComponentType<{ className?: string }> 
 /**
  * Página pública del portafolio de un estudiante. Solo existe si el perfil es
  * público (la RLS lo garantiza; `getPublicProfile` devuelve null si no) → 404.
- * Muestra la presentación, las habilidades y las evidencias marcadas públicas
- * — lo que un patrocinador necesita para evaluar si el estudiante encaja.
+ * Muestra la presentación, las habilidades y solo las evidencias marcadas
+ * públicas — lo que un patrocinador necesita para evaluar si el estudiante
+ * encaja, sin exponer elementos privados.
  */
 export default async function PerfilPublicoPage({ params }: PageProps) {
   const { id } = await params;
@@ -497,15 +498,6 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
                         </span>
                         <div className="min-w-0 flex-1">
                           <span className="font-semibold text-ink">{it.titulo}</span>
-                          {it.visibility !== "publico" && (
-                            // Solo puede llegar acá el dueño o alguien con
-                            // acceso autorizado (RLS) a un ítem que el
-                            // estudiante no hizo público — para un visitante
-                            // cualquiera, `items` nunca trae privados.
-                            <Badge tone="neutral" className="ml-2 align-middle">
-                              Privado
-                            </Badge>
-                          )}
                           {it.descripcion && (
                             <p className="mt-1 text-sm text-muted">{it.descripcion}</p>
                           )}
