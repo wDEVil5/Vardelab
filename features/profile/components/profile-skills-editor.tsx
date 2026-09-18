@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, type ReactNode } from "react";
+import { useActionState, useState, type ReactNode } from "react";
 import {
   addProfileSkill,
   deleteProfileSkill,
@@ -24,22 +24,37 @@ function SkillChip({
   children?: ReactNode;
 }) {
   const [state, formAction] = useActionState(deleteProfileSkill, DELETE_INITIAL);
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <span className="inline-flex flex-col items-start gap-0.5">
       <span className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs text-muted">
         {nombre}
         {children}
-        <form action={formAction} className="inline">
-          <input type="hidden" name="skillId" value={skillId} />
+        {confirming ? (
+          <form action={formAction} className="inline-flex items-center gap-1">
+            <input type="hidden" name="skillId" value={skillId} />
+            <button type="submit" className="ml-0.5 font-medium text-coral hover:underline">
+              ¿Quitar?
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="text-muted/60 hover:text-ink"
+            >
+              No
+            </button>
+          </form>
+        ) : (
           <button
-            type="submit"
+            type="button"
+            onClick={() => setConfirming(true)}
             aria-label={`Quitar ${nombre}`}
             className="ml-0.5 text-muted/60 hover:text-coral"
           >
             ×
           </button>
-        </form>
+        )}
       </span>
       {state.error && (
         <span role="alert" className="text-[11px] text-coral">

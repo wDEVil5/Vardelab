@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, type ReactNode } from "react";
+import { useActionState, useState, type ReactNode } from "react";
 import { deleteRoleSkill, type DeleteRoleSkillState } from "@/features/projects/actions";
 import { AddRoleSkillModal } from "@/features/projects/components/add-role-skill-modal";
 import type { Skill } from "@/features/skills/queries";
@@ -31,24 +31,39 @@ function RoleSkillChip({
   children?: ReactNode;
 }) {
   const [state, formAction] = useActionState(deleteRoleSkill, DELETE_INITIAL);
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <span className="inline-flex flex-col items-start gap-0.5">
       <span className="inline-flex items-center gap-1 rounded-full bg-electric/10 px-2.5 py-1 text-xs font-medium text-electric">
         {nombre}
         {children}
-        <form action={formAction} className="inline">
-          <input type="hidden" name="projectId" value={projectId} />
-          <input type="hidden" name="roleId" value={roleId} />
-          <input type="hidden" name="skillId" value={skillId} />
+        {confirming ? (
+          <form action={formAction} className="inline-flex items-center gap-1">
+            <input type="hidden" name="projectId" value={projectId} />
+            <input type="hidden" name="roleId" value={roleId} />
+            <input type="hidden" name="skillId" value={skillId} />
+            <button type="submit" className="ml-0.5 font-medium text-coral hover:underline">
+              ¿Quitar?
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="text-electric/60 hover:text-electric"
+            >
+              No
+            </button>
+          </form>
+        ) : (
           <button
-            type="submit"
+            type="button"
+            onClick={() => setConfirming(true)}
             aria-label={`Quitar ${nombre}`}
             className="ml-0.5 text-electric/60 hover:text-coral"
           >
             ×
           </button>
-        </form>
+        )}
       </span>
       {state.error && (
         <span role="alert" className="text-[11px] text-coral">

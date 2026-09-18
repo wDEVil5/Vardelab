@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   addSubmission,
   deleteSubmission,
@@ -17,31 +18,70 @@ import { ActionSuccess } from "@/components/ui/action-success";
 
 const INITIAL: SubmissionState = {};
 const DELETE_INITIAL: DeleteSubmissionState = {};
+const EASE = [0.22, 1, 0.36, 1] as const;
 
-/** Botón "eliminar entrega", con su propio estado de error si falla. */
+/**
+ * Botón "eliminar entrega", con confirmación en dos pasos (mismo patrón que
+ * `RemoveTeamMemberButton`) — borra el archivo de Storage, no se puede
+ * deshacer.
+ */
 function DeleteSubmissionButton({ submissionId, projectId }: { submissionId: string; projectId: string }) {
   const [state, formAction] = useActionState(deleteSubmission, DELETE_INITIAL);
+  const [confirming, setConfirming] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   return (
-    <div className="flex shrink-0 flex-col items-end gap-1">
-      <form action={formAction}>
-        <input type="hidden" name="submissionId" value={submissionId} />
-        <input type="hidden" name="projectId" value={projectId} />
-        <button
-          type="submit"
+    <AnimatePresence mode="wait" initial={false}>
+      {confirming ? (
+        <motion.div
+          key="confirm"
+          initial={reduceMotion ? false : { opacity: 0, scaleX: 0.5, x: 12 }}
+          animate={{ opacity: 1, scaleX: 1, x: 0 }}
+          exit={reduceMotion ? undefined : { opacity: 0, scaleX: 0.5, x: 12 }}
+          transition={{ duration: 0.2, ease: EASE }}
+          style={{ transformOrigin: "right center" }}
+          className="flex shrink-0 flex-col items-end gap-1"
+        >
+          <form action={formAction} className="flex items-center gap-1.5">
+            <input type="hidden" name="submissionId" value={submissionId} />
+            <input type="hidden" name="projectId" value={projectId} />
+            <button
+              type="submit"
+              className="rounded-md bg-coral px-2 py-1 text-xs font-medium text-white hover:bg-coral/90"
+            >
+              Sí, eliminar
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="rounded-md px-2 py-1 text-xs font-medium text-muted hover:bg-surface"
+            >
+              Cancelar
+            </button>
+          </form>
+          {state.error && (
+            <p role="alert" className="text-xs text-coral">
+              {state.error}
+            </p>
+          )}
+        </motion.div>
+      ) : (
+        <motion.button
+          key="trigger"
+          type="button"
+          onClick={() => setConfirming(true)}
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={reduceMotion ? undefined : { opacity: 0 }}
+          transition={{ duration: 0.12 }}
           aria-label="Eliminar entrega"
           title="Eliminar entrega"
-          className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-coral/10 hover:text-coral"
+          className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-coral/10 hover:text-coral"
         >
           <IconPapelera className="size-4" />
-        </button>
-      </form>
-      {state.error && (
-        <p role="alert" className="text-xs text-coral">
-          {state.error}
-        </p>
+        </motion.button>
       )}
-    </div>
+    </AnimatePresence>
   );
 }
 
