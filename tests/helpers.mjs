@@ -47,6 +47,8 @@ export function load(relativePath, {
   storageResponses = {},
   extraModules = {},
   adminAuthResponses = [],
+  authResponses = {},
+  rateLimitOk = true,
 } = {}) {
   const paths = [];
   const queries = [];
@@ -56,8 +58,19 @@ export function load(relativePath, {
   const storageUploads = [];
   const storageRemoves = [];
   const adminAuthCalls = [];
+  const authCalls = [];
+  const rateLimitCalls = [];
   const uploadResponses = storageResponses.upload ?? [];
   const removeResponses = storageResponses.remove ?? [];
+  // `rateLimitOk`: `true` (default) deja pasar todo; `false` bloquea todo;
+  // un array se consume en orden para simular, por ejemplo, que el segundo
+  // chequeo (por correo) bloquee aunque el primero (por IP) haya pasado.
+  const rateLimitQueue = Array.isArray(rateLimitOk) ? [...rateLimitOk] : null;
+  function nextAuthResponse(method) {
+    const queue = authResponses[method];
+    if (queue && queue.length) return queue.shift();
+    return { data: {}, error: null };
+  }
   const db = {
     from(table) {
       const query = { table, steps: [] };
@@ -80,6 +93,26 @@ export function load(relativePath, {
     auth: {
       async getUser() {
         return { data: { user: currentUser } };
+      },
+      async signUp(args) {
+        authCalls.push({ method: 'signUp', args });
+        return nextAuthResponse('signUp');
+      },
+      async signInWithPassword(args) {
+        authCalls.push({ method: 'signInWithPassword', args });
+        return nextAuthResponse('signInWithPassword');
+      },
+      async signOut() {
+        authCalls.push({ method: 'signOut' });
+        return nextAuthResponse('signOut');
+      },
+      async resetPasswordForEmail(email, opts) {
+        authCalls.push({ method: 'resetPasswordForEmail', args: { email, opts } });
+        return nextAuthResponse('resetPasswordForEmail');
+      },
+      async updateUser(attrs, opts) {
+        authCalls.push({ method: 'updateUser', args: { attrs, opts } });
+        return nextAuthResponse('updateUser');
       },
     },
     storage: {
@@ -119,6 +152,28 @@ export function load(relativePath, {
       if (name === '@/features/auth/queries') return { getCurrentUser: async () => currentUser };
       if (name === '@/features/organizations/config') return { INVITACIONES_HABILITADAS: true };
       if (name === '@/features/admin/queries') return { CONFIG_CAMPO_LABEL: {} };
+      if (name === '@/lib/site') return { SITE_URL: 'https://vardelab.test' };
+      if (name === '@/features/auth/password') {
+        // Misma regla que `features/auth/password.ts`: 8+ caracteres,
+        // mayúscula, minúscula y número. Se reimplementa acá (no se
+        // importa el archivo real) porque el helper solo puede requerir
+        // módulos que él mismo resuelve.
+        return {
+          isPasswordValid: (pw) =>
+            typeof pw === 'string' && pw.length >= 8 && /[A-Z]/.test(pw) && /[a-z]/.test(pw) && /\d/.test(pw),
+        };
+      }
+      if (name === '@/lib/rate-limit') {
+        return {
+          RATE_LIMIT_MESSAGE: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
+          getClientIp: async () => '203.0.113.1',
+          checkRateLimit: async (scope, identifier) => {
+            rateLimitCalls.push({ scope, identifier });
+            if (rateLimitQueue) return rateLimitQueue.length ? rateLimitQueue.shift() : true;
+            return rateLimitOk;
+          },
+        };
+      }
       if (name === '@/lib/supabase/admin') {
         return {
           createAdminClient: () => ({
@@ -145,7 +200,7 @@ export function load(relativePath, {
   });
   return {
     exports, paths, queries, rpcCalls, emailCalls, sendEmailCalls,
-    storageUploads, storageRemoves, adminAuthCalls,
+    storageUploads, storageRemoves, adminAuthCalls, authCalls, rateLimitCalls,
   };
 }
 
