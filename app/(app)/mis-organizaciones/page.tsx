@@ -9,7 +9,7 @@ import { getCurrentUser } from "@/features/auth/queries";
 import { getMyOrganizations } from "@/features/organizations/queries";
 
 export const metadata: Metadata = {
-  title: "Mis organizaciones · CampusLab",
+  title: "Mis organizaciones · Vardelab",
 };
 
 const TIPO_LABEL: Record<string, string> = {

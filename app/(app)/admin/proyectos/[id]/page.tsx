@@ -10,7 +10,7 @@ import {
 import { CancelProjectButton } from "@/features/projects/components/cancel-project-button";
 
 export const metadata: Metadata = {
-  title: "Detalle del proyecto · CampusLab",
+  title: "Detalle del proyecto · Vardelab",
 };
 
 const NIVEL_LABEL: Record<string, string> = {

@@ -4,8 +4,8 @@ import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 
 export const metadata: Metadata = {
-  title: "Términos y condiciones · CampusLab",
-  description: "Borrador de términos y condiciones de uso de CampusLab.",
+  title: "Términos y condiciones · Vardelab",
+  description: "Borrador de términos y condiciones de uso de Vardelab.",
 };
 
 export default function TerminosPage() {
@@ -20,16 +20,16 @@ export default function TerminosPage() {
             Términos y condiciones
           </h1>
           <div className="mt-5 rounded-xl border border-border bg-surface px-4 py-3 text-sm leading-relaxed text-muted">
-            Estos términos corresponden a la versión piloto de CampusLab y podrán
+            Estos términos corresponden a la versión piloto de Vardelab y podrán
             actualizarse a medida que evolucione la plataforma.
           </div>
           <p className="mt-5 text-sm text-muted">Última actualización: 17 de septiembre de 2026.</p>
 
           <div className="mt-10 space-y-8 text-sm leading-relaxed text-muted sm:text-base">
             <section>
-              <h2 className="text-xl font-semibold text-ink">1. Sobre CampusLab</h2>
+              <h2 className="text-xl font-semibold text-ink">1. Sobre Vardelab</h2>
               <p className="mt-2">
-                CampusLab es una plataforma web que conecta estudiantes con
+                Vardelab es una plataforma web que conecta estudiantes con
                 organizaciones para desarrollar microproyectos reales, acotados y
                 con un entregable verificable. La plataforma no es una bolsa de
                 empleo, una agencia de contratación ni un aula virtual.
@@ -42,7 +42,7 @@ export default function TerminosPage() {
                 Cada persona debe entregar información verdadera, mantener segura
                 su cuenta y usar la plataforma de forma respetuosa. No se permite
                 suplantar identidades, publicar necesidades ficticias, compartir
-                información sensible sin autorización ni utilizar CampusLab para
+                información sensible sin autorización ni utilizar Vardelab para
                 reemplazar trabajo permanente.
               </p>
             </section>
@@ -60,7 +60,7 @@ export default function TerminosPage() {
             <section>
               <h2 className="text-xl font-semibold text-ink">4. Moderación y reportes</h2>
               <p className="mt-2">
-                CampusLab puede revisar, rechazar, suspender o retirar contenido
+                Vardelab puede revisar, rechazar, suspender o retirar contenido
                 que incumpla estas reglas o ponga en riesgo a las personas. Los
                 usuarios pueden reportar problemas mediante los canales disponibles
                 en la plataforma.
@@ -71,7 +71,7 @@ export default function TerminosPage() {
               <h2 className="text-xl font-semibold text-ink">5. Responsabilidades</h2>
               <p className="mt-2">
                 Estudiantes y organizaciones deben acordar el alcance, comunicar
-                avances y cuidar la información compartida. CampusLab facilita el
+                avances y cuidar la información compartida. Vardelab facilita el
                 proceso y la trazabilidad, pero no reemplaza los acuerdos que las
                 partes necesiten antes de comenzar.
               </p>

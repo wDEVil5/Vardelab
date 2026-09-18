@@ -10,7 +10,7 @@ import { createProject } from "@/features/projects/actions";
 import { ProjectForm } from "@/features/projects/components/project-form";
 
 export const metadata: Metadata = {
-  title: "Nuevo proyecto · CampusLab",
+  title: "Nuevo proyecto · Vardelab",
 };
 
 /** Alta de proyecto. Requiere sesión de patrocinador con al menos una organización. */

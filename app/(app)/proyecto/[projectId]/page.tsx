@@ -14,7 +14,7 @@ import { ProjectProgressBar } from "@/features/projects/components/project-progr
 import { projectStatusLabel } from "@/features/projects/status";
 
 export const metadata: Metadata = {
-  title: "Mi proyecto · CampusLab",
+  title: "Mi proyecto · Vardelab",
 };
 
 type PageProps = { params: Promise<{ projectId: string }> };

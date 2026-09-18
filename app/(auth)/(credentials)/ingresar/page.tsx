@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LoginForm } from "@/features/auth/components/login-form";
 
 export const metadata: Metadata = {
-  title: "Ingresar · CampusLab",
+  title: "Ingresar · Vardelab",
 };
 
 /**

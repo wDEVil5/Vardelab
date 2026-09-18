@@ -6,7 +6,7 @@ import { createOrganization } from "@/features/organizations/actions";
 import { OrgForm } from "@/features/organizations/components/org-form";
 
 export const metadata: Metadata = {
-  title: "Nueva organización · CampusLab",
+  title: "Nueva organización · Vardelab",
 };
 
 /** Alta de organización. Requiere sesión de patrocinador. */

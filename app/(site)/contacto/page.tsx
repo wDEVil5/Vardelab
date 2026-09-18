@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 
 export const metadata: Metadata = {
-  title: "Hablar con CampusLab · Para organizaciones",
+  title: "Hablar con Vardelab · Para organizaciones",
   description:
     "Cuéntanos tu necesidad y vemos juntos si puede convertirse en un microproyecto acotado.",
 };
@@ -17,7 +17,7 @@ const RAZONES = [
 
 /**
  * Contacto para organizaciones (Fase 1 · captación). Punto de entrada de
- * "Hablar con CampusLab": en el piloto se conversa antes de que la organización
+ * "Hablar con Vardelab": en el piloto se conversa antes de que la organización
  * publique nada. Registra un lead de tipo `contacto_organizacion`.
  *
  * Mismo criterio que `/proponer`: main blanco como el nav, sin bandeja exterior.

@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 
 export const metadata: Metadata = {
-  title: "Proponer un desafío · CampusLab",
+  title: "Proponer un desafío · Vardelab",
   description:
     "¿Conoces una organización con una necesidad concreta? Ayúdanos a convertirla en un microproyecto.",
 };

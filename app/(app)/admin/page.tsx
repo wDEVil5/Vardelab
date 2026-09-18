@@ -6,7 +6,7 @@ import { ExportMetricsButton } from "@/features/admin/components/export-metrics-
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Métricas del piloto · CampusLab",
+  title: "Métricas del piloto · Vardelab",
 };
 
 /**

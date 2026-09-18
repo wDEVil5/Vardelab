@@ -9,7 +9,7 @@ import {
 import { ReportsTable, type ReportRow } from "@/features/reports/components/reports-table";
 
 export const metadata: Metadata = {
-  title: "Reportes · CampusLab",
+  title: "Reportes · Vardelab",
 };
 
 type PageProps = {

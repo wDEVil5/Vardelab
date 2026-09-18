@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎓 CampusLab
+# 🎓 Vardelab
 
 **Plataforma de microproyectos reales y colaboración interdisciplinaria**
 
@@ -22,13 +22,13 @@ Convierte necesidades reales en microproyectos acotados y acompañados, para que
 </div>
 
 > [!IMPORTANT]
-> **Propuesta independiente.** CampusLab **no** es una plataforma oficial ni cuenta todavía con patrocinio o aprobación institucional. Es un proyecto en fase de diseño, desarrollado como iniciativa estudiantil y vehículo de aprendizaje full-stack.
+> **Propuesta independiente.** Vardelab **no** es una plataforma oficial ni cuenta todavía con patrocinio o aprobación institucional. Es un proyecto en fase de diseño, desarrollado como iniciativa estudiantil y vehículo de aprendizaje full-stack.
 
 ---
 
 ## 📑 Tabla de contenido
 
-- [¿Qué es CampusLab?](#-qué-es-campuslab)
+- [¿Qué es Vardelab?](#-qué-es-vardelab)
 - [El problema](#-el-problema)
 - [Cómo funciona](#-cómo-funciona)
 - [Estado del proyecto](#-estado-del-proyecto)
@@ -43,17 +43,17 @@ Convierte necesidades reales en microproyectos acotados y acompañados, para que
 
 ---
 
-## 🧭 ¿Qué es CampusLab?
+## 🧭 ¿Qué es Vardelab?
 
-CampusLab es una plataforma web que conecta a **estudiantes** con **necesidades reales** publicadas por profesores, organizaciones sociales, unidades internas, centros de estudiantes, emprendimientos y pequeñas empresas. Cada necesidad se transforma en un **microproyecto**: breve, acotado y verificable, con roles definidos, entregable concreto, plazo limitado (2–8 semanas) y una persona responsable de acompañar el proceso.
+Vardelab es una plataforma web que conecta a **estudiantes** con **necesidades reales** publicadas por profesores, organizaciones sociales, unidades internas, centros de estudiantes, emprendimientos y pequeñas empresas. Cada necesidad se transforma en un **microproyecto**: breve, acotado y verificable, con roles definidos, entregable concreto, plazo limitado (2–8 semanas) y una persona responsable de acompañar el proceso.
 
 Su espacio está **entre la formación académica y el trabajo formal**: no reemplaza una bolsa de empleo, un aula virtual ni la intranet institucional.
 
 La idea es crear un puente simple entre quienes tienen una necesidad concreta y quienes necesitan una primera experiencia real para demostrar lo que saben hacer. Cada proyecto debe tener un alcance comprensible, un plazo acotado, roles claros, acompañamiento y un resultado que pueda revisarse y convertirse en evidencia de aprendizaje.
 
-CampusLab busca que la experiencia no termine cuando se entrega un archivo: el proceso completo —postulación, equipo, hitos, retroalimentación y evaluación— queda organizado para que el estudiante pueda explicar qué hizo, cómo lo hizo y qué aprendió.
+Vardelab busca que la experiencia no termine cuando se entrega un archivo: el proceso completo —postulación, equipo, hitos, retroalimentación y evaluación— queda organizado para que el estudiante pueda explicar qué hizo, cómo lo hizo y qué aprendió.
 
-> **Tesis del proyecto:** el activo principal de CampusLab no es publicar oportunidades, sino **convertir necesidades reales en experiencias formativas verificables y repetibles**.
+> **Tesis del proyecto:** el activo principal de Vardelab no es publicar oportunidades, sino **convertir necesidades reales en experiencias formativas verificables y repetibles**.
 
 ## 🎯 El problema
 
@@ -157,7 +157,7 @@ flowchart TD
 > `app/`, `components/`, `features/`, `lib/supabase/`, `types/` y `supabase/` están en uso. `tests/` (incluidas las pruebas de políticas RLS) se completa durante la Fase 2.
 
 ```
-campuslab/
+vardelab/
 ├── app/          # Páginas y rutas (Next.js App Router)
 ├── components/   # Interfaz reutilizable
 ├── features/     # Proyectos, postulaciones, equipos (lógica de dominio)
@@ -213,7 +213,7 @@ SUPABASE_SERVICE_ROLE_KEY=   # solo servidor, nunca en el cliente
 
 ## 🤝 Contribución
 
-CampusLab es actualmente un proyecto de una sola persona, en construcción del MVP. La construcción del MVP puede hacerse en solitario; **el piloto no**: requiere sumar mentores, patrocinadores y un enlace institucional. Si te interesa colaborar (mentoría, proyectos semilla o desarrollo), abre un *issue* para conversarlo.
+Vardelab es actualmente un proyecto de una sola persona, en construcción del MVP. La construcción del MVP puede hacerse en solitario; **el piloto no**: requiere sumar mentores, patrocinadores y un enlace institucional. Si te interesa colaborar (mentoría, proyectos semilla o desarrollo), abre un *issue* para conversarlo.
 
 ## 📄 Licencia
 

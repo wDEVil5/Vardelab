@@ -8,7 +8,7 @@ import { getCurrentUser } from "@/features/auth/queries";
 import { getMyProjects, type MyProject } from "@/features/projects/queries";
 
 export const metadata: Metadata = {
-  title: "Mis proyectos · CampusLab",
+  title: "Mis proyectos · Vardelab",
 };
 
 // Estado del proyecto → etiqueta y tono.

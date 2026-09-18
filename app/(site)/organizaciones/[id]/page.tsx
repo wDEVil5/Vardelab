@@ -23,8 +23,8 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const org = await getPublicOrganization(id);
-  if (!org) return { title: "Organización no encontrada · CampusLab" };
-  const titulo = `${org.nombre} · CampusLab`;
+  if (!org) return { title: "Organización no encontrada · Vardelab" };
+  const titulo = `${org.nombre} · Vardelab`;
   return {
     title: titulo,
     description: org.descripcion ?? undefined,
@@ -88,7 +88,7 @@ function IconCalendario({ className }: { className?: string }) {
   );
 }
 
-// "Mes y año" en español, para "En CampusLab desde…" — mismo criterio que
+// "Mes y año" en español, para "En Vardelab desde…" — mismo criterio que
 // usa `/u/[id]` para el estudiante.
 function mesYAnio(iso: string): string {
   return new Date(iso).toLocaleDateString("es-CL", { month: "long", year: "numeric" });
@@ -160,7 +160,7 @@ export default async function PerfilOrganizacionPage({ params }: PageProps) {
             <div className="flex min-w-0 flex-1 flex-col items-center gap-1 px-2.5 py-3.5 text-center sm:px-3">
               <IconCalendario className="size-5 text-electric" />
               <span className="text-sm font-semibold leading-tight text-ink">{mesYAnio(org.created_at)}</span>
-              <span className="text-xs leading-tight text-muted">En CampusLab desde</span>
+              <span className="text-xs leading-tight text-muted">En Vardelab desde</span>
             </div>
           </div>
 

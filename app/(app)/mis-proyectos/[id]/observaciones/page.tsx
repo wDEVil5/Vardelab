@@ -8,7 +8,7 @@ import { ObservationsChecklist } from "@/features/projects/components/observatio
 import { ResendToReviewForm } from "@/features/projects/components/resend-to-review-form";
 
 export const metadata: Metadata = {
-  title: "Observaciones del moderador · CampusLab",
+  title: "Observaciones del moderador · Vardelab",
 };
 
 type PageProps = { params: Promise<{ id: string }> };

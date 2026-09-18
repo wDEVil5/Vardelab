@@ -8,23 +8,23 @@ import { VerifiedBadge } from "@/components/ui/verified-badge";
  * Explicación del sello según el tipo de organización (M62): mismo patrón
  * que usan Instagram/X/LinkedIn en su panel "Acerca de esta cuenta
  * verificada" — el sello no dice lo mismo para todas las cuentas, así que
- * tampoco debería decir lo mismo para todas las organizaciones de CampusLab.
+ * tampoco debería decir lo mismo para todas las organizaciones de Vardelab.
  */
 const TIPO_EXPLICACION: Record<string, string> = {
   academica:
-    "CampusLab confirmó que esta es una unidad académica real dentro de su institución, y que quien la gestiona tiene autoridad para publicar proyectos en su nombre.",
+    "Vardelab confirmó que esta es una unidad académica real dentro de su institución, y que quien la gestiona tiene autoridad para publicar proyectos en su nombre.",
   social:
-    "CampusLab confirmó la identidad de esta organización social y que quien la gestiona representa oficialmente su trabajo en la comunidad.",
+    "Vardelab confirmó la identidad de esta organización social y que quien la gestiona representa oficialmente su trabajo en la comunidad.",
   emprendimiento:
-    "CampusLab confirmó la identidad de este emprendimiento y de la persona o equipo que está detrás.",
+    "Vardelab confirmó la identidad de este emprendimiento y de la persona o equipo que está detrás.",
   empresa:
-    "CampusLab confirmó la identidad legal de esta empresa y que quien la gestiona está autorizado a publicar en su nombre.",
+    "Vardelab confirmó la identidad legal de esta empresa y que quien la gestiona está autorizado a publicar en su nombre.",
   interna:
-    "CampusLab confirmó que esta es una unidad interna oficial de la institución.",
+    "Vardelab confirmó que esta es una unidad interna oficial de la institución.",
 };
 
 const TIPO_EXPLICACION_DEFAULT =
-  "CampusLab confirmó la identidad de esta organización.";
+  "Vardelab confirmó la identidad de esta organización.";
 
 type PopoverPosition = { top: number; left: number };
 

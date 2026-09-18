@@ -5,7 +5,7 @@ import { getAuditLog } from "@/features/admin/queries";
 import { AuditLogTable } from "@/features/admin/components/audit-log-table";
 
 export const metadata: Metadata = {
-  title: "Registro de auditoría · CampusLab",
+  title: "Registro de auditoría · Vardelab",
 };
 
 /** ¿Este evento otorgó el rol `admin`? Es lo más sensible que hoy se audita. */
