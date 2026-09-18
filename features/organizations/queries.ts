@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
+import { isUuid } from "@/lib/utils";
 
 /**
  * Ids de las organizaciones que el usuario actual puede gestionar: de las que
@@ -96,10 +97,11 @@ export type EditableOrganization = NonNullable<
  * Perfil público de una organización (análogo a `getPublicProfile` del
  * estudiante). A diferencia de `profiles`, `organizations` no tiene una
  * columna de visibilidad: la RLS `organizations_select_all` ya permite leerla
- * a cualquier visitante, así que basta con buscarla por id. `null` si no
- * existe → la página hace 404.
+ * a cualquier visitante, así que basta con buscarla por id. `null` si el id
+ * no tiene forma de UUID o no existe → la página hace 404.
  */
 export async function getPublicOrganization(id: string) {
+  if (!isUuid(id)) return null;
   const supabase = createPublicClient();
 
   const { data, error } = await supabase

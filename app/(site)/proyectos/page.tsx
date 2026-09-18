@@ -15,11 +15,11 @@ import { cn } from "@/lib/utils";
 type ProjectFilters = { q?: string; skill?: string; modalidad?: string };
 
 export const metadata: Metadata = {
-  title: "Proyectos · CampusLab",
+  title: "Proyectos · Vardelab",
   description:
     "Catálogo de microproyectos reales publicados por organizaciones. Encuentra un rol y postula.",
   openGraph: {
-    title: "Proyectos · CampusLab",
+    title: "Proyectos · Vardelab",
     description:
       "Catálogo de microproyectos reales publicados por organizaciones. Encuentra un rol y postula.",
   },

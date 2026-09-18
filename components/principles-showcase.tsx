@@ -60,14 +60,7 @@ function PrincipleMark({ index, color }: { index: number; color: string }) {
     );
   }
 
-  return (
-    <svg viewBox="0 0 180 180" className="size-64 opacity-35 lg:size-72" aria-hidden>
-      <circle cx="90" cy="90" r="58" {...common} opacity=".3" />
-      <circle cx="90" cy="90" r="34" {...common} opacity=".55" />
-      <circle cx="90" cy="90" r="10" fill={color} stroke="none" />
-      <path d="M90 22v28M90 130v28M22 90h28M130 90h28" {...common} />
-    </svg>
-  );
+  return null;
 }
 
 /** Experiencia de principios basada en Scroll Expand. */
@@ -134,7 +127,7 @@ export function PrinciplesShowcase({
             <div className="flex items-end justify-between gap-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-electric">
-                  La experiencia CampusLab
+                  La experiencia Vardelab
                 </p>
                 <h2 className="mt-4 max-w-3xl text-4xl font-bold leading-[0.96] tracking-tighter lg:text-6xl">
                   Aprender haciendo,
@@ -161,7 +154,16 @@ export function PrinciplesShowcase({
                 }}
                 aria-live="polite"
               >
-                <div className="flex w-full flex-col justify-between">
+                {/* Marca de fondo: al 8% de opacidad, más alta que la tarjeta
+                    para que el overflow-hidden del contenedor la corte arriba,
+                    abajo y a la derecha — solo se insinúa, nunca tapa el texto. */}
+                <img
+                  src={activePalette.foreground === "#FFFFFF" ? "/brand/vardelab-simbolo-blanco.svg" : "/brand/vardelab-simbolo-negro.svg"}
+                  alt=""
+                  aria-hidden
+                  className="pointer-events-none absolute -right-10 top-1/2 h-[130%] w-auto -translate-y-1/2 opacity-[0.08] lg:-right-16"
+                />
+                <div className="relative flex w-full flex-col justify-between">
                   <div aria-hidden className="h-1" />
                   <div className="relative min-h-44 max-w-3xl lg:min-h-56">
                     <AnimatePresence mode="wait" initial={false}>
@@ -229,7 +231,7 @@ export function PrinciplesShowcase({
       </section>
 
       <section className="bg-cloud px-5 py-14 text-ink md:hidden">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-electric">La experiencia CampusLab</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-electric">La experiencia Vardelab</p>
         <h2 className="mt-4 text-3xl font-bold leading-tight tracking-[-0.04em]">
           Aprender haciendo, <span className="text-muted">con un marco claro.</span>
         </h2>

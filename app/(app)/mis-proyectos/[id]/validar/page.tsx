@@ -13,7 +13,7 @@ import { MemberEvaluationForm } from "@/features/evaluations/components/member-e
 import { CloseProjectButton } from "@/features/projects/components/close-project-button";
 
 export const metadata: Metadata = {
-  title: "Validar entrega y evaluar · CampusLab",
+  title: "Validar entrega y evaluar · Vardelab",
 };
 
 // Fecha de la entrega en términos relativos.

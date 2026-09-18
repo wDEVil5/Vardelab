@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/features/auth/queries";
 import { getPendingApplicationsForSponsor } from "@/features/applications/queries";
 
 export const metadata: Metadata = {
-  title: "Postulaciones · CampusLab",
+  title: "Postulaciones · Vardelab",
 };
 
 // Fecha de postulación en términos relativos y sin ambigüedad.

@@ -7,7 +7,7 @@ import { updateProject } from "@/features/projects/actions";
 import { ProjectForm } from "@/features/projects/components/project-form";
 
 export const metadata: Metadata = {
-  title: "Editar proyecto · CampusLab",
+  title: "Editar proyecto · Vardelab",
 };
 
 type PageProps = { params: Promise<{ id: string }> };

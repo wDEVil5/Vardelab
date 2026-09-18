@@ -14,7 +14,7 @@ import { removeOrganizationMember } from "@/features/organizations/actions";
 import { InviteMemberForm } from "@/features/organizations/components/invite-member-form";
 
 export const metadata: Metadata = {
-  title: "Miembros de la organización · CampusLab",
+  title: "Miembros de la organización · Vardelab",
 };
 
 const ESTADO: Record<string, { label: string; tone: BadgeTone }> = {
@@ -120,7 +120,7 @@ export default async function MiembrosOrganizacionPage({ params }: PageProps) {
           <div className="min-w-0 flex-1">
             <h2 className="font-semibold text-ink">Invitar por correo</h2>
             <p className="mt-1 text-sm text-muted">
-              Si ya tiene cuenta en CampusLab queda activo de una; si no,
+              Si ya tiene cuenta en Vardelab queda activo de una; si no,
               apenas se registre con ese correo.
             </p>
             <div className="mt-4">

@@ -4,8 +4,8 @@ import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 
 export const metadata: Metadata = {
-  title: "Política de privacidad · CampusLab",
-  description: "Borrador de política de privacidad de CampusLab.",
+  title: "Política de privacidad · Vardelab",
+  description: "Borrador de política de privacidad de Vardelab.",
 };
 
 export default function PrivacidadPage() {
@@ -20,7 +20,7 @@ export default function PrivacidadPage() {
             Política de privacidad
           </h1>
           <div className="mt-5 rounded-xl border border-border bg-surface px-4 py-3 text-sm leading-relaxed text-muted">
-            Esta política corresponde a la versión piloto de CampusLab y podrá
+            Esta política corresponde a la versión piloto de Vardelab y podrá
             actualizarse a medida que evolucione la plataforma.
           </div>
           <p className="mt-5 text-sm text-muted">Última actualización: 17 de septiembre de 2026.</p>
@@ -59,7 +59,7 @@ export default function PrivacidadPage() {
             <section>
               <h2 className="text-xl font-semibold text-ink">4. Proveedores y seguridad</h2>
               <p className="mt-2">
-                CampusLab utiliza servicios de infraestructura, base de datos,
+                Vardelab utiliza servicios de infraestructura, base de datos,
                 autenticación y correo transaccional para operar el piloto. El
                 acceso se limita según el rol y se aplican controles de seguridad,
                 auditoría y políticas de acceso. Nunca debes compartir contraseñas

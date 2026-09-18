@@ -29,7 +29,7 @@ function exportarCsv(m: PilotMetrics) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `metricas-piloto-campuslab-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `metricas-piloto-vardelab-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }

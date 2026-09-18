@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 /**
  * Al cambiar de ruta, sube al tope al instante. Sin esto, si venías scrolleado
- * (p. ej. el CTA "Hablar con CampusLab" al final de /organizaciones) la página
+ * (p. ej. el CTA "Hablar con Vardelab" al final de /organizaciones) la página
  * nueva más corta puede abrir ya mirando el footer cortina.
  * `behavior: "instant"` evita pelearse con `scroll-behavior: smooth` del html.
  */

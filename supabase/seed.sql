@@ -267,7 +267,7 @@ values
    'authenticated', 'authenticated', 'admin@demo.cl',
    crypt('demo1234', gen_salt('bf')), now(), now(), now(),
    '{"provider":"email","providers":["email"]}',
-   '{"nombre":"Admin CampusLab"}',
+   '{"nombre":"Admin Vardelab"}',
    '', '', '', '', '', '', '', '')
 on conflict (id) do nothing;
 

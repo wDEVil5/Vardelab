@@ -5,7 +5,7 @@ import { getLeadCountsByEstado, getLeadsPage } from "@/features/leads/queries";
 import { LeadsTable } from "@/features/leads/components/leads-table";
 
 export const metadata: Metadata = {
-  title: "Leads · CampusLab",
+  title: "Leads · Vardelab",
 };
 
 type PageProps = {
@@ -15,7 +15,7 @@ type PageProps = {
 const ESTADOS_VALIDOS = ["nuevo", "contactado", "descartado", "todos"] as const;
 
 /**
- * Panel de leads (Fase 1 · captación): "Hablar con CampusLab" y "Proponer un
+ * Panel de leads (Fase 1 · captación): "Hablar con Vardelab" y "Proponer un
  * desafío" llegan aquí. Guarda de acceso por rol; la RLS `leads_select_staff`
  * (M17) además limita la lectura a moderador/admin.
  *

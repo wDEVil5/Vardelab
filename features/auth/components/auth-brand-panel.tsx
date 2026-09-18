@@ -38,11 +38,9 @@ export function AuthBrandPanel({
 
   return (
     <aside className="relative hidden min-h-screen flex-1 flex-col overflow-hidden px-10 py-10 text-white lg:flex xl:px-14 xl:py-12">
-      <Link
-        href="/"
-        className="relative z-10 text-[15px] font-semibold tracking-tight text-white"
-      >
-        CampusLab
+      <Link href="/" className="relative z-10" aria-label="Vardelab">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/vardelab-logo-horizontal-blanco.svg" alt="Vardelab" className="h-6 w-auto" />
       </Link>
 
       <div className="relative z-10 mt-14 flex max-w-md flex-1 flex-col xl:mt-16 xl:max-w-120">

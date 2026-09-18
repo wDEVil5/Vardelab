@@ -9,7 +9,7 @@ import { OrgVerificationActions } from "@/features/admin/components/org-verifica
 import { externalUrl } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Detalle de la organización · CampusLab",
+  title: "Detalle de la organización · Vardelab",
 };
 
 const VERIFICACION_TONE: Record<string, BadgeTone> = {

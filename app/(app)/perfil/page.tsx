@@ -29,7 +29,7 @@ import { ProfileSkillsEditor } from "@/features/profile/components/profile-skill
 import { PortfolioEditor } from "@/features/portfolio/components/portfolio-editor";
 
 export const metadata: Metadata = {
-  title: "Mi perfil · CampusLab",
+  title: "Mi perfil · Vardelab",
 };
 
 // Etiquetas legibles de los enlaces del perfil.
@@ -365,7 +365,7 @@ function PerfilPatrocinador({
         <h1 className="text-2xl font-bold text-ink">
           Hola, {nombre.split(/\s+/)[0] || "patrocinador"}.
         </h1>
-        <p className="text-sm text-muted">Tu información de cuenta en CampusLab.</p>
+        <p className="text-sm text-muted">Tu información de cuenta en Vardelab.</p>
       </header>
 
       {contrasenaActualizada && (
@@ -486,7 +486,7 @@ function PerfilOperativo({
         <h1 className="text-2xl font-bold text-ink">
           Hola, {nombre.split(/\s+/)[0] || "usuario"}.
         </h1>
-        <p className="text-sm text-muted">Tu información de cuenta en CampusLab.</p>
+        <p className="text-sm text-muted">Tu información de cuenta en Vardelab.</p>
       </header>
 
       {contrasenaActualizada && (

@@ -6,7 +6,7 @@ import { getUsersForAdmin } from "@/features/admin/queries";
 import { UsersTable } from "@/features/admin/components/users-table";
 
 export const metadata: Metadata = {
-  title: "Usuarios y permisos · CampusLab",
+  title: "Usuarios y permisos · Vardelab",
 };
 
 /**

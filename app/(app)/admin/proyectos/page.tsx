@@ -5,7 +5,7 @@ import { getProjectsForAdminPage } from "@/features/admin/queries";
 import { ProjectsTable } from "@/features/admin/components/projects-table";
 
 export const metadata: Metadata = {
-  title: "Proyectos · CampusLab",
+  title: "Proyectos · Vardelab",
 };
 
 type PageProps = {

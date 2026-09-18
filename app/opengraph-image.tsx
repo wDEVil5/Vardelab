@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "CampusLab — microproyectos reales para estudiantes y organizaciones";
+export const alt = "Vardelab — microproyectos reales para estudiantes y organizaciones";
 
 // Tokens de marca en hex (ImageResponse no procesa clases de Tailwind).
 const INK = "#0D253B";
@@ -42,7 +42,7 @@ export default function Image() {
             letterSpacing: -2,
           }}
         >
-          CampusLab
+          Vardelab
         </div>
         <div
           style={{

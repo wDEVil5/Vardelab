@@ -22,7 +22,7 @@ const COPY_INGRESAR = {
     </>
   ),
   description:
-    "CampusLab conecta estudiantes con organizaciones para resolver microproyectos claros, con objetivos y acompañamiento.",
+    "Vardelab conecta estudiantes con organizaciones para resolver microproyectos claros, con objetivos y acompañamiento.",
 } as const;
 
 const COPY_REGISTRO: Record<
