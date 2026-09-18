@@ -47,26 +47,38 @@ export async function addMilestone(
   return { created: titulo };
 }
 
+export type MilestoneActionState = { error?: string };
+
 /**
  * Aprueba un hito entregado (`entregado → aprobado`). Solo transiciona desde
  * `entregado`: no se aprueba un hito sin entrega ni se reabre uno ya cerrado. La
  * RLS `milestones_write_manager` (M5) limita la escritura al gestor del proyecto.
  */
-export async function approveMilestone(formData: FormData): Promise<void> {
+export async function approveMilestone(
+  _prevState: MilestoneActionState,
+  formData: FormData,
+): Promise<MilestoneActionState> {
   const milestoneId = String(formData.get("milestoneId") ?? "");
   const projectId = String(formData.get("projectId") ?? "");
-  if (!milestoneId) return;
+  if (!milestoneId) return { error: "Falta el hito." };
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("milestones")
-    .update({ estado: "aprobado" })
+    .update({ estado: "aprobado" }, { count: "exact" })
     .eq("id", milestoneId)
     .eq("estado", "entregado");
 
-  if (error) console.error("[approveMilestone]", error.message);
+  if (error) {
+    console.error("[approveMilestone]", error.message);
+    return { error: "No se pudo aprobar el hito. Inténtalo de nuevo." };
+  }
+  if (!count) {
+    return { error: "Este hito ya no está entregado — puede que alguien más ya lo haya procesado." };
+  }
 
   revalidatePath(`/mis-proyectos/${projectId}`);
+  return {};
 }
 
 /**
@@ -74,28 +86,41 @@ export async function approveMilestone(formData: FormData): Promise<void> {
  * equipo lo verá como "pedido de cambios"; al re-entregar, el trigger de M16 lo
  * vuelve a `entregado`. Solo actúa desde `entregado`.
  */
-export async function returnMilestone(formData: FormData): Promise<void> {
+export async function returnMilestone(
+  _prevState: MilestoneActionState,
+  formData: FormData,
+): Promise<MilestoneActionState> {
   const milestoneId = String(formData.get("milestoneId") ?? "");
   const projectId = String(formData.get("projectId") ?? "");
-  if (!milestoneId) return;
+  if (!milestoneId) return { error: "Falta el hito." };
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("milestones")
-    .update({ estado: "en_progreso" })
+    .update({ estado: "en_progreso" }, { count: "exact" })
     .eq("id", milestoneId)
     .eq("estado", "entregado");
 
-  if (error) console.error("[returnMilestone]", error.message);
+  if (error) {
+    console.error("[returnMilestone]", error.message);
+    return { error: "No se pudo devolver el hito. Inténtalo de nuevo." };
+  }
+  if (!count) {
+    return { error: "Este hito ya no está entregado — puede que alguien más ya lo haya procesado." };
+  }
 
   revalidatePath(`/mis-proyectos/${projectId}`);
+  return {};
 }
 
 /** Elimina un hito. La RLS restringe a quien gestiona el proyecto. */
-export async function deleteMilestone(formData: FormData): Promise<void> {
+export async function deleteMilestone(
+  _prevState: MilestoneActionState,
+  formData: FormData,
+): Promise<MilestoneActionState> {
   const milestoneId = String(formData.get("milestoneId") ?? "");
   const projectId = String(formData.get("projectId") ?? "");
-  if (!milestoneId) return;
+  if (!milestoneId) return { error: "Falta el hito." };
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -103,7 +128,11 @@ export async function deleteMilestone(formData: FormData): Promise<void> {
     .delete()
     .eq("id", milestoneId);
 
-  if (error) console.error("[deleteMilestone]", error.message);
+  if (error) {
+    console.error("[deleteMilestone]", error.message);
+    return { error: "No se pudo eliminar el hito. Inténtalo de nuevo." };
+  }
 
   revalidatePath(`/mis-proyectos/${projectId}`);
+  return {};
 }

@@ -1,15 +1,54 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, type ReactNode } from "react";
 import {
   addProfileSkill,
   deleteProfileSkill,
   type AddSkillState,
+  type DeleteProfileSkillState,
 } from "@/features/profile/actions";
 import type { Skill } from "@/features/skills/queries";
 import type { MyProfileSkill } from "@/features/profile/queries";
 
 const INITIAL: AddSkillState = {};
+const DELETE_INITIAL: DeleteProfileSkillState = {};
+
+/** Chip de una habilidad ya declarada, con su propio botón de quitar. */
+function SkillChip({
+  skillId,
+  nombre,
+  children,
+}: {
+  skillId: string;
+  nombre: string;
+  children?: ReactNode;
+}) {
+  const [state, formAction] = useActionState(deleteProfileSkill, DELETE_INITIAL);
+
+  return (
+    <span className="inline-flex flex-col items-start gap-0.5">
+      <span className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs text-muted">
+        {nombre}
+        {children}
+        <form action={formAction} className="inline">
+          <input type="hidden" name="skillId" value={skillId} />
+          <button
+            type="submit"
+            aria-label={`Quitar ${nombre}`}
+            className="ml-0.5 text-muted/60 hover:text-coral"
+          >
+            ×
+          </button>
+        </form>
+      </span>
+      {state.error && (
+        <span role="alert" className="text-[11px] text-coral">
+          {state.error}
+        </span>
+      )}
+    </span>
+  );
+}
 
 const NIVEL_LABEL: Record<string, string> = {
   basico: "Básico",
@@ -41,27 +80,13 @@ export function ProfileSkillsEditor({
       {skills.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {skills.map((s) => (
-            <span
-              key={s.skill?.id ?? s.skill_id}
-              className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs text-muted"
-            >
-              {s.skill?.nombre}
+            <SkillChip key={s.skill?.id ?? s.skill_id} skillId={s.skill?.id ?? ""} nombre={s.skill?.nombre ?? ""}>
               {s.nivel && (
                 <span className="text-muted/70">
                   · {NIVEL_LABEL[s.nivel] ?? s.nivel}
                 </span>
               )}
-              <form action={deleteProfileSkill} className="inline">
-                <input type="hidden" name="skillId" value={s.skill?.id ?? ""} />
-                <button
-                  type="submit"
-                  aria-label={`Quitar ${s.skill?.nombre}`}
-                  className="ml-0.5 text-muted/60 hover:text-coral"
-                >
-                  ×
-                </button>
-              </form>
-            </span>
+            </SkillChip>
           ))}
         </div>
       )}

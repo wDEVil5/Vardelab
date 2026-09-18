@@ -434,12 +434,17 @@ export async function addRoleSkill(
   return {};
 }
 
+export type DeleteRoleSkillState = { error?: string };
+
 /** Quita una habilidad de un rol. La RLS restringe a quien gestiona el proyecto. */
-export async function deleteRoleSkill(formData: FormData): Promise<void> {
+export async function deleteRoleSkill(
+  _prevState: DeleteRoleSkillState,
+  formData: FormData,
+): Promise<DeleteRoleSkillState> {
   const projectId = String(formData.get("projectId") ?? "");
   const roleId = String(formData.get("roleId") ?? "");
   const skillId = String(formData.get("skillId") ?? "");
-  if (!roleId || !skillId) return;
+  if (!roleId || !skillId) return { error: "Falta la habilidad." };
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -450,9 +455,11 @@ export async function deleteRoleSkill(formData: FormData): Promise<void> {
 
   if (error) {
     console.error("[deleteRoleSkill]", error.message);
+    return { error: "No se pudo quitar la habilidad. Inténtalo de nuevo." };
   }
 
   revalidatePath(`/mis-proyectos/${projectId}`);
+  return {};
 }
 
 export type PublishState = { error?: string };

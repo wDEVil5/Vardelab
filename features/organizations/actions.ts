@@ -364,10 +364,15 @@ export async function inviteOrganizationMember(
  * RLS `organization_members_delete` deja hacerlo al dueño, a cualquier
  * miembro activo (mismos permisos), o al propio invitado.
  */
-export async function removeOrganizationMember(formData: FormData): Promise<void> {
+export type RemoveMemberState = { error?: string };
+
+export async function removeOrganizationMember(
+  _prevState: RemoveMemberState,
+  formData: FormData,
+): Promise<RemoveMemberState> {
   const memberId = String(formData.get("memberId") ?? "");
   const orgId = String(formData.get("orgId") ?? "");
-  if (!memberId || !orgId) return;
+  if (!memberId || !orgId) return { error: "Falta el integrante." };
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -377,8 +382,9 @@ export async function removeOrganizationMember(formData: FormData): Promise<void
 
   if (error) {
     console.error("[removeOrganizationMember]", error.message);
-    return;
+    return { error: "No se pudo quitar al integrante. Inténtalo de nuevo." };
   }
 
   revalidatePath(`/mis-organizaciones/${orgId}/miembros`);
+  return {};
 }
