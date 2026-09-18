@@ -8,7 +8,7 @@ import {
 import { OrganizationsTable } from "@/features/admin/components/organizations-table";
 
 export const metadata: Metadata = {
-  title: "Organizaciones · CampusLab",
+  title: "Organizaciones · Vardelab",
 };
 
 type PageProps = {

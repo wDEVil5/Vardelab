@@ -8,7 +8,7 @@ import { getProjectForModeration } from "@/features/projects/queries";
 import { ModerationReviewControls } from "@/features/projects/components/moderation-review-controls";
 
 export const metadata: Metadata = {
-  title: "Revisar proyecto · CampusLab",
+  title: "Revisar proyecto · Vardelab",
 };
 
 type PageProps = { params: Promise<{ id: string }> };

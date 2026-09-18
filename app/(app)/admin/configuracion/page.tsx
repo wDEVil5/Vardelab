@@ -5,7 +5,7 @@ import { getPilotConfig, getConfigChangeHistory } from "@/features/admin/queries
 import { PilotConfigForm } from "@/features/admin/components/pilot-config-form";
 
 export const metadata: Metadata = {
-  title: "Configuración del piloto · CampusLab",
+  title: "Configuración del piloto · Vardelab",
 };
 
 /**

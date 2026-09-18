@@ -350,7 +350,7 @@ export async function inviteOrganizationMember(
     sendEmail(
       email,
       "invitacion_organizacion",
-      `Te invitaron a co-gestionar "${org?.nombre ?? "una organización"}" en CampusLab.`,
+      `Te invitaron a co-gestionar "${org?.nombre ?? "una organización"}" en Vardelab.`,
       userId ? `/mis-organizaciones/${orgId}/miembros` : "/registro",
     ),
   );

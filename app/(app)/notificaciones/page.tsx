@@ -5,7 +5,7 @@ import { getMyNotifications } from "@/features/notifications/queries";
 import { NotificationsList } from "@/features/notifications/components/notifications-list";
 
 export const metadata: Metadata = {
-  title: "Notificaciones · CampusLab",
+  title: "Notificaciones · Vardelab",
 };
 
 /**

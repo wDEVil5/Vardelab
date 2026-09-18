@@ -10,7 +10,7 @@ import { getMyActiveApplicationInProject } from "@/features/applications/queries
 import { ApplyForm } from "@/features/applications/components/apply-form";
 
 export const metadata: Metadata = {
-  title: "Postular · CampusLab",
+  title: "Postular · Vardelab",
 };
 
 const NIVEL_LABEL: Record<string, string> = {

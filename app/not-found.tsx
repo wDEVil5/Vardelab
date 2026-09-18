@@ -3,11 +3,11 @@ import Link from "next/link";
 import { FallingText } from "@/components/falling-text";
 
 export const metadata: Metadata = {
-  title: "Página no encontrada · CampusLab",
+  title: "Página no encontrada · Vardelab",
 };
 
 const FALLING_WORDS =
-  "CampusLab Explorar proyectos Organizaciones Cómo funciona Alcance definido Microproyectos reales Estudiantes Colaboración Primera experiencia Roles abiertos Postular Remoto Portafolio Equipos GitHub Habilidades Mentoría Diseño Datos Frontend Backend UX Investigación Impacto Práctica Semanas Cupos Verificado Patrocinador Comunidad Entregable Desafío";
+  "Vardelab Explorar proyectos Organizaciones Cómo funciona Alcance definido Microproyectos reales Estudiantes Colaboración Primera experiencia Roles abiertos Postular Remoto Portafolio Equipos GitHub Habilidades Mentoría Diseño Datos Frontend Backend UX Investigación Impacto Práctica Semanas Cupos Verificado Patrocinador Comunidad Entregable Desafío";
 
 /**
  * 404 raíz. FallingText a pantalla completa.
@@ -20,7 +20,7 @@ export default function NotFound() {
         <FallingText
           text={FALLING_WORDS}
           highlightWords={[
-            "CampusLab",
+            "Vardelab",
             "Microproyectos",
             "Alcance",
             "Explorar",
@@ -43,7 +43,7 @@ export default function NotFound() {
           href="/"
           className="pointer-events-auto shrink-0 text-base font-bold text-white sm:text-lg"
         >
-          CampusLab
+          Vardelab
         </Link>
         <Link
           href="/proyectos"

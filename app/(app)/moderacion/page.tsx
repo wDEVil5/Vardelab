@@ -9,7 +9,7 @@ import {
 import { ModerationQueueTable } from "@/features/projects/components/moderation-queue-table";
 
 export const metadata: Metadata = {
-  title: "Moderación · CampusLab",
+  title: "Moderación · Vardelab",
 };
 
 type PageProps = {

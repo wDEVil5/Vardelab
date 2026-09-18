@@ -2,7 +2,7 @@
 # https://supabase.com/docs/guides/local-development/cli/config
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "CampusLab"
+project_id = "Vardelab"
 
 [api]
 enabled = true
@@ -252,15 +252,15 @@ otp_expiry = 3600
 # sender_name = "Admin"
 
 [auth.email.template.confirmation]
-subject = "Confirma tu cuenta en CampusLab"
+subject = "Confirma tu cuenta en Vardelab"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.recovery]
-subject = "Restablece tu contraseña en CampusLab"
+subject = "Restablece tu contraseña en Vardelab"
 content_path = "./supabase/templates/recovery.html"
 
 [auth.email.template.email_change]
-subject = "Confirma tu nuevo correo en CampusLab"
+subject = "Confirma tu nuevo correo en Vardelab"
 content_path = "./supabase/templates/email_change.html"
 
 # Uncomment to customize email template

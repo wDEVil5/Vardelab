@@ -3,7 +3,7 @@ import Link from "next/link";
 import { UpdatePasswordForm } from "@/features/auth/components/update-password-form";
 
 export const metadata: Metadata = {
-  title: "Nueva contraseña · CampusLab",
+  title: "Nueva contraseña · Vardelab",
 };
 
 /**
@@ -20,7 +20,7 @@ export default function ActualizarContrasenaPage() {
       />
 
       <Link href="/" className="text-lg font-bold text-ink">
-        CampusLab
+        Vardelab
       </Link>
 
       <div className="mt-10 w-full max-w-sm">

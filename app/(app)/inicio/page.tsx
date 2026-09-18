@@ -12,7 +12,7 @@ import { ProyectoCarousel } from "@/features/dashboard/components/proyecto-carou
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Inicio · CampusLab",
+  title: "Inicio · Vardelab",
 };
 
 /**

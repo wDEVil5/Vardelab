@@ -11,7 +11,7 @@ import {
 import { ReportReviewControls } from "@/features/reports/components/report-review-controls";
 
 export const metadata: Metadata = {
-  title: "Detalle de reporte · CampusLab",
+  title: "Detalle de reporte · Vardelab",
 };
 
 type PageProps = { params: Promise<{ id: string }> };

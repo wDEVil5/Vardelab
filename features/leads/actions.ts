@@ -8,7 +8,7 @@ import { sendPlainEmail } from "@/features/notifications/email";
 
 /**
  * Acción de captación (Fase 1). Registra un lead público en la tabla `leads`:
- * "Hablar con CampusLab" (contacto_organizacion) o "Proponer un desafío"
+ * "Hablar con Vardelab" (contacto_organizacion) o "Proponer un desafío"
  * (propuesta_desafio). La RLS `leads_insert_public` (M17) permite el insert
  * anónimo forzando `estado = 'nuevo'`; la lectura queda para moderador/admin.
  *
@@ -16,13 +16,13 @@ import { sendPlainEmail } from "@/features/notifications/email";
  * enterara salvo revisando el panel a mano. Al insertar con éxito se manda,
  * por Brevo (`sendPlainEmail`, sin depender de `notification_tipo`): una
  * confirmación a quien escribió (para que sepa que su mensaje llegó) y un
- * aviso interno al correo de CampusLab con el detalle, para no tener que
+ * aviso interno al correo de Vardelab con el detalle, para no tener que
  * revisar `/leads` a cada rato. Ninguno de los dos bloquea la respuesta al
  * usuario si falla (mismo criterio que el resto de los correos del
  * proyecto): el lead ya quedó guardado, que es lo que importa.
  */
 
-const CONTACTO_CAMPUSLAB = "wilnesdevil9@gmail.com";
+const CONTACTO_VARDELAB = "wilnesdevil9@gmail.com";
 
 type LeadTipo = Database["public"]["Enums"]["lead_tipo"];
 const TIPOS: readonly LeadTipo[] = [
@@ -80,7 +80,7 @@ export async function submitLead(
       instruccion: "Nuestro equipo te va a contactar a este mismo correo en los próximos días.",
     }),
     sendPlainEmail(
-      CONTACTO_CAMPUSLAB,
+      CONTACTO_VARDELAB,
       `Nuevo lead: ${TIPO_LABEL[tipo as LeadTipo]}`,
       `${nombre} (${email})${organizacion ? ` de ${organizacion}` : ""} escribió: "${mensaje}"`,
       { instruccion: "Podés gestionarlo desde el panel de leads.", cta: "Ver leads", link: "/leads" },

@@ -16,7 +16,7 @@ import { OrgLogoPicker } from "@/features/organizations/components/org-logo-pick
 import { DeleteOrgButton } from "@/features/organizations/components/delete-org-button";
 
 export const metadata: Metadata = {
-  title: "Perfil de organización · CampusLab",
+  title: "Perfil de organización · Vardelab",
 };
 
 const TIPO_LABEL: Record<string, string> = {

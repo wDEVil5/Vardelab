@@ -6,7 +6,7 @@ import { getMyReports, getReportTarget } from "@/features/reports/queries";
 import { ReportDetailButton } from "@/features/reports/components/report-detail-button";
 
 export const metadata: Metadata = {
-  title: "Mis reportes · CampusLab",
+  title: "Mis reportes · Vardelab",
 };
 
 const ESTADO: Record<string, { label: string; tone: BadgeTone }> = {

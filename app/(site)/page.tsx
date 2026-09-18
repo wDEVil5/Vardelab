@@ -18,16 +18,16 @@ import { HeroOpenProjects } from "@/features/projects/components/hero-open-proje
 import { cuposRestantesProyecto } from "@/features/projects/roles";
 
 export const metadata: Metadata = {
-  title: "CampusLab · Desafíos reales. Talento que se demuestra.",
+  title: "Vardelab · Desafíos reales. Talento que se demuestra.",
   description:
     "Microdesafíos acotados junto a organizaciones: practica colaborar con alcance definido y acompañamiento por hitos.",
   openGraph: {
-    title: "CampusLab · Desafíos reales. Talento que se demuestra.",
+    title: "Vardelab · Desafíos reales. Talento que se demuestra.",
   },
 };
 
 /**
- * P-01 · Landing pública. Server Component: presenta CampusLab a estudiantes y
+ * P-01 · Landing pública. Server Component: presenta Vardelab a estudiantes y
  * organizaciones y los lleva a una acción. Página de presentación (no un panel
  * autenticado), sobre los tokens de Foundations. Piloto independiente: sin
  * métricas, testimonios ni logos ficticios.
@@ -186,7 +186,7 @@ export default async function Home() {
                     La idea
                   </p>
                   <p className="text-base leading-relaxed text-muted sm:text-lg">
-                    CampusLab existe para acortar esa distancia con microdesafíos
+                    Vardelab existe para acortar esa distancia con microdesafíos
                     acotados junto a{" "}
                     <strong className="font-semibold text-ink">organizaciones</strong>,{" "}
                     <strong className="font-semibold text-ink">pymes</strong>,{" "}
@@ -387,12 +387,12 @@ const FAQ = [
     a: "Te da una primera experiencia de colaboración en un proyecto concreto. No reemplaza esos procesos formales.",
   },
   {
-    q: "¿CampusLab es un empleo?",
+    q: "¿Vardelab es un empleo?",
     a: "No. Es una experiencia acotada para un desafío puntual; no sustituye un puesto ni una contratación.",
   },
 ];
 
-// Principios de CampusLab (sección diferenciadora). Cada uno con un ejemplo
+// Principios de Vardelab (sección diferenciadora). Cada uno con un ejemplo
 // concreto y verdadero ("en la práctica"), atado a una funcionalidad real.
 const PRINCIPIOS: PrincipleShowcaseItem[] = [
   {

@@ -4,7 +4,7 @@ import type { Rol } from "@/features/auth/components/signup-form";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Crear cuenta · CampusLab",
+  title: "Crear cuenta · Vardelab",
 };
 
 type PageProps = { searchParams: Promise<{ rol?: string }> };
