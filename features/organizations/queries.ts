@@ -69,6 +69,7 @@ export type MyOrganization = Awaited<
  * 404. Base para el formulario de edición.
  */
 export async function getMyOrganization(id: string) {
+  if (!isUuid(id)) return null;
   const orgIds = await getMyOrgIds();
   if (!orgIds.includes(id)) return null;
 

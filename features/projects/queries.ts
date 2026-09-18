@@ -505,6 +505,7 @@ const PROJECT_REVIEW_DETAIL_SELECT = `
  * cola. La RLS `projects_select_moderator` limita a moderador/admin.
  */
 export async function getProjectForModeration(id: string) {
+  if (!isUuid(id)) return null;
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -722,6 +723,7 @@ export type MyProject = Awaited<ReturnType<typeof getMyProjects>>[number];
  * por esta vía.
  */
 export async function getManagedProject(id: string) {
+  if (!isUuid(id)) return null;
   const orgIds = await getMyOrgIds();
   if (orgIds.length === 0) return null;
 
@@ -770,6 +772,7 @@ export async function getManagedProject(id: string) {
  * (dueño o miembro, igual que `getManagedProject`) → la página muestra 404.
  */
 export async function getProjectObservations(id: string) {
+  if (!isUuid(id)) return null;
   const orgIds = await getMyOrgIds();
   if (orgIds.length === 0) return null;
 
@@ -813,6 +816,7 @@ export type ManagedProject = NonNullable<
  * tras crear) ni `status` (se gestiona con los controles de publicación).
  */
 export async function getEditableProject(id: string) {
+  if (!isUuid(id)) return null;
   const orgIds = await getMyOrgIds();
   if (orgIds.length === 0) return null;
 

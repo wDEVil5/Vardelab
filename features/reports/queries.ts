@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/utils";
 
 /**
  * Capa de datos de reportes (M7 + M22). Un reporte apunta a una entidad
@@ -124,6 +125,7 @@ export type MyReport = Awaited<ReturnType<typeof getMyReports>>[number];
 
 /** Un reporte por id, con su detalle completo. `null` si no existe o no se ve. */
 export async function getReportById(id: string) {
+  if (!isUuid(id)) return null;
   const supabase = await createClient();
 
   const { data, error } = await supabase
