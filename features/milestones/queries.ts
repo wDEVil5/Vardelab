@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getMyOrgIds } from "@/features/organizations/queries";
+import { isUuid } from "@/lib/utils";
 
 /**
  * Hitos de un proyecto, ordenados por `orden` y luego por fecha de creación. La
@@ -125,6 +126,7 @@ async function firmarArchivosDeEntregas<
  * poder reusar `MilestoneSubmissions` en las dos pantallas.
  */
 export async function getMilestoneWithSubmissionsById(id: string) {
+  if (!isUuid(id)) return null;
   const supabase = await createClient();
 
   const { data, error } = await supabase
