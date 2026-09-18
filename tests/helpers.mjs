@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import ts from 'typescript';
 
 const CHAIN_METHODS = [
-  'select', 'insert', 'update', 'delete', 'eq', 'in', 'limit', 'order', 'maybeSingle', 'single',
+  'select', 'insert', 'update', 'delete', 'eq', 'neq', 'in', 'limit', 'order', 'maybeSingle', 'single',
 ];
 
 /**
