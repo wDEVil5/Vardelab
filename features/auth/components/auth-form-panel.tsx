@@ -14,11 +14,9 @@ export function AuthFormPanel({
 }) {
   return (
     <div className="relative flex flex-1 flex-col items-center justify-center px-6 py-12">
-      <Link
-        href="/"
-        className="mb-8 text-[15px] font-semibold tracking-tight text-white lg:hidden"
-      >
-        CampusLab
+      <Link href="/" className="mb-8 lg:hidden" aria-label="Vardelab">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/vardelab-logo-horizontal-blanco.svg" alt="Vardelab" className="h-6 w-auto" />
       </Link>
 
       <div className="relative z-10 w-full max-w-sm rounded-2xl border border-white/10 bg-white p-8 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)]">

@@ -24,8 +24,9 @@ export function SiteFooter() {
       <div className="relative mx-auto w-full max-w-5xl px-5 py-8 sm:px-6 sm:py-9">
         <div className="flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between sm:gap-12">
           <div className="flex max-w-xs flex-col gap-2">
-            <Link href="/" className="font-bold text-white">
-              CampusLab
+            <Link href="/" aria-label="Vardelab">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/vardelab-logo-horizontal-blanco.svg" alt="Vardelab" className="h-6 w-auto" />
             </Link>
             <p className="text-sm leading-relaxed text-white/70">
               Microproyectos reales que conectan estudiantes con organizaciones.
@@ -58,7 +59,7 @@ export function SiteFooter() {
 
         <div className="mt-10 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 border-t border-white/10 pt-6 text-[11px] text-white/50 sm:flex sm:items-start sm:justify-between sm:gap-5">
           <div className="contents sm:flex sm:min-w-0 sm:items-center sm:gap-5">
-            <div className="order-1 col-span-2 flex flex-wrap items-center gap-x-5 gap-y-2 sm:order-none sm:col-auto">
+            <div className="order-1 col-span-2 flex flex-wrap items-center gap-x-5 gap-y-2 sm:order-0 sm:col-auto">
               <Link
                 href="/terminos"
                 className="transition-colors hover:text-white"
@@ -72,12 +73,12 @@ export function SiteFooter() {
                 Política de privacidad
               </Link>
             </div>
-            <div className="order-2 flex flex-wrap items-center gap-x-5 gap-y-2 sm:order-none">
-              <span>© {new Date().getFullYear()} CampusLab</span>
+            <div className="order-2 flex flex-wrap items-center gap-x-5 gap-y-2 sm:order-0">
+              <span>© {new Date().getFullYear()} Vardelab</span>
               <span>Piloto independiente</span>
             </div>
           </div>
-          <span className="order-3 flex shrink-0 items-center gap-1 justify-self-end sm:order-none sm:self-auto sm:gap-2 sm:justify-self-auto">
+          <span className="order-3 flex shrink-0 items-center gap-1 justify-self-end sm:order-0 sm:self-auto sm:gap-2 sm:justify-self-auto">
             <a
               href="https://github.com/wDEVil5"
               target="_blank"
