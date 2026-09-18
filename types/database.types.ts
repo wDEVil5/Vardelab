@@ -1020,6 +1020,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_application: { Args: { _application_id: string }; Returns: string }
       accepted_count_for_role: { Args: { _role_id: string }; Returns: number }
       accepted_counts_for_roles: {
         Args: { _role_ids: string[] }
