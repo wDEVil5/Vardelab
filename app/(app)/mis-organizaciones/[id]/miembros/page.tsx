@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
-import { buttonClasses } from "@/components/ui/button";
 import { OrgLogo } from "@/components/ui/org-logo";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/features/auth/queries";
@@ -10,8 +9,8 @@ import {
   getMyOrganization,
   getOrganizationMembers,
 } from "@/features/organizations/queries";
-import { removeOrganizationMember } from "@/features/organizations/actions";
 import { InviteMemberForm } from "@/features/organizations/components/invite-member-form";
+import { RemoveMemberButton } from "@/features/organizations/components/remove-member-button";
 
 export const metadata: Metadata = {
   title: "Miembros de la organización · Vardelab",
@@ -190,16 +189,7 @@ export default async function MiembrosOrganizacionPage({ params }: PageProps) {
                   </span>
                 )}
                 <Badge tone={estado.tone}>{estado.label}</Badge>
-                <form action={removeOrganizationMember}>
-                  <input type="hidden" name="memberId" value={m.id} />
-                  <input type="hidden" name="orgId" value={org.id} />
-                  <button
-                    type="submit"
-                    className={buttonClasses({ variant: "ghost", size: "sm" })}
-                  >
-                    Quitar
-                  </button>
-                </form>
+                <RemoveMemberButton memberId={m.id} orgId={org.id} />
               </li>
             );
           })}

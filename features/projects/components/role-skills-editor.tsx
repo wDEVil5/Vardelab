@@ -1,6 +1,7 @@
 "use client";
 
-import { deleteRoleSkill } from "@/features/projects/actions";
+import { useActionState, type ReactNode } from "react";
+import { deleteRoleSkill, type DeleteRoleSkillState } from "@/features/projects/actions";
 import { AddRoleSkillModal } from "@/features/projects/components/add-role-skill-modal";
 import type { Skill } from "@/features/skills/queries";
 import type { ManagedProject } from "@/features/projects/queries";
@@ -11,7 +12,52 @@ const NIVEL_LABEL: Record<string, string> = {
   avanzado: "Avanzado",
 };
 
+const DELETE_INITIAL: DeleteRoleSkillState = {};
+
 type RoleSkill = ManagedProject["roles"][number]["skills"][number];
+
+/** Chip de una habilidad ya exigida en el rol, con su propio botón de quitar. */
+function RoleSkillChip({
+  projectId,
+  roleId,
+  skillId,
+  nombre,
+  children,
+}: {
+  projectId: string;
+  roleId: string;
+  skillId: string;
+  nombre: string;
+  children?: ReactNode;
+}) {
+  const [state, formAction] = useActionState(deleteRoleSkill, DELETE_INITIAL);
+
+  return (
+    <span className="inline-flex flex-col items-start gap-0.5">
+      <span className="inline-flex items-center gap-1 rounded-full bg-electric/10 px-2.5 py-1 text-xs font-medium text-electric">
+        {nombre}
+        {children}
+        <form action={formAction} className="inline">
+          <input type="hidden" name="projectId" value={projectId} />
+          <input type="hidden" name="roleId" value={roleId} />
+          <input type="hidden" name="skillId" value={skillId} />
+          <button
+            type="submit"
+            aria-label={`Quitar ${nombre}`}
+            className="ml-0.5 text-electric/60 hover:text-coral"
+          >
+            ×
+          </button>
+        </form>
+      </span>
+      {state.error && (
+        <span role="alert" className="text-[11px] text-coral">
+          {state.error}
+        </span>
+      )}
+    </span>
+  );
+}
 
 /**
  * Habilidades exigidas de un rol ya creado: los chips con botón de quitar, y
@@ -47,29 +93,19 @@ export function RoleSkillsEditor({
       {skills.length > 0 ? (
         <div className="flex flex-wrap gap-2">
           {skills.map((s) => (
-            <span
+            <RoleSkillChip
               key={s.skill?.id ?? s.nivel_minimo}
-              className="inline-flex items-center gap-1 rounded-full bg-electric/10 px-2.5 py-1 text-xs font-medium text-electric"
+              projectId={projectId}
+              roleId={roleId}
+              skillId={s.skill?.id ?? ""}
+              nombre={s.skill?.nombre ?? ""}
             >
-              {s.skill?.nombre}
               {s.nivel_minimo && (
                 <span className="font-normal text-electric/70">
                   · {NIVEL_LABEL[s.nivel_minimo] ?? s.nivel_minimo}
                 </span>
               )}
-              <form action={deleteRoleSkill} className="inline">
-                <input type="hidden" name="projectId" value={projectId} />
-                <input type="hidden" name="roleId" value={roleId} />
-                <input type="hidden" name="skillId" value={s.skill?.id ?? ""} />
-                <button
-                  type="submit"
-                  aria-label={`Quitar ${s.skill?.nombre}`}
-                  className="ml-0.5 text-electric/60 hover:text-coral"
-                >
-                  ×
-                </button>
-              </form>
-            </span>
+            </RoleSkillChip>
           ))}
         </div>
       ) : (
