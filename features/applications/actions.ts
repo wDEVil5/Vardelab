@@ -189,10 +189,10 @@ export async function withdrawApplication(formData: FormData): Promise<void> {
 async function resolveApplication(
   formData: FormData,
   nuevoEstado: "aceptada" | "rechazada",
-): Promise<void> {
+): Promise<{ error?: string }> {
   const applicationId = String(formData.get("applicationId") ?? "");
   const projectId = String(formData.get("projectId") ?? "");
-  if (!applicationId) return;
+  if (!applicationId) return { error: "Falta la postulación." };
 
   const supabase = await createClient();
 
@@ -206,15 +206,23 @@ async function resolveApplication(
     .eq("status", "enviada")
     .maybeSingle();
 
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("applications")
-    .update({ status: nuevoEstado })
+    .update({ status: nuevoEstado }, { count: "exact" })
     .eq("id", applicationId)
     .eq("status", "enviada");
 
+  revalidatePath(`/mis-proyectos/${projectId}/postulaciones`);
+
   if (error) {
     console.error("[resolveApplication]", error.message);
-  } else if (solicitud && nuevoEstado === "rechazada") {
+    return { error: "No se pudo rechazar la postulación. Inténtalo de nuevo." };
+  }
+  if (!count) {
+    return { error: "Esta postulación ya fue procesada." };
+  }
+
+  if (solicitud && nuevoEstado === "rechazada") {
     const titulo = solicitud.role?.project?.titulo ?? "un proyecto";
     after(() =>
       sendEmailToUser(
@@ -226,7 +234,7 @@ async function resolveApplication(
     );
   }
 
-  revalidatePath(`/mis-proyectos/${projectId}/postulaciones`);
+  return {};
 }
 
 export type AcceptApplicationState = { error?: string };
@@ -293,7 +301,12 @@ export async function acceptApplication(
   return {};
 }
 
-export async function rejectApplication(formData: FormData): Promise<void> {
+export type RejectApplicationState = { error?: string };
+
+export async function rejectApplication(
+  _prevState: RejectApplicationState,
+  formData: FormData,
+): Promise<RejectApplicationState> {
   return resolveApplication(formData, "rechazada");
 }
 

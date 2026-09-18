@@ -5,6 +5,7 @@ import {
   addSubmission,
   deleteSubmission,
   type SubmissionState,
+  type DeleteSubmissionState,
 } from "@/features/submissions/actions";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,34 @@ import type { MilestoneWithSubmissions } from "@/features/milestones/queries";
 import { ActionSuccess } from "@/components/ui/action-success";
 
 const INITIAL: SubmissionState = {};
+const DELETE_INITIAL: DeleteSubmissionState = {};
+
+/** Botón "eliminar entrega", con su propio estado de error si falla. */
+function DeleteSubmissionButton({ submissionId, projectId }: { submissionId: string; projectId: string }) {
+  const [state, formAction] = useActionState(deleteSubmission, DELETE_INITIAL);
+
+  return (
+    <div className="flex shrink-0 flex-col items-end gap-1">
+      <form action={formAction}>
+        <input type="hidden" name="submissionId" value={submissionId} />
+        <input type="hidden" name="projectId" value={projectId} />
+        <button
+          type="submit"
+          aria-label="Eliminar entrega"
+          title="Eliminar entrega"
+          className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-coral/10 hover:text-coral"
+        >
+          <IconPapelera className="size-4" />
+        </button>
+      </form>
+      {state.error && (
+        <p role="alert" className="text-xs text-coral">
+          {state.error}
+        </p>
+      )}
+    </div>
+  );
+}
 
 // Misma etiqueta y color que ya usa la vista general del proyecto (E-05) para
 // cada estado — antes acá decía "Entregado" para el mismo estado que ahí dice
@@ -250,18 +279,7 @@ export function MilestoneSubmissions({
                   sería borrar la evidencia de algo que el gestor ya dio por
                   bueno. */}
               {!aprobado && s.submitted_by === currentUserId && (
-                <form action={deleteSubmission}>
-                  <input type="hidden" name="submissionId" value={s.id} />
-                  <input type="hidden" name="projectId" value={projectId} />
-                  <button
-                    type="submit"
-                    aria-label="Eliminar entrega"
-                    title="Eliminar entrega"
-                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-coral/10 hover:text-coral"
-                  >
-                    <IconPapelera className="size-4" />
-                  </button>
-                </form>
+                <DeleteSubmissionButton submissionId={s.id} projectId={projectId} />
               )}
             </li>
           ))}

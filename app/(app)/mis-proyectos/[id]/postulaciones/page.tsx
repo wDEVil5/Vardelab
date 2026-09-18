@@ -2,15 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/features/auth/queries";
 import {
   getProjectApplications,
   type ProjectApplications,
 } from "@/features/applications/queries";
-import { rejectApplication } from "@/features/applications/actions";
-import { AcceptApplicationButton } from "@/features/applications/components/accept-application-button";
+import {
+  AcceptApplicationButton,
+  RejectApplicationButton,
+} from "@/features/applications/components/accept-application-button";
 import { ConfirmTeamButton } from "@/features/applications/components/confirm-team-button";
 import { RemoveTeamMemberButton } from "@/features/applications/components/remove-team-member-button";
 
@@ -340,18 +341,7 @@ function RoleApplications({
                   ) : (
                     <div className="flex flex-col gap-2 sm:w-32 sm:shrink-0 sm:self-center">
                       <AcceptApplicationButton applicationId={app.id} projectId={projectId} />
-                      <form action={rejectApplication}>
-                        <input type="hidden" name="applicationId" value={app.id} />
-                        <input type="hidden" name="projectId" value={projectId} />
-                        <SubmitButton
-                          variant="ghost"
-                          size="sm"
-                          pendingText="Rechazando…"
-                          className="w-full"
-                        >
-                          Rechazar
-                        </SubmitButton>
-                      </form>
+                      <RejectApplicationButton applicationId={app.id} projectId={projectId} />
                     </div>
                   ))}
               </li>

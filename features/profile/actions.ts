@@ -241,16 +241,21 @@ export async function addProfileSkill(
   return {};
 }
 
+export type DeleteProfileSkillState = { error?: string };
+
 /** Quita una habilidad del perfil propio. */
-export async function deleteProfileSkill(formData: FormData): Promise<void> {
+export async function deleteProfileSkill(
+  _prevState: DeleteProfileSkillState,
+  formData: FormData,
+): Promise<DeleteProfileSkillState> {
   const skillId = String(formData.get("skillId") ?? "");
-  if (!skillId) return;
+  if (!skillId) return { error: "Falta la habilidad." };
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) return { error: "Tu sesión expiró. Vuelve a iniciar sesión." };
 
   const { error } = await supabase
     .from("profile_skills")
@@ -258,7 +263,11 @@ export async function deleteProfileSkill(formData: FormData): Promise<void> {
     .eq("profile_id", user.id)
     .eq("skill_id", skillId);
 
-  if (error) console.error("[deleteProfileSkill]", error.message);
+  if (error) {
+    console.error("[deleteProfileSkill]", error.message);
+    return { error: "No se pudo quitar la habilidad. Inténtalo de nuevo." };
+  }
 
   revalidatePath("/perfil");
+  return {};
 }
