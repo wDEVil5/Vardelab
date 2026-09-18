@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import ts from 'typescript';
 
 const CHAIN_METHODS = [
-  'select', 'insert', 'update', 'delete', 'eq', 'neq', 'in', 'ilike', 'not',
+  'select', 'insert', 'update', 'upsert', 'delete', 'eq', 'neq', 'in', 'ilike', 'not',
   'limit', 'order', 'maybeSingle', 'single',
 ];
 
@@ -151,6 +151,9 @@ export function load(relativePath, {
       if (name === '@/lib/supabase/server') return { createClient: async () => db };
       if (name === '@/features/auth/queries') return { getCurrentUser: async () => currentUser };
       if (name === '@/features/organizations/config') return { INVITACIONES_HABILITADAS: true };
+      if (name === '@/features/organizations/queries' && !('@/features/organizations/queries' in extraModules)) {
+        return { getMyOrgIds: async () => [] };
+      }
       if (name === '@/features/admin/queries') return { CONFIG_CAMPO_LABEL: {} };
       if (name === '@/lib/site') return { SITE_URL: 'https://vardelab.test' };
       if (name === '@/features/auth/password') {
@@ -192,6 +195,7 @@ export function load(relativePath, {
         return {
           sendEmailToUser: async (...args) => { emailCalls.push(args); },
           sendEmail: async (...args) => { sendEmailCalls.push(args); },
+          sendPlainEmail: async (...args) => { sendEmailCalls.push(args); },
         };
       }
       if (name in extraModules) return extraModules[name];
