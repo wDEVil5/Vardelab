@@ -16,8 +16,8 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const data = await getPublicProfile(id);
-  if (!data) return { title: "Perfil no encontrado · CampusLab" };
-  const titulo = `${data.profile.nombre ?? "Perfil"} · CampusLab`;
+  if (!data) return { title: "Perfil no encontrado · Vardelab" };
+  const titulo = `${data.profile.nombre ?? "Perfil"} · Vardelab`;
   return {
     title: titulo,
     description: data.profile.bio ?? undefined,
@@ -61,7 +61,7 @@ function iniciales(nombre: string | null): string {
   return partes.map((p) => p[0]?.toUpperCase() ?? "").join("") || "?";
 }
 
-// "Mes y año" en español, para "En CampusLab desde…" — no hace falta más
+// "Mes y año" en español, para "En Vardelab desde…" — no hace falta más
 // precisión que esa para una fecha de ingreso.
 function mesYAnio(iso: string): string {
   return new Date(iso).toLocaleDateString("es-CL", {
@@ -193,7 +193,7 @@ function IconVideo({ className }: { className?: string }) {
   );
 }
 
-/** Ícono de calendario, para "en CampusLab desde…". */
+/** Ícono de calendario, para "en Vardelab desde…". */
 function IconCalendario({ className }: { className?: string }) {
   return (
     <svg
@@ -386,7 +386,7 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
               <span className="text-xs font-semibold text-ink">
                 {mesYAnio(profile.created_at)}
               </span>
-              <span className="text-xs text-muted">En CampusLab desde</span>
+              <span className="text-xs text-muted">En Vardelab desde</span>
             </div>
           </div>
 
@@ -588,7 +588,7 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
                   ¿Buscas talento para tu proyecto?
                 </p>
                 <p className="text-muted">
-                  CampusLab conecta estudiantes con organizaciones reales.
+                  Vardelab conecta estudiantes con organizaciones reales.
                 </p>
                 <Link
                   href="/proyectos"

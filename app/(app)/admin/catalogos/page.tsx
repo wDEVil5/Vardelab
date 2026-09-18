@@ -5,7 +5,7 @@ import { getSkillsCatalog, getModalidadUsage } from "@/features/admin/queries";
 import { CatalogosTabs } from "@/features/admin/components/catalogos-tabs";
 
 export const metadata: Metadata = {
-  title: "Gestión de catálogos · CampusLab",
+  title: "Gestión de catálogos · Vardelab",
 };
 
 /**

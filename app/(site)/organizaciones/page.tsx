@@ -14,11 +14,11 @@ import { OrganizacionHeroVisual } from "@/components/organizacion-hero-visual";
 import { EJEMPLOS_ORGANIZACION } from "@/features/organizations/necesidades-ejemplo";
 
 export const metadata: Metadata = {
-  title: "Para organizaciones · CampusLab",
+  title: "Para organizaciones · Vardelab",
   description:
     "Convierte una necesidad concreta en un microproyecto con alcance definido, estudiantes interesados y seguimiento visible de principio a fin.",
   openGraph: {
-    title: "Para organizaciones · CampusLab",
+    title: "Para organizaciones · Vardelab",
     description:
       "Convierte una necesidad concreta en un microproyecto con alcance definido, estudiantes interesados y seguimiento visible de principio a fin.",
   },
@@ -73,7 +73,7 @@ export default function OrganizacionesPage() {
 
             {/* Composición pasiva: ficha de desafío + chips flotantes.
                 Inspirada en firstjob.me (capa central + flotantes), adaptada
-                a CampusLab. Si no convence, volver a TransformacionHero. */}
+                a Vardelab. Si no convence, volver a TransformacionHero. */}
             <div className="animate-rise hidden md:block" style={{ animationDelay: "150ms" }}>
               <OrganizacionHeroVisual />
             </div>
@@ -170,7 +170,7 @@ export default function OrganizacionesPage() {
                 <span>Un alcance que se puede completar.</span>
               </div>
               <p className="mt-5 max-w-3xl border-t border-white/15 pt-5 text-sm leading-relaxed text-white/65">
-                CampusLab no reemplaza un puesto de trabajo ni sirve para
+                Vardelab no reemplaza un puesto de trabajo ni sirve para
                 proyectos indefinidos. El desafío debe poder completarse en un
                 marco formativo de 2 a 8 semanas.
               </p>
@@ -361,7 +361,7 @@ export default function OrganizacionesPage() {
                     "h-11 px-6 text-base",
                   )}
                 >
-                  Hablar con CampusLab
+                  Hablar con Vardelab
                 </Link>
               </div>
             </div>
@@ -581,7 +581,7 @@ const FAQ = [
     a: "Entre 2 y 8 semanas. Cada estudiante suele dedicar unas 3 a 6 horas semanales; tú defines el alcance al publicar.",
   },
   {
-    q: "¿CampusLab reemplaza una contratación?",
+    q: "¿Vardelab reemplaza una contratación?",
     a: "No. Es una experiencia acotada para un desafío puntual con estudiantes; no sustituye un empleo ni una contratación.",
   },
 ];

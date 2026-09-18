@@ -9,7 +9,7 @@ import { getProjectMilestones } from "@/features/milestones/queries";
 import { projectStatusLabel } from "@/features/projects/status";
 
 export const metadata: Metadata = {
-  title: "Mis proyectos · CampusLab",
+  title: "Mis proyectos · Vardelab",
 };
 
 // Conectores que no aportan a las iniciales del monograma.

@@ -14,7 +14,7 @@ import { ConfirmTeamButton } from "@/features/applications/components/confirm-te
 import { RemoveTeamMemberButton } from "@/features/applications/components/remove-team-member-button";
 
 export const metadata: Metadata = {
-  title: "Seleccionar equipo · CampusLab",
+  title: "Seleccionar equipo · Vardelab",
 };
 
 const ESTADO_PROYECTO: Record<string, { label: string; tone: BadgeTone }> = {

@@ -30,8 +30,8 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const project = await getPublishedProjectById(id);
-  if (!project) return { title: "Proyecto no encontrado · CampusLab" };
-  const titulo = `${project.titulo} · CampusLab`;
+  if (!project) return { title: "Proyecto no encontrado · Vardelab" };
+  const titulo = `${project.titulo} · Vardelab`;
   return {
     title: titulo,
     description: project.resumen ?? undefined,
@@ -215,7 +215,7 @@ export default async function ProyectoPage({ params, searchParams }: PageProps) 
                 <ul className="flex flex-col gap-2.5 text-sm">
                   {project.revisado_at && (
                     <Condicion
-                      titulo="Revisado por CampusLab."
+                      titulo="Revisado por Vardelab."
                       texto="El alcance se revisó antes de publicarse."
                     />
                   )}

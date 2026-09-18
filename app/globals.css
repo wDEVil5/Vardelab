@@ -25,7 +25,7 @@ header:has(.site-header-pill button[aria-expanded="true"]) {
   }
 }
 
-/* CampusLab — Foundations (design tokens) · ver PRD §5.1 y página Figma "Foundations" */
+/* Vardelab — Foundations (design tokens) · ver PRD §5.1 y página Figma "Foundations" */
 @theme {
   /* Color */
   --color-ink: #0d253b; /* texto principal / marca oscura */

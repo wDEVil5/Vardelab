@@ -5,7 +5,7 @@ import { getMyApplications } from "@/features/applications/queries";
 import { ApplicationsTable } from "@/features/applications/components/applications-table";
 
 export const metadata: Metadata = {
-  title: "Mis postulaciones · CampusLab",
+  title: "Mis postulaciones · Vardelab",
 };
 
 /**

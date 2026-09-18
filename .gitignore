@@ -40,7 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# --- CampusLab custom ---
+# --- Vardelab custom ---
 !.env.example
 
 # supabase (temporales del CLI local: `supabase start`)
@@ -49,6 +49,7 @@ supabase/.branches/
 docs/CampusLab_Informe_Completo.pdf
 docs/CampusLab_Diseno_Backend.pdf
 docs/CampusLab_Vision_Tesis_y_Expansion.pdf
+logos-marca/
 .claude/
 tmp/
 BACKEND.md

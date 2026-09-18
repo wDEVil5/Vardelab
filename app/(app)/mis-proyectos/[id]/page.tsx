@@ -20,7 +20,7 @@ import { getTeamForEvaluation } from "@/features/evaluations/queries";
 import { MemberEvaluationForm } from "@/features/evaluations/components/member-evaluation-form";
 
 export const metadata: Metadata = {
-  title: "Gestionar proyecto · CampusLab",
+  title: "Gestionar proyecto · Vardelab",
 };
 
 const ESTADO: Record<string, { label: string; tone: BadgeTone }> = {

@@ -22,7 +22,7 @@ import { getProjectMessages, getProjectParticipantNames } from "@/features/messa
 import { MessageThread } from "@/features/messages/components/message-thread";
 
 export const metadata: Metadata = {
-  title: "Seguimiento de hitos · CampusLab",
+  title: "Seguimiento de hitos · Vardelab",
 };
 
 // Estado del hito → etiqueta, tono del badge y estilo del círculo (mismo

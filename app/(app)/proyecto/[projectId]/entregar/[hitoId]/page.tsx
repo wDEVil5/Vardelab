@@ -7,7 +7,7 @@ import { getMilestoneWithSubmissionsById } from "@/features/milestones/queries";
 import { MilestoneSubmissions } from "@/features/submissions/components/milestone-submissions";
 
 export const metadata: Metadata = {
-  title: "Entregar evidencia · CampusLab",
+  title: "Entregar evidencia · Vardelab",
 };
 
 type PageProps = { params: Promise<{ projectId: string; hitoId: string }> };

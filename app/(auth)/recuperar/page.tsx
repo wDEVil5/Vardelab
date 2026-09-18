@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ForgotPasswordForm } from "@/features/auth/components/forgot-password-form";
 
 export const metadata: Metadata = {
-  title: "Recuperar contraseña · CampusLab",
+  title: "Recuperar contraseña · Vardelab",
 };
 
 type PageProps = { searchParams: Promise<{ error?: string }> };
@@ -26,7 +26,7 @@ export default async function RecuperarPage({ searchParams }: PageProps) {
       />
 
       <Link href="/" className="text-lg font-bold text-ink">
-        CampusLab
+        Vardelab
       </Link>
 
       <div className="mt-10 w-full max-w-sm">
