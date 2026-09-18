@@ -47,15 +47,23 @@ export function countAs(args) {
 
 /** Afirma que `fn()` (una llamada a `queryAs`) revienta por RLS/permisos, no por otra cosa. */
 export function expectRlsError(fn) {
+  expectError(fn, /row-level security|permission denied|must be owner|insufficient privilege/i);
+}
+
+/**
+ * Igual que `expectRlsError`, pero para el `raise exception` a mano que
+ * hacen las funciones `security definer` (`accept_application`,
+ * `set_user_role`) — su mensaje no tiene el texto genérico de RLS de
+ * Postgres, así que necesitan su propio patrón.
+ */
+export function expectError(fn, pattern) {
   try {
     fn();
   } catch (err) {
-    if (/row-level security|permission denied|must be owner|insufficient privilege/i.test(err.message)) {
-      return;
-    }
-    throw new Error(`Falló, pero no por RLS/permisos: ${err.message}`);
+    if (pattern.test(err.message)) return;
+    throw new Error(`Falló, pero no coincide con lo esperado (${pattern}): ${err.message}`);
   }
-  throw new Error('Se esperaba un error de RLS/permisos y no ocurrió');
+  throw new Error(`Se esperaba un error que coincida con ${pattern} y no ocurrió`);
 }
 
 // UUIDs fijos de `supabase/seed.sql` — mismos que ya se usan en el resto del
