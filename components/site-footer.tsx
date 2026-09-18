@@ -56,24 +56,28 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-5 border-t border-white/10 pt-6 text-[11px] text-white/50 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-3">
-            <Link
-              href="/terminos"
-              className="transition-colors hover:text-white"
-            >
-              Términos y condiciones
-            </Link>
-            <Link
-              href="/privacidad"
-              className="transition-colors hover:text-white"
-            >
-              Política de privacidad
-            </Link>
-            <span>© {new Date().getFullYear()} CampusLab</span>
-            <span>Piloto independiente</span>
+        <div className="mt-10 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 border-t border-white/10 pt-6 text-[11px] text-white/50 sm:flex sm:items-start sm:justify-between sm:gap-5">
+          <div className="contents sm:flex sm:min-w-0 sm:items-center sm:gap-5">
+            <div className="order-1 col-span-2 flex flex-wrap items-center gap-x-5 gap-y-2 sm:order-none sm:col-auto">
+              <Link
+                href="/terminos"
+                className="transition-colors hover:text-white"
+              >
+                Términos y condiciones
+              </Link>
+              <Link
+                href="/privacidad"
+                className="transition-colors hover:text-white"
+              >
+                Política de privacidad
+              </Link>
+            </div>
+            <div className="order-2 flex flex-wrap items-center gap-x-5 gap-y-2 sm:order-none">
+              <span>© {new Date().getFullYear()} CampusLab</span>
+              <span>Piloto independiente</span>
+            </div>
           </div>
-          <span className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <span className="order-3 flex shrink-0 items-center gap-1 justify-self-end sm:order-none sm:self-auto sm:gap-2 sm:justify-self-auto">
             <a
               href="https://github.com/wDEVil5"
               target="_blank"

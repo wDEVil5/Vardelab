@@ -76,9 +76,11 @@ export function SiteHeaderBar({ children }: { children: ReactNode }) {
       // Al scrollear: vidrio suave + borde del token --color-border (#e3e8ee).
       // La clase `bg-white` del nodo cubre el primer paint (SSR / pre-hydrate);
       // sin ella el fondo solo existía tras el useEffect y se veía un flash.
-      el.style.backgroundColor = `rgba(255, 255, 255, ${lerp(1, 0.92, t)})`;
+      // Un poco más de transparencia deja que el contenido se intuya detrás
+      // del nav sin perder legibilidad ni generar una capa demasiado marcada.
+      el.style.backgroundColor = `rgba(255, 255, 255, ${lerp(1, 0.84, t)})`;
       el.style.borderColor = `rgba(227, 232, 238, ${lerp(0, 1, t)})`;
-      el.style.boxShadow = `0 10px 30px -12px rgba(15, 23, 42, ${lerp(0, 0.18, t)})`;
+      el.style.boxShadow = `0 10px 30px -12px rgba(15, 23, 42, ${lerp(0, 0.14, t)})`;
     };
 
     const tick = () => {
@@ -119,7 +121,7 @@ export function SiteHeaderBar({ children }: { children: ReactNode }) {
         // el efecto de scroll ya calcula para t=0 (tope de página), fijado acá
         // como clase para que el primer paint (antes de que corra el useEffect)
         // no se vea "full bleed" de punta a punta por una fracción de segundo.
-        className="site-header-pill w-full border border-transparent bg-white backdrop-blur-md md:mx-auto md:max-w-7xl"
+        className="site-header-pill w-full border border-transparent bg-white backdrop-blur-lg backdrop-saturate-150 md:mx-auto md:max-w-7xl"
       >
         {children}
       </div>
