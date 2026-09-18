@@ -19,11 +19,16 @@ export function load(relativePath, {
   responses = [],
   rpcResponses = [],
   currentUser = null,
+  storageResponses = {},
 } = {}) {
   const paths = [];
   const queries = [];
   const rpcCalls = [];
   const emailCalls = [];
+  const storageUploads = [];
+  const storageRemoves = [];
+  const uploadResponses = storageResponses.upload ?? [];
+  const removeResponses = storageResponses.remove ?? [];
   const db = {
     from(table) {
       const query = { table, steps: [] };
@@ -43,6 +48,25 @@ export function load(relativePath, {
       assert.ok(rpcResponses.length, `Llamada RPC inesperada a "${name}"`);
       return Promise.resolve(rpcResponses.shift());
     },
+    auth: {
+      async getUser() {
+        return { data: { user: currentUser } };
+      },
+    },
+    storage: {
+      from(bucket) {
+        return {
+          async upload(path, file, opts) {
+            storageUploads.push({ bucket, path, opts });
+            return uploadResponses.shift() ?? { error: null };
+          },
+          async remove(pathsToRemove) {
+            storageRemoves.push({ bucket, paths: pathsToRemove });
+            return removeResponses.shift() ?? { error: null };
+          },
+        };
+      },
+    },
   };
   const exports = {};
   const source = readFileSync(new URL(`../${relativePath}`, import.meta.url), 'utf8');
@@ -51,6 +75,10 @@ export function load(relativePath, {
   });
   vm.runInNewContext(outputText, {
     exports, console: { error() {} },
+    // `File`/`FormData`: algunas acciones hacen `archivo instanceof File`. El
+    // contexto del vm no hereda los globals de Node, así que sin esto ese
+    // chequeo revienta con "File is not defined" en vez de evaluar bien.
+    File, FormData,
     require(name) {
       if (name === 'next/cache') return { revalidatePath: (path) => paths.push(path) };
       if (name === 'next/navigation') return { redirect: () => assert.fail('Redirección inesperada') };
@@ -63,7 +91,7 @@ export function load(relativePath, {
       throw new Error(`Import inesperado: ${name}`);
     },
   });
-  return { exports, paths, queries, rpcCalls, emailCalls };
+  return { exports, paths, queries, rpcCalls, emailCalls, storageUploads, storageRemoves };
 }
 
 export function form(values) {
