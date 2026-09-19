@@ -28,12 +28,24 @@ export default async function InicioPage() {
   const user = await getCurrentUser();
   const nombre = (user?.nombre ?? "").split(/\s+/)[0] || "";
 
+  // Ramas explícitas y con prioridad clara — antes la de patrocinador exigía
+  // `esPatrocinador && !esEstudiante`, así que cualquier cuenta que no
+  // calzara exacto (los dos roles a la vez, o una lectura de roles vacía)
+  // caía sin avisar al dashboard de estudiante completo de más abajo, con
+  // "Recomendados" y "postula a un proyecto" — contenido que no le
+  // corresponde a un patrocinador. Ahora cada rol tiene su propio `return`,
+  // y lo que no calza con ningún rol conocido no llega a ver el dashboard
+  // de estudiante por descarte.
   if (user?.esModerador || user?.esAdmin) {
     return <ModeradorInicio nombre={nombre} />;
   }
 
-  if (user?.esPatrocinador && !user?.esEstudiante) {
+  if (user?.esPatrocinador) {
     return <PatrocinadorInicio nombre={nombre} />;
+  }
+
+  if (!user?.esEstudiante) {
+    return <SinRolInicio nombre={nombre} />;
   }
 
   const dashboard = await getStudentDashboard();
@@ -185,6 +197,26 @@ export default async function InicioPage() {
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+/**
+ * Cuenta sin ningún rol reconocido en `user_roles` (no debería pasar en el
+ * flujo normal — el registro siempre asigna uno — pero es más seguro mostrar
+ * esto que caer por descarte en el dashboard de estudiante). Sin CTA ni
+ * datos: no hay ningún rol que decida qué mostrarle.
+ */
+function SinRolInicio({ nombre }: { nombre: string }) {
+  return (
+    <div className="mx-auto w-full max-w-2xl px-6 py-8 lg:py-10">
+      <h1 className="text-2xl font-semibold tracking-tight text-ink">Hola, {nombre}.</h1>
+      <section className="mt-6 rounded-2xl border border-dashed border-border bg-white p-8">
+        <p className="font-medium text-ink">Tu cuenta todavía no tiene un rol asignado.</p>
+        <p className="mt-1 text-sm text-muted">
+          Si esto no debería ser así, contacta a un administrador.
+        </p>
+      </section>
     </div>
   );
 }

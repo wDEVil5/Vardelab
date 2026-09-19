@@ -4,8 +4,13 @@ import { OrgLogo } from "@/components/ui/org-logo";
 import { ReportButton } from "@/features/reports/components/report-button";
 import { externalUrl } from "@/lib/utils";
 import { VerifiedInfoBadge } from "@/components/ui/verified-info-popover";
+import Link from "next/link";
 import { OrgProjectsGrid } from "@/features/organizations/components/org-projects-grid";
-import { getMyOrgIds, getPublicOrganization } from "@/features/organizations/queries";
+import {
+  getMyOrgIds,
+  getOrganizationOwnerProfile,
+  getPublicOrganization,
+} from "@/features/organizations/queries";
 import { getPublishedProjectsByOrg } from "@/features/projects/queries";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -94,6 +99,17 @@ function mesYAnio(iso: string): string {
   return new Date(iso).toLocaleDateString("es-CL", { month: "long", year: "numeric" });
 }
 
+// Iniciales para el avatar cuando no hay foto — mismo criterio que `/u/[id]`.
+function iniciales(nombre: string | null): string {
+  if (!nombre) return "?";
+  return nombre
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 /**
  * Perfil público de una organización: lo que un estudiante ve antes de
  * postular a uno de sus proyectos (identidad, verificación, contacto y sus
@@ -110,6 +126,14 @@ export default async function PerfilOrganizacionPage({ params }: PageProps) {
   ]);
   if (!org) notFound();
   const esPropia = misOrgIds.includes(id);
+  // Solo devuelve datos si el dueño mantiene su perfil público (ver
+  // `getOrganizationOwnerProfile`) — por eso va después del 404, no en el
+  // mismo Promise.all: no tiene sentido pedirlo para una org que no existe.
+  const dueno = await getOrganizationOwnerProfile(org.owner_id);
+  const duenoEnlaces = (dueno?.enlaces ?? {}) as { linkedin?: string; sitio?: string };
+  const duenoTieneContenido = Boolean(
+    dueno && (dueno.cargo || dueno.bio || duenoEnlaces.linkedin || duenoEnlaces.sitio),
+  );
 
   const cuposAbiertos = proyectos.reduce(
     (total, p) => total + p.roles.reduce((sub, r) => sub + r.cupos, 0),
@@ -196,6 +220,62 @@ export default async function PerfilOrganizacionPage({ params }: PageProps) {
           )}
         </div>
       </header>
+
+      {duenoTieneContenido && dueno && (
+        <section className="mt-10 rounded-2xl border border-border bg-white p-6">
+          <h2 className="text-lg font-semibold text-ink">Quién está detrás</h2>
+          <Link
+            href={`/u/${dueno.id}`}
+            className="mt-4 flex items-center gap-3 rounded-xl transition-colors hover:bg-surface"
+          >
+            <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-electric text-base font-semibold text-white">
+              {dueno.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={dueno.avatar_url}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="size-12 object-cover"
+                />
+              ) : (
+                iniciales(dueno.nombre)
+              )}
+            </span>
+            <span>
+              <span className="block font-semibold text-ink">{dueno.nombre}</span>
+              {dueno.cargo && <span className="block text-sm text-muted">{dueno.cargo}</span>}
+            </span>
+          </Link>
+
+          {dueno.bio && <p className="mt-4 text-sm leading-relaxed text-muted">{dueno.bio}</p>}
+
+          {(duenoEnlaces.linkedin || duenoEnlaces.sitio) && (
+            <div className="mt-4 flex flex-wrap gap-4 text-sm">
+              {duenoEnlaces.linkedin && (
+                <a
+                  href={externalUrl(duenoEnlaces.linkedin)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-electric hover:underline"
+                >
+                  LinkedIn
+                </a>
+              )}
+              {duenoEnlaces.sitio && (
+                <a
+                  href={externalUrl(duenoEnlaces.sitio)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-electric hover:underline"
+                >
+                  Sitio personal
+                </a>
+              )}
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="mt-10">
         <h2 className="text-lg font-semibold text-ink">

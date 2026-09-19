@@ -268,24 +268,31 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
   ]);
   if (!data) notFound();
 
-  const { profile, items, skills, proyectosCompletados } = data;
+  const { profile, items, skills, proyectosCompletados, esPatrocinador } = data;
   const esPropio = viewer?.id === profile.id;
   const enlaces = (profile.enlaces ?? {}) as ProfileLinks;
   const enlacesList = (Object.keys(ENLACE_LABEL) as (keyof ProfileLinks)[])
     .map((k) => ({ k, url: enlaces[k] }))
-    .filter((e) => e.url);
+    .filter((e) => e.url && (e.k !== "github" || !esPatrocinador));
 
   // Solo le importa a quien es dueño del perfil: es la lista de lo que le
-  // conviene completar antes de que un patrocinador lo vea. Doble uso — se
+  // conviene completar antes de que alguien más lo vea. Doble uso — se
   // muestra en la tarjeta de la derecha (que si no, quedaba vacía apenas no
-  // hay enlaces) y evita mostrar la tarjeta si ya no falta nada.
+  // hay enlaces) y evita mostrar la tarjeta si ya no falta nada. Habilidades
+  // y portafolio son de estudiante — no aplican a un patrocinador.
   const faltantes = esPropio
-    ? [
-        !profile.bio && "Cuéntanos sobre ti",
-        skills.length === 0 && "Suma tus habilidades",
-        enlacesList.length === 0 && "Agrega un enlace (GitHub, LinkedIn o tu sitio)",
-        items.length === 0 && "Publica una evidencia en tu portafolio",
-      ].filter((f): f is string => Boolean(f))
+    ? esPatrocinador
+      ? [
+          !profile.cargo && "Agrega tu cargo",
+          !profile.bio && "Preséntate ante los estudiantes",
+          enlacesList.length === 0 && "Agrega un enlace (LinkedIn o tu sitio)",
+        ].filter((f): f is string => Boolean(f))
+      : [
+          !profile.bio && "Cuéntanos sobre ti",
+          skills.length === 0 && "Suma tus habilidades",
+          enlacesList.length === 0 && "Agrega un enlace (GitHub, LinkedIn o tu sitio)",
+          items.length === 0 && "Publica una evidencia en tu portafolio",
+        ].filter((f): f is string => Boolean(f))
     : [];
 
   // Avanzado primero: lo que más le importa ver a un patrocinador de un
@@ -352,6 +359,7 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
           </span>
 
           <h1 className="mt-4 text-2xl font-bold text-ink">{profile.nombre}</h1>
+          {profile.cargo && <p className="text-sm font-medium text-ink">{profile.cargo}</p>}
           {(profile.carrera || profile.semestre) && (
             <p className="text-sm text-muted">
               {profile.carrera}
@@ -361,26 +369,32 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
           )}
 
           {/* Resumen rápido, como su propio módulo (no más texto corrido
-              mezclado con el resto): tres celdas con ícono, separadas por
-              líneas — lo primero que necesita ver un patrocinador antes de
-              leer todo lo demás. Con datos en cero (un perfil recién
-              empezando) igual se muestra — es información honesta, no un
-              error. */}
+              mezclado con el resto): celdas con ícono, separadas por líneas
+              — lo primero que necesita ver un visitante antes de leer todo
+              lo demás. Con datos en cero (un perfil recién empezando) igual
+              se muestra — es información honesta, no un error. Un
+              patrocinador no tiene "proyectos completados" ni "evidencias"
+              (son de estudiante, ver portafolio), así que solo se queda con
+              la fecha de ingreso — mismo lenguaje visual, menos celdas. */}
           <div className="mt-6 flex w-full divide-x divide-border rounded-xl border border-border bg-surface/50">
-            <div className="flex flex-1 flex-col items-center gap-1 px-3 py-3.5">
-              <IconCompletado className="size-4 text-electric" />
-              <span className="text-lg font-bold text-ink">{proyectosCompletados}</span>
-              <span className="text-xs text-muted">
-                {proyectosCompletados === 1 ? "proyecto completado" : "proyectos completados"}
-              </span>
-            </div>
-            <div className="flex flex-1 flex-col items-center gap-1 px-3 py-3.5">
-              <IconEvidencia className="size-4 text-electric" />
-              <span className="text-lg font-bold text-ink">{items.length}</span>
-              <span className="text-xs text-muted">
-                {items.length === 1 ? "evidencia" : "evidencias"}
-              </span>
-            </div>
+            {!esPatrocinador && (
+              <>
+                <div className="flex flex-1 flex-col items-center gap-1 px-3 py-3.5">
+                  <IconCompletado className="size-4 text-electric" />
+                  <span className="text-lg font-bold text-ink">{proyectosCompletados}</span>
+                  <span className="text-xs text-muted">
+                    {proyectosCompletados === 1 ? "proyecto completado" : "proyectos completados"}
+                  </span>
+                </div>
+                <div className="flex flex-1 flex-col items-center gap-1 px-3 py-3.5">
+                  <IconEvidencia className="size-4 text-electric" />
+                  <span className="text-lg font-bold text-ink">{items.length}</span>
+                  <span className="text-xs text-muted">
+                    {items.length === 1 ? "evidencia" : "evidencias"}
+                  </span>
+                </div>
+              </>
+            )}
             <div className="flex flex-1 flex-col items-center gap-1 px-3 py-3.5">
               <IconCalendario className="size-4 text-electric" />
               <span className="text-xs font-semibold text-ink">
@@ -463,7 +477,9 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
         </div>
           </header>
 
-          {/* Portafolio */}
+          {/* Portafolio: solo de estudiante — un patrocinador no tiene
+              evidencias que mostrar, esta sección directamente no aplica. */}
+          {!esPatrocinador && (
           <section className="mt-10">
         <h2 className="text-lg font-semibold text-ink">Portafolio</h2>
         {items.length === 0 ? (
@@ -521,15 +537,18 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
             ))}
           </div>
         )}
-
-        {/* No tiene sentido ofrecer reportar el propio perfil (y el server
-            action ahora lo rechaza igual) — se oculta directamente. */}
-        {!esPropio && (
-          <div className="mt-8">
-            <ReportButton targetType="perfil" targetId={profile.id} />
-          </div>
-        )}
           </section>
+          )}
+
+          {/* No tiene sentido ofrecer reportar el propio perfil (y el server
+              action ahora lo rechaza igual) — se oculta directamente. Va
+              afuera de la sección de Portafolio: también aplica a un
+              patrocinador, que no tiene esa sección. */}
+          {!esPropio && (
+            <div className="mt-8">
+              <ReportButton targetType="perfil" targetId={profile.id} />
+            </div>
+          )}
         </div>
 
         {/* Columna angosta y fija (`sticky`): enlaces (visitante o dueño), un
@@ -541,7 +560,7 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
             el perfil recién creado). Solo en pantallas anchas — por debajo de
             `xl` esta columna desaparece (se apila) y los enlaces de arriba,
             dentro del encabezado, siguen cumpliendo la misma función. */}
-        {(enlacesList.length > 0 || faltantes.length > 0 || !esPropio) && (
+        {(enlacesList.length > 0 || faltantes.length > 0 || (!esPropio && !esPatrocinador)) && (
           <aside className="mt-10 hidden xl:sticky xl:top-24 xl:mt-0 xl:flex xl:flex-col xl:gap-4">
             {enlacesList.length > 0 && (
               <div className="flex flex-col gap-3 rounded-xl border border-border bg-white p-4 text-sm shadow-sm">
@@ -581,8 +600,11 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
             )}
 
             {/* Solo cuando no hay nada más que mostrarle a un visitante —
-                si ya hay enlaces reales, esos alcanzan. */}
-            {!esPropio && enlacesList.length === 0 && (
+                si ya hay enlaces reales, esos alcanzan. El copy está escrito
+                para quien visita el perfil de un ESTUDIANTE ("¿buscas
+                talento?"); no tiene sentido si el perfil es de un
+                patrocinador. */}
+            {!esPropio && !esPatrocinador && enlacesList.length === 0 && (
               <div className="flex flex-col gap-2 rounded-xl border border-border bg-white p-4 text-sm shadow-sm">
                 <p className="font-semibold text-ink">
                   ¿Buscas talento para tu proyecto?
