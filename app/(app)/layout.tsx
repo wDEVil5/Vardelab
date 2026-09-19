@@ -11,6 +11,7 @@ import {
 import { NotificationsProvider } from "@/features/notifications/notifications-context";
 import { NotificationToasts } from "@/features/notifications/components/notification-toasts";
 import { OnboardingWizard } from "@/features/profile/components/onboarding-wizard";
+import { ModeratorIntro } from "@/features/profile/components/moderator-intro";
 import { getActiveSkills } from "@/features/skills/queries";
 
 // Todo lo que vive bajo `(app)` depende 100% de la sesión — nunca debe
@@ -52,6 +53,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // sin opciones para elegir, pero un error transitorio ahí no debe tumbar
   // el layout entero (no hay ningún error.tsx en el proyecto que lo frene).
   const necesitaOnboarding = user.esEstudiante && !user.onboardingCompletado;
+  // M88: informativa, no de datos — separada del onboarding de estudiante.
+  // Si por alguna combinación de roles hicieran falta las dos, el de
+  // estudiante gana (ver más abajo): son mutuamente excluyentes en pantalla,
+  // nunca se muestran los dos modales a la vez.
+  const necesitaIntroModerador = user.esModerador && !user.moderadorIntroCompletado;
   const [notifications, unreadCount, catalogoOnboarding] = await Promise.all([
     getMyNotifications(),
     getUnreadNotificationCount(),
@@ -130,7 +136,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         </main>
       </div>
       <NotificationToasts />
-      {necesitaOnboarding && <OnboardingWizard catalog={catalogoOnboarding} />}
+      {necesitaOnboarding ? (
+        <OnboardingWizard catalog={catalogoOnboarding} />
+      ) : (
+        necesitaIntroModerador && <ModeratorIntro />
+      )}
     </NotificationsProvider>
   );
 }

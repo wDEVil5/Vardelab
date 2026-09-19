@@ -39,7 +39,7 @@ export async function getCurrentUser() {
   const [{ data: profile }, { data: roles }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("nombre, avatar_url, onboarding_completado")
+      .select("nombre, avatar_url, onboarding_completado, moderador_intro_completado")
       .eq("id", user.id)
       .maybeSingle(),
     supabase.from("user_roles").select("role").eq("user_id", user.id),
@@ -53,6 +53,7 @@ export async function getCurrentUser() {
     nombre: profile?.nombre ?? user.email ?? "",
     avatarUrl: profile?.avatar_url ?? null,
     onboardingCompletado: profile?.onboarding_completado ?? true,
+    moderadorIntroCompletado: profile?.moderador_intro_completado ?? true,
     roles: rolesList,
     esPatrocinador: rolesList.includes("patrocinador"),
     esEstudiante: rolesList.includes("estudiante"),
