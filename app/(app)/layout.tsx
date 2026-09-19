@@ -10,6 +10,8 @@ import {
 } from "@/features/notifications/queries";
 import { NotificationsProvider } from "@/features/notifications/notifications-context";
 import { NotificationToasts } from "@/features/notifications/components/notification-toasts";
+import { OnboardingWizard } from "@/features/profile/components/onboarding-wizard";
+import { getActiveSkills } from "@/features/skills/queries";
 
 // Todo lo que vive bajo `(app)` depende 100% de la sesión — nunca debe
 // cachearse ni compartirse entre requests. Sin esto se reprodujo un bug real:
@@ -42,9 +44,18 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     redirect(`/ingresar?next=${pathname}`);
   }
 
-  const [notifications, unreadCount] = await Promise.all([
+  // M87: si hace falta mostrar el wizard de onboarding, el catálogo de
+  // habilidades se pide en paralelo con las notificaciones (no en serie
+  // desde adentro del componente del modal) — es un round trip extra que
+  // corre en TODA carga de página mientras el estudiante no lo complete o
+  // lo omita. `.catch(() => [])`: si falla, el paso de habilidades queda
+  // sin opciones para elegir, pero un error transitorio ahí no debe tumbar
+  // el layout entero (no hay ningún error.tsx en el proyecto que lo frene).
+  const necesitaOnboarding = user.esEstudiante && !user.onboardingCompletado;
+  const [notifications, unreadCount, catalogoOnboarding] = await Promise.all([
     getMyNotifications(),
     getUnreadNotificationCount(),
+    necesitaOnboarding ? getActiveSkills().catch(() => []) : Promise.resolve([]),
   ]);
 
   const roleLabel = user.esAdmin
@@ -119,6 +130,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         </main>
       </div>
       <NotificationToasts />
+      {necesitaOnboarding && <OnboardingWizard catalog={catalogoOnboarding} />}
     </NotificationsProvider>
   );
 }
