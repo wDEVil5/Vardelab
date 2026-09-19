@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
@@ -166,12 +167,26 @@ export function UsersTable({
                 >
                   <td className="px-8 py-6">
                     <p className="font-medium text-ink">
-                      {u.nombre}
+                      {u.perfilPublico ? (
+                        <Link
+                          href={`/u/${u.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-electric hover:underline"
+                        >
+                          {u.nombre}
+                        </Link>
+                      ) : (
+                        u.nombre
+                      )}
                       {u.id === currentUserId && (
                         <span className="ml-1.5 text-xs font-normal text-muted">(tu cuenta)</span>
                       )}
                     </p>
                     <p className="mt-1 text-xs text-muted">{u.email}</p>
+                    {!u.perfilPublico && (
+                      <p className="mt-0.5 text-xs text-muted/70">Perfil privado</p>
+                    )}
                   </td>
                   <td className="px-8 py-6">
                     {u.rolPrincipal ? (
