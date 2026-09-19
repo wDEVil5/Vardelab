@@ -16,6 +16,7 @@ export async function updateProfile(
   formData: FormData,
 ): Promise<ProfileState> {
   const nombre = String(formData.get("nombre") ?? "").trim();
+  const cargo = String(formData.get("cargo") ?? "").trim();
   const carrera = String(formData.get("carrera") ?? "").trim();
   const semestreRaw = String(formData.get("semestre") ?? "").trim();
   const bio = String(formData.get("bio") ?? "").trim();
@@ -54,6 +55,7 @@ export async function updateProfile(
     .from("profiles")
     .update({
       nombre,
+      cargo: cargo || null,
       carrera: carrera || null,
       semestre,
       bio: bio || null,
@@ -69,6 +71,58 @@ export async function updateProfile(
   }
 
   revalidatePath("/perfil");
+  // También el perfil público: sin esto, después de guardar, navegar ahí con
+  // un <Link> (sin recarga completa) podía mostrar la versión cacheada de
+  // antes de los cambios — ni la tarjeta "Completa tu perfil" (que depende de
+  // qué campos quedaron llenos) ni el resto del contenido se actualizaban.
+  revalidatePath(`/u/${user.id}`);
+  redirect("/perfil?guardado=1");
+}
+
+/**
+ * Edición del perfil de un patrocinador: nombre, cargo, bio y enlaces — sin
+ * carrera/semestre/intereses/disponibilidad, que son de estudiante y no le
+ * aplican (ver `PerfilPatrocinador` en app/(app)/perfil/page.tsx). El nombre
+ * va acá y no en un diálogo aparte: es el mismo formulario único que usa un
+ * estudiante (`ProfileForm`/`updateProfile`), solo con menos campos.
+ */
+export async function updateSponsorProfile(
+  _prevState: ProfileState,
+  formData: FormData,
+): Promise<ProfileState> {
+  const nombre = String(formData.get("nombre") ?? "").trim();
+  const cargo = String(formData.get("cargo") ?? "").trim();
+  const bio = String(formData.get("bio") ?? "").trim();
+  const linkedin = String(formData.get("linkedin") ?? "").trim();
+  const sitio = String(formData.get("sitio") ?? "").trim();
+
+  if (!nombre) return { error: "Tu nombre no puede quedar vacío." };
+
+  const enlaces: Record<string, string> = {};
+  if (linkedin) enlaces.linkedin = linkedin;
+  if (sitio) enlaces.sitio = sitio;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/ingresar");
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ nombre, cargo: cargo || null, bio: bio || null, enlaces })
+    .eq("id", user.id);
+
+  if (error) {
+    console.error("[updateSponsorProfile]", error.message);
+    return { error: "No se pudieron guardar los cambios. Inténtalo de nuevo." };
+  }
+
+  revalidatePath("/perfil");
+  // Mismo motivo que en `updateProfile`: la tarjeta "Completa tu perfil" y
+  // el resto de `/u/[id]` dependen de estos campos, sin esto podían quedar
+  // con la versión cacheada de antes de guardar.
+  revalidatePath(`/u/${user.id}`);
   redirect("/perfil?guardado=1");
 }
 
@@ -95,6 +149,10 @@ export async function setProfileVisibility(formData: FormData): Promise<void> {
   if (error) console.error("[setProfileVisibility]", error.message);
 
   revalidatePath("/perfil");
+  // El toggle decide si /u/[id] existe siquiera para terceros (RLS): sin
+  // revalidar esa ruta también, una vista cacheada de antes de cambiarlo
+  // podía seguir mostrando el estado viejo hasta la siguiente carga fresca.
+  revalidatePath(`/u/${user.id}`);
 }
 
 export type OnboardingState = { error?: string };
@@ -156,6 +214,60 @@ export async function completeOnboarding(
 
   if (error) {
     console.error("[completeOnboarding]", error.message);
+    return { error: "No se pudo guardar. Inténtalo de nuevo." };
+  }
+
+  return {};
+}
+
+export type SponsorOnboardingData = {
+  cargo: string;
+  bio: string;
+  linkedin: string;
+  sitio: string;
+};
+
+/**
+ * Onboarding de patrocinador tras registrarse (M89): mismo mecanismo que
+ * `completeOnboarding`, campos de patrocinador en vez de estudiante (sin
+ * carrera/semestre/habilidades). A diferencia del primer intento, estos
+ * datos SÍ tienen dónde mostrarse: la sección "Quién está detrás" de la
+ * ficha pública de la organización, y `/u/[id]` si el perfil es público —
+ * ver la revisión de M89 en BACKEND.md. Comparte el flag
+ * `onboarding_completado` con la de estudiante (mutuamente excluyentes por
+ * rol). Sin `revalidatePath` por el mismo motivo que las otras: el wizard
+ * controla su propio cierre animado con `router.refresh()`.
+ */
+export async function completeSponsorOnboarding(
+  data: SponsorOnboardingData,
+): Promise<OnboardingState> {
+  const cargo = data.cargo.trim();
+  const bio = data.bio.trim();
+  const linkedin = data.linkedin.trim();
+  const sitio = data.sitio.trim();
+
+  const enlaces: Record<string, string> = {};
+  if (linkedin) enlaces.linkedin = linkedin;
+  if (sitio) enlaces.sitio = sitio;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/ingresar");
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      cargo: cargo || null,
+      bio: bio || null,
+      enlaces,
+      onboarding_completado: true,
+    })
+    .eq("id", user.id);
+
+  if (error) {
+    console.error("[completeSponsorOnboarding]", error.message);
     return { error: "No se pudo guardar. Inténtalo de nuevo." };
   }
 

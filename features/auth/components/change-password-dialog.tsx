@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import { buttonClasses } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { ChangePasswordForm } from "./change-password-form";
 
 /**
@@ -20,7 +19,7 @@ export function ChangePasswordDialog() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={cn(buttonClasses({ variant: "outline", size: "sm" }), "mt-4")}
+        className={buttonClasses({ variant: "outline", size: "sm" })}
       >
         Cambiar contraseña
       </button>
