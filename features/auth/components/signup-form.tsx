@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { signUp, type SignUpState } from "@/features/auth/actions";
+import { ActionSuccess } from "@/components/ui/action-success";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { PasswordField } from "./password-field";
@@ -76,10 +77,10 @@ export function SignupForm({
 
   if (state.ok) {
     return (
-      <p className="text-sm text-ink">
-        Te enviamos un enlace de confirmación a tu correo. Ábrelo para
-        activar tu cuenta (revisa también spam).
-      </p>
+      <ActionSuccess
+        title="Revisa tu correo"
+        description="Te enviamos un enlace de confirmación. Ábrelo para activar tu cuenta (revisa también spam)."
+      />
     );
   }
 

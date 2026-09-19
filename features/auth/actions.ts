@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isPasswordValid } from "@/features/auth/password";
 import { SITE_URL } from "@/lib/site";
 import { checkRateLimit, getClientIp, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit";
+import { POST_AUTH_REDIRECT } from "@/features/auth/constants";
 
 /**
  * Acciones de autenticación (Server Actions).
@@ -15,16 +16,13 @@ import { checkRateLimit, getClientIp, RATE_LIMIT_MESSAGE } from "@/lib/rate-limi
  * retornan: `redirect()` corta la ejecución y navega.
  */
 
-export type AuthState = { error?: string };
+export type AuthState = { error?: string; ok?: boolean };
 export type SignUpState = { error?: string; ok?: boolean };
 
 // Roles que un registro puede autoasignarse (coincide con la lista blanca del
 // trigger handle_new_user en M11). El trigger es la barrera real; esto es la
 // validación temprana del lado del servidor para dar un mensaje claro.
 const ROLES_AUTOSERVICIO = ["estudiante", "patrocinador"] as const;
-
-// Destino tras autenticarse. Provisional hasta que exista el panel del rol.
-const POST_AUTH_REDIRECT = "/inicio";
 
 export async function signUp(
   _prevState: SignUpState,
@@ -121,7 +119,12 @@ export async function signIn(
   }
 
   revalidatePath("/", "layout");
-  redirect(POST_AUTH_REDIRECT);
+  // No redirect() acá: si el login viene del modal (ver AuthModal), un
+  // redirect server-side es una navegación "suave" que Next a veces no
+  // resuelve bien contra el slot @modal — el modal queda pegado en pantalla
+  // encima de la página de destino (mismo problema que /recuperar). El
+  // cliente hace la navegación dura (ver LoginForm), que sí lo cierra.
+  return { ok: true };
 }
 
 export async function signOut() {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { isRegistroAbierto } from "@/features/auth/queries";
 import { RegistroView } from "@/features/auth/components/registro-view";
 import type { Rol } from "@/features/auth/components/signup-form";
-import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Crear cuenta · Vardelab",
@@ -15,14 +15,7 @@ type PageProps = { searchParams: Promise<{ rol?: string }> };
 export default async function RegistroPage({ searchParams }: PageProps) {
   const { rol } = await searchParams;
   const initialRol: Rol = rol === "patrocinador" ? "patrocinador" : "estudiante";
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("pilot_registro_abierto");
-
-  if (error) {
-    console.error("[RegistroPage:pilot_registro_abierto]", error.message);
-  }
-
-  const registroAbierto = error ? true : data !== false;
+  const registroAbierto = await isRegistroAbierto("RegistroPage");
 
   return (
     <RegistroView initialRol={initialRol} registroAbierto={registroAbierto} />

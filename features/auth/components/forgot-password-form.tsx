@@ -5,6 +5,7 @@ import {
   requestPasswordReset,
   type ResetRequestState,
 } from "@/features/auth/actions";
+import { ActionSuccess } from "@/components/ui/action-success";
 import { Input } from "@/components/ui/input";
 import { SubmitButton } from "./submit-button";
 
@@ -20,10 +21,10 @@ export function ForgotPasswordForm() {
 
   if (state.ok) {
     return (
-      <p className="text-sm text-ink">
-        Si ese correo tiene una cuenta, te enviamos un enlace para
-        restablecer tu contraseña. Revisa tu bandeja de entrada (y spam).
-      </p>
+      <ActionSuccess
+        title="Enlace enviado"
+        description="Si ese correo tiene una cuenta, te enviamos un enlace para restablecer tu contraseña. Revisa tu bandeja de entrada (y spam)."
+      />
     );
   }
 
