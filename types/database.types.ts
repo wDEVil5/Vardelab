@@ -530,6 +530,7 @@ export type Database = {
           enlaces: Json
           id: string
           intereses: string | null
+          moderador_intro_completado: boolean
           nombre: string | null
           onboarding_completado: boolean
           semestre: number | null
@@ -545,6 +546,7 @@ export type Database = {
           enlaces?: Json
           id: string
           intereses?: string | null
+          moderador_intro_completado?: boolean
           nombre?: string | null
           onboarding_completado?: boolean
           semestre?: number | null
@@ -560,6 +562,7 @@ export type Database = {
           enlaces?: Json
           id?: string
           intereses?: string | null
+          moderador_intro_completado?: boolean
           nombre?: string | null
           onboarding_completado?: boolean
           semestre?: number | null

@@ -276,3 +276,11 @@ delete from public.user_roles
 insert into public.user_roles (user_id, role)
 values ('55555555-5555-5555-5555-555555555555', 'admin')
 on conflict (user_id, role) do nothing;
+
+-- Las cuentas de demo representan usuarios ya establecidos, no altas
+-- recién creadas: sin esto, en un `db reset` desde cero (migraciones
+-- corren ANTES que este seed, así que el backfill de M87 no alcanza a
+-- estas filas) le aparecería el onboarding a Valentina Soto pidiéndole
+-- carrera/semestre/bio que el seed ya le cargó arriba, y pisándolos si los
+-- completa.
+update public.profiles set onboarding_completado = true;
