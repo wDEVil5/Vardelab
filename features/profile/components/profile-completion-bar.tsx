@@ -50,28 +50,30 @@ export function ProfileCompletionStatus({
         <Badge tone={esPublico ? "success" : "neutral"}>
           {esPublico ? "Perfil público" : "Perfil privado"}
         </Badge>
-        {pct < 100 && <Badge tone="brand">{redondeado}% completo</Badge>}
+        <Badge tone={pct >= 100 ? "success" : "brand"}>
+          {redondeado}% completo
+        </Badge>
       </div>
 
       {/* Barra de progreso: el número solo ("67% completo") no da una
-          sensación inmediata de cuánto falta; el trazo sí. */}
-      {pct < 100 && (
+          sensación inmediata de cuánto falta; el trazo sí. Al 100% se queda
+          (no desaparece) y cambia a verde: cierra el ciclo en vez de que el
+          indicador se esfume justo cuando terminaste. */}
+      <div
+        role="progressbar"
+        aria-valuenow={redondeado}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Perfil completo"
+        className="mt-2 h-1.5 w-full max-w-56 overflow-hidden rounded-full bg-surface"
+      >
+        {/* Sin `transition`: el ancho ya se interpola cuadro a cuadro en
+            el `requestAnimationFrame` de arriba. */}
         <div
-          role="progressbar"
-          aria-valuenow={redondeado}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Perfil completo"
-          className="mt-2 h-1.5 w-full max-w-56 overflow-hidden rounded-full bg-surface"
-        >
-          {/* Sin `transition`: el ancho ya se interpola cuadro a cuadro en
-              el `requestAnimationFrame` de arriba. */}
-          <div
-            className="h-full rounded-full bg-electric"
-            style={{ width: `${valor}%` }}
-          />
-        </div>
-      )}
+          className={pct >= 100 ? "h-full rounded-full bg-sprout" : "h-full rounded-full bg-electric"}
+          style={{ width: `${valor}%` }}
+        />
+      </div>
     </>
   );
 }

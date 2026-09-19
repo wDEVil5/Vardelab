@@ -33,10 +33,12 @@ export function RoleCard({
   rol,
   projectId,
   miPostulacion,
+  estaAutenticado,
 }: {
   rol: Role;
   projectId: string;
   miPostulacion: MyProjectApplication | null;
+  estaAutenticado: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const skills = rol.skills ?? [];
@@ -49,7 +51,16 @@ export function RoleCard({
   const horas =
     rol.horas_semanales != null ? `~${rol.horas_semanales} h/semana` : null;
   const apto = esAptoSinExperiencia(skills);
-  const postularHref = `/proyectos/${projectId}/postular/${rol.id}`;
+  const postularPath = `/proyectos/${projectId}/postular/${rol.id}`;
+  // Sin sesión, el link va directo a /ingresar?next=... por <Link> — mismo
+  // camino que ya funciona bien con el modal (interceptado desde "el
+  // frente"). Si en cambio se deja pasar por /postular, que redirige
+  // server-side, la navegación de cliente entra al router de Next y el slot
+  // @modal la intercepta un instante antes de corregirse sola a la página
+  // completa (parpadeo del modal seguido de un salto no deseado).
+  const postularHref = estaAutenticado
+    ? postularPath
+    : `/ingresar?next=${encodeURIComponent(postularPath)}`;
 
   function abrir() {
     setOpen(true);

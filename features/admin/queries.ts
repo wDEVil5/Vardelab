@@ -131,7 +131,7 @@ export async function getUsersForAdmin() {
   const authUsers = Array.from(authUsersPorId.values());
 
   const [{ data: perfiles }, { data: roles }] = await Promise.all([
-    supabase.from("profiles").select("id, nombre, carrera"),
+    supabase.from("profiles").select("id, nombre, carrera, visibility"),
     supabase.from("user_roles").select("user_id, role"),
   ]);
 
@@ -154,6 +154,7 @@ export async function getUsersForAdmin() {
         email: u.email ?? "(sin correo)",
         nombre: perfil?.nombre ?? "(sin nombre)",
         carrera: perfil?.carrera ?? null,
+        perfilPublico: perfil?.visibility === "publico",
         roles: rolesUsuario,
         rolPrincipal,
         suspendido: estaSuspendido(u.banned_until),

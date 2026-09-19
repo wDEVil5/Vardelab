@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
 import { OrgLogo } from "@/components/ui/org-logo";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import {
@@ -15,7 +14,6 @@ import { RolesScroller } from "@/features/projects/components/roles-scroller";
 import { getCurrentUser } from "@/features/auth/queries";
 import { ReportButton } from "@/features/reports/components/report-button";
 import { getMyActiveApplicationInProject } from "@/features/applications/queries";
-import { getPublicProjectTeam } from "@/features/teams/queries";
 import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
 import { ActionSuccess } from "@/components/ui/action-success";
@@ -65,9 +63,8 @@ export default async function ProyectoPage({ params, searchParams }: PageProps) 
     ),
   );
 
-  const [miPostulacion, equipo, similares] = await Promise.all([
+  const [miPostulacion, similares] = await Promise.all([
     user ? getMyActiveApplicationInProject(project.id) : Promise.resolve(null),
-    getPublicProjectTeam(project.id),
     getSimilarPublishedProjects({
       id: project.id,
       modalidad: project.modalidad,
@@ -81,6 +78,19 @@ export default async function ProyectoPage({ params, searchParams }: PageProps) 
     (total, rol) => total + Math.max(0, rol.cupos - rol.aceptadas),
     0,
   );
+
+  // Estado del equipo por rol, sin nombres: mostrar quién quedó seleccionado
+  // en cada proyecto crea un ranking visible al recorrer el catálogo (la
+  // misma persona apareciendo "ganadora" en varios proyectos), algo que
+  // puede sentirse injusto para quien postuló y no quedó. Cubiertos primero:
+  // es la señal de que el proyecto ya tiene gente trabajando.
+  const equipoRoles = [...roles]
+    .filter((rol) => rol.aceptadas > 0)
+    .sort((a, b) => {
+      const cubiertoA = a.aceptadas >= a.cupos ? 1 : 0;
+      const cubiertoB = b.aceptadas >= b.cupos ? 1 : 0;
+      return cubiertoB - cubiertoA;
+    });
 
   const horasSemanales = roles
     .map((r) => r.horas_semanales)
@@ -202,6 +212,7 @@ export default async function ProyectoPage({ params, searchParams }: PageProps) 
                         rol={rol}
                         projectId={project.id}
                         miPostulacion={miPostulacion}
+                        estaAutenticado={Boolean(user)}
                       />
                     ))}
                   </RolesScroller>
@@ -239,21 +250,28 @@ export default async function ProyectoPage({ params, searchParams }: PageProps) 
                 </p>
               </div>
 
-              {equipo.length > 0 && (
+              {equipoRoles.length > 0 && (
                 <section>
                   <h2 className="text-lg font-semibold text-ink sm:text-xl">
                     Equipo seleccionado
                   </h2>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {equipo.map((m) => (
-                      <Badge key={m.userId} tone="outline">
-                        {m.nombre ?? "Integrante"}
-                        {m.rol && (
-                          <span className="text-muted/70"> · {m.rol}</span>
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
+                  <ul className="mt-3 flex flex-wrap gap-1.5">
+                    {equipoRoles.map((rol) => {
+                      const cubierto = rol.aceptadas >= rol.cupos;
+                      return (
+                        <li
+                          key={rol.id}
+                          className="inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-muted"
+                        >
+                          {rol.nombre}
+                          <span className="text-muted/70">
+                            {" · "}
+                            {cubierto ? "Cubierto" : `${rol.aceptadas} de ${rol.cupos}`}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </section>
               )}
 
