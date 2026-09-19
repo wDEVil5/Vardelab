@@ -3,6 +3,7 @@
 // Compartidos entre la vista de solo lectura (/perfil) y el formulario de
 // edición (ProfileForm), para que un campo se identifique igual en los dos.
 export type PerfilIcon =
+  | "cargo"
   | "bio"
   | "intereses"
   | "disponibilidad"
@@ -15,6 +16,9 @@ export type PerfilIcon =
   | "sitio";
 
 const PATHS: Partial<Record<PerfilIcon, string>> = {
+  // Maletín — el mismo ícono que ya usa el ícono de tipo "empresa" en el
+  // resto del sitio (ver TIPO_LABEL en las páginas de organización).
+  cargo: "M4 7h16a2 2 0 012 2v9a2 2 0 01-2 2H4a2 2 0 01-2-2V9a2 2 0 012-2zm4 0V5a2 2 0 012-2h4a2 2 0 012 2v2M2 13h20",
   bio: "M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z",
   intereses: "M12 2l2.9 6.3L22 9l-5 5 1.3 7.1L12 17.8 5.7 21.1 7 14 2 9l7.1-.7z",
   disponibilidad: "M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z",

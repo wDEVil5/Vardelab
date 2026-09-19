@@ -524,6 +524,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          cargo: string | null
           carrera: string | null
           created_at: string
           disponibilidad: string | null
@@ -540,6 +541,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          cargo?: string | null
           carrera?: string | null
           created_at?: string
           disponibilidad?: string | null
@@ -556,6 +558,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          cargo?: string | null
           carrera?: string | null
           created_at?: string
           disponibilidad?: string | null
@@ -1169,6 +1172,7 @@ export type Database = {
         | "organizacion_verificada"
         | "organizacion_no_verificada"
         | "postulacion_removida"
+        | "proyecto_rechazado"
       org_type:
         | "academica"
         | "social"
@@ -1344,6 +1348,7 @@ export const Constants = {
         "organizacion_verificada",
         "organizacion_no_verificada",
         "postulacion_removida",
+        "proyecto_rechazado",
       ],
       org_type: ["academica", "social", "emprendimiento", "empresa", "interna"],
       project_modality: ["presencial", "remoto", "hibrido"],
