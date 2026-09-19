@@ -531,6 +531,7 @@ export type Database = {
           id: string
           intereses: string | null
           nombre: string | null
+          onboarding_completado: boolean
           semestre: number | null
           updated_at: string
           visibility: Database["public"]["Enums"]["visibility"]
@@ -545,6 +546,7 @@ export type Database = {
           id: string
           intereses?: string | null
           nombre?: string | null
+          onboarding_completado?: boolean
           semestre?: number | null
           updated_at?: string
           visibility?: Database["public"]["Enums"]["visibility"]
@@ -559,6 +561,7 @@ export type Database = {
           id?: string
           intereses?: string | null
           nombre?: string | null
+          onboarding_completado?: boolean
           semestre?: number | null
           updated_at?: string
           visibility?: Database["public"]["Enums"]["visibility"]
