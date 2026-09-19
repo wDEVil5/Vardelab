@@ -120,7 +120,10 @@ export function PrinciplesShowcase({
       <section
         ref={sectionRef}
         className="relative isolate hidden overflow-visible bg-cloud text-ink md:block"
-        style={{ height: `${Math.max(items.length * 78, 300)}vh` }}
+        style={{
+          height: `${Math.max(items.length * 78, 300)}vh`,
+          background: "linear-gradient(to bottom, #f7f8f4 0%, #f7f8f4 calc(100% - 180px), #ffffff 100%)",
+        }}
       >
         <div className="sticky top-14 flex h-[calc(100vh-3.5rem)] items-center overflow-hidden">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-8 py-12 lg:px-12">
@@ -230,7 +233,12 @@ export function PrinciplesShowcase({
         </div>
       </section>
 
-      <section className="bg-cloud px-5 py-14 text-ink md:hidden">
+      <section
+        className="px-5 py-14 text-ink md:hidden"
+        style={{
+          background: "linear-gradient(to bottom, #f7f8f4 0%, #f7f8f4 calc(100% - 120px), #ffffff 100%)",
+        }}
+      >
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-electric">La experiencia Vardelab</p>
         <h2 className="mt-4 text-3xl font-bold leading-tight tracking-[-0.04em]">
           Aprender haciendo, <span className="text-muted">con un marco claro.</span>

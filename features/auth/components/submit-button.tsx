@@ -11,11 +11,17 @@ import { Button } from "@/components/ui/button";
 export function SubmitButton({
   children,
   pendingText,
+  forcePending = false,
 }: {
   children: React.ReactNode;
   pendingText: string;
+  /** Mantiene el estado "pendiente" aunque `useFormStatus` ya haya vuelto a
+   * false — usado en el login para cubrir el instante entre que la Server
+   * Action termina y el `window.location.href` de éxito realmente navega. */
+  forcePending?: boolean;
 }) {
-  const { pending } = useFormStatus();
+  const { pending: formPending } = useFormStatus();
+  const pending = formPending || forcePending;
   return (
     <Button type="submit" className="w-full" disabled={pending}>
       {pending ? pendingText : children}
