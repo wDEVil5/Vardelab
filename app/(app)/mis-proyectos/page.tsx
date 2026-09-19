@@ -42,7 +42,7 @@ export default async function MisProyectosPage() {
   ).length;
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-6 py-8 lg:py-10">
+    <div className="mx-auto w-full max-w-6xl px-6 py-8 lg:py-10">
       <header className="flex items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-ink">Mis proyectos</h1>
@@ -59,7 +59,7 @@ export default async function MisProyectosPage() {
       </header>
 
       {proyectos.length === 0 ? (
-        <div className="mt-8 rounded-lg border border-dashed border-border bg-surface/50 px-6 py-16 text-center">
+        <div className="mt-8 max-w-4xl rounded-lg border border-dashed border-border bg-surface/50 px-6 py-16 text-center">
           <p className="font-medium text-ink">Todavía no tienes proyectos</p>
           <p className="mt-1 text-sm text-muted">
             Crea tu primer proyecto: se guarda como borrador hasta que lo
@@ -76,22 +76,64 @@ export default async function MisProyectosPage() {
           </Link>
         </div>
       ) : (
-        <>
-          {/* Tarjetas KPI: panorama del ciclo completo de un vistazo, antes
-              de entrar al detalle de cada proyecto en la lista. */}
-          <div className="mt-8 grid grid-cols-3 gap-4">
-            <KpiStat valor={activos} label="Activos" icon={IconRayo} tone="electric" />
-            <KpiStat valor={enRevision} label="En revisión" icon={IconReloj} tone="coral" />
-            <KpiStat valor={completados} label="Completados" icon={IconCheck} tone="sprout" />
+        // Izquierda (mismo ancho que antes, `max-w-4xl`): KPI + lista.
+        // Derecha: tarjeta fija con contexto sobre los estados — mismo
+        // lenguaje visual que "Completa tu perfil" en /u/[id] (borde
+        // punteado, fondo con tinte). Se oculta bajo `lg` para no competir
+        // con la lista en pantallas angostas.
+        <div className="mt-8 flex items-start gap-6">
+          <div className="max-w-4xl flex-1">
+            {/* Tarjetas KPI: panorama del ciclo completo de un vistazo, antes
+                de entrar al detalle de cada proyecto en la lista. */}
+            <div className="grid grid-cols-3 gap-4">
+              <KpiStat valor={activos} label="Activos" icon={IconRayo} tone="electric" />
+              <KpiStat valor={enRevision} label="En revisión" icon={IconReloj} tone="coral" />
+              <KpiStat valor={completados} label="Completados" icon={IconCheck} tone="sprout" />
+            </div>
+
+            <ul className="mt-6 flex flex-col gap-3">
+              {proyectos.map((p) => (
+                <FilaProyecto key={p.id} proyecto={p} />
+              ))}
+            </ul>
           </div>
 
-          <ul className="mt-6 flex flex-col gap-3">
-            {proyectos.map((p) => (
-              <FilaProyecto key={p.id} proyecto={p} />
-            ))}
-          </ul>
-        </>
+          <aside className="hidden w-72 shrink-0 lg:block">
+            <EstadosInfo />
+          </aside>
+        </div>
       )}
+    </div>
+  );
+}
+
+const ESTADOS_INFO: { estado: string; texto: string }[] = [
+  { estado: "Borrador", texto: "Solo tú lo ves. Complétalo y envíalo a revisión cuando esté listo." },
+  { estado: "En revisión", texto: "Un moderador lo está evaluando antes de que quede visible para estudiantes." },
+  { estado: "Publicado", texto: "Visible en el catálogo. Los estudiantes ya pueden postular." },
+  { estado: "En selección", texto: "Tiene postulaciones por revisar — decide a quién aceptar." },
+  { estado: "Activo", texto: "El equipo ya está formado y trabajando en los hitos." },
+  { estado: "Completado", texto: "El hito final quedó entregado y aprobado — puedes evaluar al equipo." },
+  { estado: "Cancelado", texto: "Se cerró antes de tiempo. No se puede reabrir." },
+];
+// "Suspendido" y "Revisión final" existen como valor de enum pero hoy ningún
+// flujo del producto los alcanza (ni gestor, ni moderador, ni admin desde la
+// UI) — se excluyen a propósito de esta lista para no explicarle a un
+// patrocinador un estado que nunca va a ver.
+
+/** Tarjeta de contexto: qué significa cada estado del ciclo de un proyecto. */
+function EstadosInfo() {
+  return (
+    <div className="rounded-2xl border border-dashed border-electric/30 bg-electric/5 p-5">
+      <p className="font-semibold text-ink">Sobre los estados</p>
+      <dl className="mt-3 flex flex-col gap-3">
+        {ESTADOS_INFO.map((e) => (
+          <div key={e.estado}>
+            <dt className="text-sm font-medium text-ink">{e.estado}</dt>
+            <dd className="mt-0.5 text-xs leading-relaxed text-muted">{e.texto}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }
@@ -139,23 +181,44 @@ function FilaProyecto({ proyecto: p }: { proyecto: MyProject }) {
         ? `${p.postulacionesPendientes} ${p.postulacionesPendientes === 1 ? "postulación" : "postulaciones"}`
         : "Sin equipo";
 
+  // Avisos que antes no tenía ninguna señal (hallazgo de auditoría): un
+  // publicado sin ninguna postulación hace más de una semana, o un
+  // completado con integrantes todavía sin evaluar. Solo uno a la vez, el
+  // más relevante para el estado en que está el proyecto.
+  const aviso =
+    p.diasSinPostulaciones !== null && p.diasSinPostulaciones >= 7
+      ? `Publicado hace ${p.diasSinPostulaciones} días, sin postulaciones`
+      : p.evaluacionesPendientes > 0
+        ? `Faltan ${p.evaluacionesPendientes} ${p.evaluacionesPendientes === 1 ? "evaluación" : "evaluaciones"} del equipo`
+        : null;
+
   return (
-    <li className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-white p-6 transition-all hover:border-electric/30 hover:shadow-sm">
-      <div className="flex items-center gap-4">
+    <li className="flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-white p-6 transition-all hover:border-electric/30 hover:shadow-sm">
+      {/* `min-w-0 flex-1` + `truncate`: sin esto, un título largo empujaba al
+          grupo de la derecha (badge/equipo/Abrir) a su propia línea al
+          envolver, y ahí `justify-between` lo dejaba pegado a la izquierda
+          en vez de a la derecha — se veía roto. Ahora el título se trunca
+          con "…" y el grupo de la derecha nunca pierde su lugar. */}
+      <div className="flex min-w-0 flex-1 items-center gap-4">
         <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface text-muted">
           <IconCarpeta className="size-5" />
         </span>
-        <div className="flex flex-col gap-0.5">
+        <div className="min-w-0 flex-1">
           <Link
             href={`/mis-proyectos/${p.id}`}
-            className="font-semibold text-ink transition-colors hover:text-electric"
+            className="block truncate font-semibold text-ink transition-colors hover:text-electric"
           >
             {p.titulo}
           </Link>
-          <span className="text-xs text-muted">{p.organization?.nombre}</span>
+          <span className="truncate text-xs text-muted">{p.organization?.nombre}</span>
+          {aviso && (
+            <span className="mt-0.5 block truncate text-xs font-medium text-coral">
+              {aviso}
+            </span>
+          )}
         </div>
       </div>
-      <div className="flex items-center gap-5">
+      <div className="flex shrink-0 items-center gap-5">
         <Badge tone={estado.tone}>{estado.label}</Badge>
         <span className="w-28 shrink-0 text-sm text-muted">{equipoTexto}</span>
         <Link

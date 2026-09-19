@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+// Supabase Realtime (notificaciones en vivo, `NotificationsProvider`) abre un
+// websocket, no una conexión http normal — un origen `http(s)://` en
+// `connect-src` NO cubre su equivalente `ws(s)://` en todos los navegadores
+// (confirmado: sin esto, Chrome bloqueaba la conexión con una violación de
+// CSP real). Hay que declarar el esquema ws/wss aparte, a mano.
+const supabaseWsUrl = supabaseUrl.replace(/^http/, "ws");
 
 // En dev, Next/React usan eval() para reconstruir stack traces entre Turbopack
 // y el navegador (nunca en producción) — sin 'unsafe-eval' ahí, cualquier
@@ -15,7 +21,7 @@ const csp = [
   scriptSrc,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: https: ${supabaseUrl}`.trim(),
-  `connect-src 'self' ${supabaseUrl}`.trim(),
+  `connect-src 'self' ${supabaseUrl} ${supabaseWsUrl}`.trim(),
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

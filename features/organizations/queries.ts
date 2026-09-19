@@ -108,7 +108,7 @@ export async function getPublicOrganization(id: string) {
   const { data, error } = await supabase
     .from("organizations")
     .select(
-      "id, nombre, tipo, descripcion, sitio_web, contacto, contacto_email, logo_url, verificacion, created_at",
+      "id, nombre, tipo, descripcion, sitio_web, contacto, contacto_email, logo_url, verificacion, created_at, owner_id",
     )
     .eq("id", id)
     .maybeSingle();
@@ -116,6 +116,31 @@ export async function getPublicOrganization(id: string) {
   if (error) {
     console.error("[getPublicOrganization]", error.message);
     throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Perfil público de quien creó la organización (para la ficha pública, ver
+ * la página `/organizaciones/[id]`). Mismo cliente sin sesión que
+ * `getPublicOrganization`: la RLS `profiles_select_public_or_own` (M1) ya
+ * filtra a `visibility = 'publico'` para un visitante anónimo, así que si el
+ * dueño mantiene su perfil privado esto simplemente devuelve `null` — nada
+ * de lógica de privacidad extra en este archivo, la base la resuelve sola.
+ */
+export async function getOrganizationOwnerProfile(ownerId: string) {
+  const supabase = createPublicClient();
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, nombre, cargo, bio, enlaces, avatar_url")
+    .eq("id", ownerId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getOrganizationOwnerProfile]", error.message);
+    return null;
   }
 
   return data;

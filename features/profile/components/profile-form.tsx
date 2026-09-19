@@ -21,6 +21,18 @@ export function ProfileForm({ profile }: { profile: MyProfile }) {
         <Input name="nombre" required defaultValue={profile.nombre ?? ""} />
       </label>
 
+      <label className="flex flex-col gap-1.5">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-ink">
+          <PerfilIconSvg name="cargo" className="size-4 text-muted" />
+          Cargo <span className="text-muted">(opcional)</span>
+        </span>
+        <Input
+          name="cargo"
+          defaultValue={profile.cargo ?? ""}
+          placeholder="Ej: Directora de Innovación, Fundador, Estudiante de..."
+        />
+      </label>
+
       <div className="flex flex-col gap-4 sm:flex-row">
         <label className="flex flex-1 flex-col gap-1.5">
           <span className="text-sm font-medium text-ink">
