@@ -51,6 +51,9 @@ const TRAZOS: Record<Notification["tipo"], ReactNode> = {
       <path d="M9.5 9.5l5 5M14.5 9.5l-5 5" />
     </>
   ),
+  proyecto_rechazado: (
+    <path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
+  ),
   organizacion_verificada: (
     <path
       fillRule="evenodd"
@@ -83,6 +86,7 @@ const TONO: Record<Notification["tipo"], string> = {
   hito_por_vencer: "bg-coral/15 text-coral",
   mensaje_nuevo: "bg-electric/10 text-electric",
   proyecto_cancelado: "bg-coral/15 text-coral",
+  proyecto_rechazado: "bg-coral/15 text-coral",
   organizacion_verificada: "bg-sprout/15 text-sprout",
   organizacion_no_verificada: "bg-coral/15 text-coral",
   postulacion_removida: "bg-ink/10 text-ink",

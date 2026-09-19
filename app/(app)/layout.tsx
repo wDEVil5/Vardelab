@@ -11,6 +11,7 @@ import {
 import { NotificationsProvider } from "@/features/notifications/notifications-context";
 import { NotificationToasts } from "@/features/notifications/components/notification-toasts";
 import { OnboardingWizard } from "@/features/profile/components/onboarding-wizard";
+import { SponsorOnboardingWizard } from "@/features/profile/components/sponsor-onboarding-wizard";
 import { ModeratorIntro } from "@/features/profile/components/moderator-intro";
 import { getActiveSkills } from "@/features/skills/queries";
 
@@ -45,23 +46,27 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     redirect(`/ingresar?next=${pathname}`);
   }
 
-  // M87: si hace falta mostrar el wizard de onboarding, el catálogo de
-  // habilidades se pide en paralelo con las notificaciones (no en serie
-  // desde adentro del componente del modal) — es un round trip extra que
-  // corre en TODA carga de página mientras el estudiante no lo complete o
-  // lo omita. `.catch(() => [])`: si falla, el paso de habilidades queda
-  // sin opciones para elegir, pero un error transitorio ahí no debe tumbar
-  // el layout entero (no hay ningún error.tsx en el proyecto que lo frene).
-  const necesitaOnboarding = user.esEstudiante && !user.onboardingCompletado;
-  // M88: informativa, no de datos — separada del onboarding de estudiante.
-  // Si por alguna combinación de roles hicieran falta las dos, el de
-  // estudiante gana (ver más abajo): son mutuamente excluyentes en pantalla,
-  // nunca se muestran los dos modales a la vez.
+  // M87/M89: si hace falta mostrar alguno de los dos wizards de onboarding
+  // (estudiante o patrocinador), comparten el mismo flag
+  // `onboarding_completado` — son mutuamente excluyentes porque cada cuenta
+  // es una cosa o la otra, nunca las dos. El catálogo de habilidades solo lo
+  // usa el de estudiante, se pide en paralelo con las notificaciones (no en
+  // serie desde adentro del modal) — es un round trip extra que corre en
+  // TODA carga de página mientras no se complete o se omita. `.catch(() =>
+  // [])`: si falla, el paso de habilidades queda sin opciones para elegir,
+  // pero un error transitorio ahí no debe tumbar el layout entero (no hay
+  // ningún error.tsx en el proyecto que lo frene).
+  const necesitaOnboardingEstudiante = user.esEstudiante && !user.onboardingCompletado;
+  const necesitaOnboardingPatrocinador = user.esPatrocinador && !user.onboardingCompletado;
+  // M88: informativa, no de datos — separada de los onboardings de arriba.
+  // Si por alguna combinación de roles hicieran falta varias, el onboarding
+  // de perfil gana sobre la intro de moderador (ver más abajo): son
+  // mutuamente excluyentes en pantalla, nunca se muestra más de un modal.
   const necesitaIntroModerador = user.esModerador && !user.moderadorIntroCompletado;
   const [notifications, unreadCount, catalogoOnboarding] = await Promise.all([
     getMyNotifications(),
     getUnreadNotificationCount(),
-    necesitaOnboarding ? getActiveSkills().catch(() => []) : Promise.resolve([]),
+    necesitaOnboardingEstudiante ? getActiveSkills().catch(() => []) : Promise.resolve([]),
   ]);
 
   const roleLabel = user.esAdmin
@@ -136,8 +141,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         </main>
       </div>
       <NotificationToasts />
-      {necesitaOnboarding ? (
+      {necesitaOnboardingEstudiante ? (
         <OnboardingWizard catalog={catalogoOnboarding} />
+      ) : necesitaOnboardingPatrocinador ? (
+        <SponsorOnboardingWizard />
       ) : (
         necesitaIntroModerador && <ModeratorIntro />
       )}

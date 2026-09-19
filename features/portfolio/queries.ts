@@ -61,19 +61,32 @@ export type PortfolioItem = Awaited<
 export async function getPublicProfile(profileId: string) {
   const supabase = await createClient();
 
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select(
-      "id, nombre, carrera, semestre, bio, intereses, enlaces, avatar_url, created_at",
-    )
-    .eq("id", profileId)
-    .maybeSingle();
+  const [{ data: profile, error }, { data: esPatrocinador }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select(
+        "id, nombre, cargo, carrera, semestre, bio, intereses, enlaces, avatar_url, created_at",
+      )
+      .eq("id", profileId)
+      .maybeSingle(),
+    // `has_role` (M1) es la única forma pública de saber el rol de OTRA
+    // cuenta: `user_roles` no es de lectura pública (solo la propia o admin),
+    // pero esta función sí lo es, no revela nada que un visitante no pudiera
+    // ya inferir por el resto de la página. Decide qué mostrar acá: un
+    // patrocinador no tiene portafolio/habilidades/"proyectos completados",
+    // eso es de estudiante — ver la página `/u/[id]`.
+    supabase.rpc("has_role", { _user_id: profileId, _role: "patrocinador" }),
+  ]);
 
   if (error) {
     console.error("[getPublicProfile]", error.message);
     return null;
   }
   if (!profile) return null;
+
+  if (esPatrocinador) {
+    return { profile, items: [], skills: [], proyectosCompletados: 0, esPatrocinador: true };
+  }
 
   const [{ data: items }, { data: skills }, { data: completados }] = await Promise.all([
     supabase
@@ -97,6 +110,7 @@ export async function getPublicProfile(profileId: string) {
     items: items ?? [],
     skills: skills ?? [],
     proyectosCompletados: completados ?? 0,
+    esPatrocinador: false,
   };
 }
 

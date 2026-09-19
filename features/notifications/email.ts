@@ -80,6 +80,13 @@ const CATALOGO: Record<
     instruccion: "Puedes revisar el detalle o seguir explorando otros proyectos.",
     cta: "Ver proyecto",
   },
+  // Sin caller todavía (M91 genera la notificación in-app desde un trigger
+  // de Postgres, no desde una Server Action) — mismo caso que `mensaje_nuevo`.
+  proyecto_rechazado: {
+    asunto: "Un moderador pidió cambios en tu proyecto",
+    instruccion: "Revisa el motivo y las observaciones antes de reenviarlo a revisión.",
+    cta: "Ver proyecto",
+  },
   organizacion_verificada: {
     asunto: "Tu organización fue verificada",
     instruccion: "El sello de verificada ya es visible en tu perfil público y tus proyectos.",
