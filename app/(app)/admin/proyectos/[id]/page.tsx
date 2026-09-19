@@ -73,7 +73,23 @@ export default async function AdminProyectoDetallePage({ params }: PageProps) {
             </h1>
             <p className="mt-1 text-sm text-muted">
               {project.org?.nombre ?? "(sin organización)"}
-              {project.creadoPorNombre && ` · A cargo de ${project.creadoPorNombre}`}
+              {project.creadoPorNombre && (
+                <>
+                  {" · A cargo de "}
+                  {project.creadoPorPerfilPublico && project.created_by ? (
+                    <a
+                      href={`/u/${project.created_by}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-electric hover:underline"
+                    >
+                      {project.creadoPorNombre} ↗
+                    </a>
+                  ) : (
+                    project.creadoPorNombre
+                  )}
+                </>
+              )}
             </p>
           </div>
           <Badge tone={puedeCancelar ? "brand" : "danger"}>{project.etiquetaEstado}</Badge>

@@ -22,6 +22,7 @@ import { getActiveSkills } from "@/features/skills/queries";
 import { getMyPortfolioItems } from "@/features/portfolio/queries";
 import { getMyTeams } from "@/features/teams/queries";
 import { EditProfileDialog } from "@/features/profile/components/edit-profile-dialog";
+import { EditSponsorProfileDialog } from "@/features/profile/components/edit-sponsor-profile-dialog";
 import { EditAccountNameDialog } from "@/features/profile/components/edit-account-name-dialog";
 import { ChangePasswordDialog } from "@/features/auth/components/change-password-dialog";
 import { ChangeEmailDialog } from "@/features/auth/components/change-email-dialog";
@@ -114,9 +115,13 @@ export default async function PerfilPage({ searchParams }: PageProps) {
   if (!user.esEstudiante) {
     const avatarPresets = await getAvatarPresets();
 
-    // El patrocinador tiene una identidad pública real, pero la administra en
-    // su organización (S-01 del Figma), no acá.
+    // El patrocinador administra la identidad de su ORGANIZACIÓN desde ahí
+    // (S-01 del Figma), no acá — pero sí tiene una identidad PERSONAL propia
+    // (cargo, bio, enlaces) que la ficha pública de su organización muestra
+    // como "Quién está detrás" si la hace pública (M89).
     if (user.esPatrocinador) {
+      const profile = await getMyProfile();
+      if (!profile) redirect("/ingresar?next=/perfil");
       return (
         <PerfilPatrocinador
           nombre={user.nombre}
@@ -124,6 +129,11 @@ export default async function PerfilPage({ searchParams }: PageProps) {
           avatarUrl={user.avatarUrl}
           avatarPresets={avatarPresets}
           contrasenaActualizada={guardado === "contrasena"}
+          profileId={profile.id}
+          cargo={profile.cargo}
+          bio={profile.bio}
+          enlaces={(profile.enlaces ?? {}) as ProfileLinks}
+          esPublico={profile.visibility === "publico"}
         />
       );
     }
@@ -253,6 +263,7 @@ export default async function PerfilPage({ searchParams }: PageProps) {
         <section className="rounded-2xl border border-border bg-white p-6">
           <h2 className="text-lg font-semibold text-ink">Tus datos</h2>
           <dl className="mt-4 flex flex-col gap-4">
+            <Campo icon="cargo" label="Cargo" valor={profile.cargo} />
             <Campo icon="bio" label="Presentación" valor={profile.bio} />
             <Campo
               icon="intereses"
@@ -340,11 +351,13 @@ export default async function PerfilPage({ searchParams }: PageProps) {
 }
 
 /**
- * Versión mínima del perfil para una cuenta de patrocinador puro: identidad
- * básica (nombre, correo, avatar) y un enlace a su organización, que es donde
- * realmente administra lo que ven los estudiantes (S-01 del Figma). Sin
- * carrera/habilidades/portafolio ni el medidor de "% completo" — nada de eso
- * aplica a una organización.
+ * Perfil de una cuenta de patrocinador: identidad de cuenta (nombre, correo,
+ * avatar) más una identidad PERSONAL pública opcional (cargo, bio, enlaces) —
+ * distinta de la identidad de la ORGANIZACIÓN, que se administra aparte
+ * (S-01 del Figma). Sin carrera/habilidades/portafolio ni el medidor de "%
+ * completo" — nada de eso aplica. La identidad personal es opcional y
+ * privada por defecto (M89): solo se muestra en la ficha pública de la
+ * organización si el patrocinador la hace pública acá.
  */
 function PerfilPatrocinador({
   nombre,
@@ -352,15 +365,29 @@ function PerfilPatrocinador({
   avatarUrl,
   avatarPresets,
   contrasenaActualizada,
+  profileId,
+  cargo,
+  bio,
+  enlaces,
+  esPublico,
 }: {
   nombre: string;
   email: string;
   avatarUrl: string | null;
   avatarPresets: AvatarPreset[];
   contrasenaActualizada: boolean;
+  profileId: string;
+  cargo: string | null;
+  bio: string | null;
+  enlaces: ProfileLinks;
+  esPublico: boolean;
 }) {
+  const enlacesList = (["linkedin", "sitio"] as const)
+    .map((k) => ({ k, url: enlaces[k] }))
+    .filter((e) => e.url);
+
   return (
-    <div className="mx-auto w-full max-w-2xl px-6 py-8 lg:py-10">
+    <div className="mx-auto w-full max-w-5xl px-6 py-8 lg:py-10">
       <header className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold text-ink">
           Hola, {nombre.split(/\s+/)[0] || "patrocinador"}.
@@ -374,6 +401,9 @@ function PerfilPatrocinador({
         </div>
       )}
 
+      {/* El nombre se edita desde "Editar perfil público" (abajo), no con un
+          diálogo aparte acá — antes era un botón chico junto al nombre, poco
+          visible para lo que es. Esta tarjeta queda solo de resumen. */}
       <section className="mt-6 rounded-2xl border border-border bg-white p-7">
         <div className="flex flex-wrap items-center gap-4">
           <AvatarPicker
@@ -382,16 +412,82 @@ function PerfilPatrocinador({
             presets={avatarPresets}
           />
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="truncate text-xl font-bold text-ink">{nombre}</p>
-              <EditAccountNameDialog nombre={nombre} />
-            </div>
+            <p className="truncate text-xl font-bold text-ink">{nombre}</p>
             <p className="mt-1 text-sm text-muted">{email}</p>
           </div>
         </div>
       </section>
 
-      <div className="mt-5 flex flex-col gap-4">
+      {/* Dos columnas asimétricas: izquierda (más ancha) el formulario de
+          perfil público, que es lo que de verdad se edita acá; derecha (más
+          angosta) organización + seguridad apiladas, son solo enlaces a
+          otro lado o acciones puntuales, no necesitan tanto ancho. */}
+      <div className="mt-5 grid items-start gap-4 lg:grid-cols-[3fr_2fr]">
+      <section className="rounded-2xl border border-border bg-white p-7">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold text-ink">Tu perfil público</h2>
+          <EditSponsorProfileDialog nombre={nombre} cargo={cargo} bio={bio} enlaces={enlaces} />
+        </div>
+        <p className="mt-1 text-sm text-muted">
+          Se muestra en la ficha pública de tu organización, para que los estudiantes
+          sepan quién está detrás antes de postular.
+        </p>
+
+        <dl className="mt-4 flex flex-col gap-4">
+          <Campo icon="cargo" label="Cargo" valor={cargo} />
+          <Campo icon="bio" label="Presentación" valor={bio} />
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-surface text-muted">
+              <PerfilIconSvg name="enlaces" />
+            </span>
+            <div className="min-w-0">
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted">Enlaces</dt>
+              <dd className="mt-0.5">
+                {enlacesList.length > 0 ? (
+                  <ul className="flex flex-col gap-1 text-sm">
+                    {enlacesList.map((e) => (
+                      <li key={e.k}>
+                        <a
+                          href={e.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-electric hover:underline"
+                        >
+                          {e.k === "linkedin" ? "LinkedIn" : "Sitio"}
+                        </a>
+                        <span className="text-muted"> · {e.url}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="text-sm text-muted">Sin enlaces</span>
+                )}
+              </dd>
+            </div>
+          </div>
+        </dl>
+
+        <div className="mt-5 flex items-center justify-between gap-4 border-t border-border pt-5">
+          <p className="text-sm text-muted">
+            {esPublico
+              ? "Tu perfil es visible para cualquiera con el enlace."
+              : "Tu perfil es privado; solo tú lo ves."}
+          </p>
+          <div className="flex items-center gap-4">
+            {esPublico && (
+              <Link
+                href={`/u/${profileId}`}
+                className="text-sm font-medium text-electric hover:underline"
+              >
+                Ver perfil público
+              </Link>
+            )}
+            <VisibilityToggle checked={esPublico} action={setProfileVisibility} />
+          </div>
+        </div>
+      </section>
+
+      <div className="flex flex-col gap-4">
         <section className="rounded-2xl border border-border bg-white p-7 transition-all hover:border-electric/30 hover:shadow-sm">
           <div className="flex items-start gap-4">
             <span className="mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-electric/10 text-electric">
@@ -424,13 +520,14 @@ function PerfilPatrocinador({
               <p className="mt-1 text-sm text-muted">
                 Cambia la contraseña o el correo con el que ingresas a tu cuenta.
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <ChangePasswordDialog />
                 <ChangeEmailDialog currentEmail={email} />
               </div>
             </div>
           </div>
         </section>
+      </div>
       </div>
     </div>
   );
@@ -526,7 +623,7 @@ function PerfilOperativo({
               <p className="mt-1 text-sm text-muted">
                 Cambia la contraseña o el correo con el que ingresas a tu cuenta.
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <ChangePasswordDialog />
                 <ChangeEmailDialog currentEmail={email} />
               </div>

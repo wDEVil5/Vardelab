@@ -686,9 +686,11 @@ export async function getMyProjects() {
       duracion_semanas,
       comentario_moderacion,
       created_at,
+      revisado_at,
       organization:organizations ( nombre ),
       roles:project_roles ( id, applications ( status ) ),
-      team:teams ( team_members ( id ) )
+      team:teams ( team_members ( id ) ),
+      evaluations ( evaluatee_id )
     `,
     )
     .in("org_id", orgIds)
@@ -699,17 +701,40 @@ export async function getMyProjects() {
     throw error;
   }
 
-  // Deriva el tamaño del equipo y las postulaciones pendientes acá: la
-  // página no necesita conocer la forma anidada cruda (team/roles/applications).
-  return (data ?? []).map((p) => ({
-    ...p,
-    equipoTamano: p.team?.team_members?.length ?? 0,
-    postulacionesPendientes: (p.roles ?? []).reduce(
-      (total, r) =>
-        total + (r.applications ?? []).filter((a) => a.status === "enviada").length,
+  const MS_DIA = 1000 * 60 * 60 * 24;
+
+  // Deriva el tamaño del equipo, las postulaciones pendientes, y dos avisos
+  // que antes no tenía ninguna señal: un publicado sin ninguna postulación
+  // hace más de una semana (nadie lo está viendo, o el listado necesita
+  // ajustes), y un completado con integrantes todavía sin evaluar (queda
+  // hecho para siempre si nadie lo recuerda) — hallazgos de la auditoría del
+  // flujo completo de gestión de proyectos.
+  return (data ?? []).map((p) => {
+    const equipoTamano = p.team?.team_members?.length ?? 0;
+    const totalPostulaciones = (p.roles ?? []).reduce(
+      (total, r) => total + (r.applications ?? []).length,
       0,
-    ),
-  }));
+    );
+    const diasSinPostulaciones =
+      p.status === "publicado" && totalPostulaciones === 0 && p.revisado_at
+        ? Math.floor((Date.now() - new Date(p.revisado_at).getTime()) / MS_DIA)
+        : null;
+    const evaluadosUnicos = new Set((p.evaluations ?? []).map((e) => e.evaluatee_id)).size;
+    const evaluacionesPendientes =
+      p.status === "completado" ? Math.max(0, equipoTamano - evaluadosUnicos) : 0;
+
+    return {
+      ...p,
+      equipoTamano,
+      postulacionesPendientes: (p.roles ?? []).reduce(
+        (total, r) =>
+          total + (r.applications ?? []).filter((a) => a.status === "enviada").length,
+        0,
+      ),
+      diasSinPostulaciones,
+      evaluacionesPendientes,
+    };
+  });
 }
 
 export type MyProject = Awaited<ReturnType<typeof getMyProjects>>[number];

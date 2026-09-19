@@ -583,13 +583,18 @@ export async function getProjectDetailForAdmin(id: string) {
   // gestores (M37/M38), así que el nombre de la org sola no dice quién lo
   // cargó — esto sí lo dice.
   let creadoPorNombre: string | null = null;
+  // Si su perfil es público, "A cargo de" enlaza a `/u/[id]` (mismo criterio
+  // que la tabla de /admin/usuarios: perfil privado se muestra como texto
+  // plano, nunca como un link que termine en 404/RLS para el admin).
+  let creadoPorPerfilPublico = false;
   if (project.created_by) {
     const { data: creador } = await supabase
       .from("profiles")
-      .select("nombre")
+      .select("nombre, visibility")
       .eq("id", project.created_by)
       .maybeSingle();
     creadoPorNombre = creador?.nombre ?? "(usuario eliminado)";
+    creadoPorPerfilPublico = creador?.visibility === "publico";
   }
 
   return {
@@ -598,6 +603,7 @@ export async function getProjectDetailForAdmin(id: string) {
       ETIQUETA_ESTADO[project.status as (typeof ESTADOS_PROYECTO)[number]] ?? project.status,
     integrantes,
     creadoPorNombre,
+    creadoPorPerfilPublico,
   };
 }
 
