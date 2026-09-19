@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useEffectEvent, useRef, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { createPortal } from "react-dom";
-
-// Selectores de elementos que pueden recibir foco por teclado, para el trap.
-const FOCUSABLE =
-  'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
+import { useModalBehavior } from "@/components/ui/use-modal-behavior";
 
 /**
  * Ventana modal accesible. Se monta en un portal sobre el resto de la página, con
@@ -30,55 +27,9 @@ export function Modal({
   busy?: boolean;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const disparadorRef = useRef<HTMLElement | null>(null);
   const reduce = useReducedMotion();
-  const closeFromKeyboard = useEffectEvent(() => { if (!busy) onClose(); });
 
-  useEffect(() => {
-    if (!open) return;
-
-    // Recuerda quién tenía el foco para devolvérselo al cerrar.
-    disparadorRef.current = document.activeElement as HTMLElement | null;
-
-    // Foco inicial: el primer elemento enfocable del diálogo (o el diálogo
-    // mismo si no hay ninguno).
-    const primero = dialogRef.current?.querySelector<HTMLElement>(FOCUSABLE);
-    (primero ?? dialogRef.current)?.focus();
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        closeFromKeyboard();
-        return;
-      }
-      // Trap de foco: Tab/Shift+Tab no salen del diálogo.
-      if (e.key === "Tab" && dialogRef.current) {
-        const focusables = Array.from(
-          dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE),
-        );
-        if (focusables.length === 0) { e.preventDefault(); dialogRef.current.focus(); return; }
-        const primero = focusables[0];
-        const ultimo = focusables[focusables.length - 1];
-        if (e.shiftKey && (document.activeElement === primero || document.activeElement === dialogRef.current || !dialogRef.current.contains(document.activeElement))) {
-          e.preventDefault();
-          ultimo.focus();
-        } else if (!e.shiftKey && (document.activeElement === ultimo || !dialogRef.current.contains(document.activeElement))) {
-          e.preventDefault();
-          primero.focus();
-        }
-      }
-    };
-    window.addEventListener("keydown", onKey);
-
-    const previo = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previo;
-      // Devuelve el foco a quien abrió el modal (si el elemento sigue en el DOM).
-      disparadorRef.current?.focus?.();
-    };
-  }, [open]);
+  useModalBehavior({ open, onClose, busy, containerRef: dialogRef });
 
   if (typeof document === "undefined") return null;
 

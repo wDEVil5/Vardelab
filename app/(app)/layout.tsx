@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/queries";
 import { AppSidebar, type AppNavItem } from "@/components/app-sidebar";
@@ -32,7 +33,14 @@ export const fetchCache = "force-no-store";
  */
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
-  if (!user) redirect("/ingresar");
+  if (!user) {
+    // `x-pathname` la pone el middleware (ver lib/supabase/middleware.ts):
+    // un layout no recibe la URL actual como prop, a diferencia de una page.
+    // Sin esto, cada página de acá abajo perdía su propio `?next=` — este
+    // guard corre primero y ganaba con un redirect a secas a /ingresar.
+    const pathname = (await headers()).get("x-pathname") ?? "/inicio";
+    redirect(`/ingresar?next=${pathname}`);
+  }
 
   const [notifications, unreadCount] = await Promise.all([
     getMyNotifications(),
