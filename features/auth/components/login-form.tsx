@@ -22,6 +22,10 @@ export function LoginForm({ redirectTo = POST_AUTH_REDIRECT }: { redirectTo?: st
     if (state.ok) window.location.href = redirectTo;
   }, [state.ok, redirectTo]);
 
+  // Sin esto, entre que la acción termina y `window.location.href` navega de
+  // verdad hay un instante donde el botón vuelve a "Ingresar" y el formulario
+  // se ve habilitado de nuevo, como si el login no hubiera pasado nada.
+
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1.5">
@@ -82,7 +86,9 @@ export function LoginForm({ redirectTo = POST_AUTH_REDIRECT }: { redirectTo?: st
         </p>
       )}
 
-      <SubmitButton pendingText="Ingresando…">Ingresar</SubmitButton>
+      <SubmitButton pendingText="Ingresando…" forcePending={state.ok}>
+        Ingresar
+      </SubmitButton>
     </form>
   );
 }
