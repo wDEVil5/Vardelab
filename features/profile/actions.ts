@@ -180,6 +180,32 @@ export async function skipOnboarding(): Promise<void> {
   revalidatePath("/inicio");
 }
 
+/**
+ * Marca vista la pantalla informativa que se muestra al pasar a moderador
+ * (M88). Sin `revalidatePath`, mismo motivo que `completeOnboarding`: el
+ * cliente muestra su propia animación de cierre y recién ahí pide el
+ * refresh, en vez de que una revalidación automática la corte a la mitad.
+ */
+export async function completeModeradorIntro(): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Tu sesión expiró. Vuelve a iniciar sesión." };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ moderador_intro_completado: true })
+    .eq("id", user.id);
+
+  if (error) {
+    console.error("[completeModeradorIntro]", error.message);
+    return { error: "No se pudo continuar. Inténtalo de nuevo." };
+  }
+
+  return {};
+}
+
 export type AvatarState = { error?: string };
 
 const AVATAR_TIPOS_PERMITIDOS = ["image/png", "image/jpeg", "image/webp"];
