@@ -1,6 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
 
 /**
+ * Si el registro de cuentas nuevas está abierto (flag `pilot_registro_abierto`
+ * en Postgres). Ante un error de red/RPC se asume abierto (`true`) para no
+ * bloquear el registro por una falla ajena al flag en sí; el error se loguea
+ * con el `caller` recibido para poder rastrear cuál de las dos pantallas de
+ * /registro (modal o página completa) lo llamó.
+ */
+export async function isRegistroAbierto(caller: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("pilot_registro_abierto");
+
+  if (error) {
+    console.error(`[${caller}:pilot_registro_abierto]`, error.message);
+  }
+
+  return error ? true : data !== false;
+}
+
+/**
  * Usuario autenticado actual con su nombre de perfil, o `null` si no hay sesión.
  * Pensado para Server Components (header, guardas de página). Usa
  * `auth.getUser()`, que valida el token contra el servidor de Auth (no confía

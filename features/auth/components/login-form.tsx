@@ -1,16 +1,26 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import Link from "next/link";
+import { useActionState, useEffect, useState } from "react";
 import { signIn, type AuthState } from "@/features/auth/actions";
+import { POST_AUTH_REDIRECT } from "@/features/auth/constants";
 import { Input } from "@/components/ui/input";
 import { SubmitButton } from "./submit-button";
 
 const INITIAL: AuthState = {};
 
-export function LoginForm() {
+export function LoginForm({ redirectTo = POST_AUTH_REDIRECT }: { redirectTo?: string }) {
   const [state, formAction] = useActionState(signIn, INITIAL);
   const [visible, setVisible] = useState(false);
+
+  // Navegación dura (no router.push): si el login viene del modal, una
+  // navegación de Next normal no siempre cierra el slot @modal (mismo
+  // problema que se resolvió para /recuperar) — el modal queda pegado
+  // encima de la página de destino. Con esto se cierra siempre.
+  // `redirectTo` es el `?next=` que las páginas protegidas agregan al
+  // mandar a /ingresar, para volver ahí después de loguearse.
+  useEffect(() => {
+    if (state.ok) window.location.href = redirectTo;
+  }, [state.ok, redirectTo]);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -28,12 +38,15 @@ export function LoginForm() {
       <label className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-ink">Contraseña</span>
-          <Link
+          {/* <a> normal (no <Link>): /recuperar nunca debe abrirse como
+              modal, así que fuerza una navegación dura en vez de la
+              interceptada (ver app/@modal). */}
+          <a
             href="/recuperar"
             className="text-xs font-medium text-electric hover:underline"
           >
             ¿Olvidaste tu contraseña?
-          </Link>
+          </a>
         </div>
         <div className="relative">
           <Input

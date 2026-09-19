@@ -42,12 +42,13 @@ export const metadata: Metadata = {
  * que los grupos de ruta decidan si lo muestran: `(site)` lo incluye, `(auth)`
  * (login/registro, pantalla completa) no.
  */
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children, modal }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={`${inter.variable} h-full antialiased`}>
+    <html lang="es" data-scroll-behavior="smooth" className={`${inter.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
         <ScrollToTop />
         {children}
+        {modal}
       </body>
     </html>
   );

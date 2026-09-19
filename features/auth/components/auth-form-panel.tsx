@@ -2,8 +2,10 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 
 /**
- * Columna derecha: misma base oscura; la tarjeta blanca concentra el form.
- * Separación visual por contraste de la tarjeta, no por una línea entre paneles.
+ * Columna derecha (desktop) de /ingresar y /registro en pantalla completa:
+ * panel blanco de borde a borde, igual que el lado del formulario del modal
+ * (`AuthModal`) — ya no es una tarjeta flotando sobre fondo oscuro, es la
+ * sección completa de la pantalla.
  */
 export function AuthFormPanel({
   children,
@@ -13,17 +15,16 @@ export function AuthFormPanel({
   footerNote?: string;
 }) {
   return (
-    <div className="relative flex flex-1 flex-col items-center justify-center px-6 py-12">
+    <div className="relative flex flex-1 flex-col items-center justify-center bg-white px-6 py-12">
       <Link href="/" className="mb-8 lg:hidden" aria-label="Vardelab">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/vardelab-logo-horizontal-blanco.svg" alt="Vardelab" className="h-6 w-auto" />
+        <img src="/brand/vardelab-logo-horizontal-negro.svg" alt="Vardelab" className="h-6 w-auto" />
       </Link>
 
-      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-white/10 bg-white p-8 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)]">
+      <div className="w-full max-w-sm">
         {children}
+        <p className="mt-6 text-center text-xs text-muted">{footerNote}</p>
       </div>
-
-      <p className="relative z-10 mt-6 text-xs text-white/40">{footerNote}</p>
     </div>
   );
 }
