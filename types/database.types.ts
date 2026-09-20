@@ -823,6 +823,10 @@ export type Database = {
         Row: {
           created_at: string
           descripcion: string | null
+          escalado_admin: boolean
+          escalado_at: string | null
+          escalado_nota: string | null
+          escalado_por: string | null
           id: string
           motivo: string
           reporter_id: string | null
@@ -835,6 +839,10 @@ export type Database = {
         Insert: {
           created_at?: string
           descripcion?: string | null
+          escalado_admin?: boolean
+          escalado_at?: string | null
+          escalado_nota?: string | null
+          escalado_por?: string | null
           id?: string
           motivo: string
           reporter_id?: string | null
@@ -847,6 +855,10 @@ export type Database = {
         Update: {
           created_at?: string
           descripcion?: string | null
+          escalado_admin?: boolean
+          escalado_at?: string | null
+          escalado_nota?: string | null
+          escalado_por?: string | null
           id?: string
           motivo?: string
           reporter_id?: string | null
@@ -1173,6 +1185,9 @@ export type Database = {
         | "organizacion_no_verificada"
         | "postulacion_removida"
         | "proyecto_rechazado"
+        | "reporte_escalado"
+        | "reporte_recibido"
+        | "reporte_resuelto"
       org_type:
         | "academica"
         | "social"
@@ -1349,6 +1364,9 @@ export const Constants = {
         "organizacion_no_verificada",
         "postulacion_removida",
         "proyecto_rechazado",
+        "reporte_escalado",
+        "reporte_recibido",
+        "reporte_resuelto",
       ],
       org_type: ["academica", "social", "emprendimiento", "empresa", "interna"],
       project_modality: ["presencial", "remoto", "hibrido"],
