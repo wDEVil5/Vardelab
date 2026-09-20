@@ -80,7 +80,10 @@ export default async function DetalleReportePage({ params }: PageProps) {
       <div className="mt-6 grid items-start gap-4 lg:grid-cols-[1fr_20rem]">
         {/* Contexto del reporte */}
         <div className="rounded-2xl border border-border bg-white p-7">
-          <Badge tone={estado.tone}>{estado.label}</Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge tone={estado.tone}>{estado.label}</Badge>
+            {report.escalado_admin && <Badge tone="brand">Escalado a admin</Badge>}
+          </div>
 
           <h2 className="mt-4 text-xl font-bold text-ink">
             {TARGET_LABEL[report.target_type] ?? report.target_type} reportado
@@ -134,7 +137,14 @@ export default async function DetalleReportePage({ params }: PageProps) {
             Selecciona una medida y deja registro.
           </p>
           <div className="mt-4">
-            <ReportReviewControls reportId={report.id} status={report.status} />
+            <ReportReviewControls
+              reportId={report.id}
+              status={report.status}
+              escaladoAdmin={report.escalado_admin}
+              escaladoNota={report.escalado_nota}
+              escaladoAt={report.escalado_at}
+              esAdmin={user.esAdmin}
+            />
           </div>
         </div>
       </div>
