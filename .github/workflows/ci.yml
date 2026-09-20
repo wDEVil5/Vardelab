@@ -1,0 +1,61 @@
+# CI: corre en cada PR y en cada push a main. Bloquea el merge si falla
+# (activar "Require status checks to pass" en la protección de la rama
+# `main` de GitHub, apuntando a este workflow, si no está activado ya).
+#
+# Tres pasos, en orden de más rápido/barato a más lento:
+#   1. Tipos (tsc --noEmit)
+#   2. Lint (eslint)
+#   3. Tests: los de tests/*.test.mjs son mocks puros (sin Postgres); los de
+#      tests/rls/*.test.mjs corren contra un Supabase local real levantado
+#      acá mismo con la CLI (Docker, ya viene en los runners de GitHub).
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Chequear tipos
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests de lógica (mocks, sin Postgres)
+        run: node --test tests/*.test.mjs
+
+      - name: Instalar cliente de Postgres (psql)
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Instalar la CLI de Supabase
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Levantar Supabase local (migraciones + seed)
+        run: supabase start
+
+      - name: Tests de RLS (Postgres local real)
+        run: node --test tests/rls/*.test.mjs
+
+      - name: Bajar Supabase local
+        if: always()
+        run: supabase stop --no-backup

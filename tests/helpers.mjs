@@ -150,6 +150,7 @@ export function load(relativePath, {
       if (name === 'next/server') return { after: (fn) => { fn(); } };
       if (name === '@/lib/supabase/server') return { createClient: async () => db };
       if (name === '@/features/auth/queries') return { getCurrentUser: async () => currentUser };
+      if (name === '@/features/auth/constants') return { POST_AUTH_REDIRECT: '/inicio' };
       if (name === '@/features/organizations/config') return { INVITACIONES_HABILITADAS: true };
       if (name === '@/features/organizations/queries' && !('@/features/organizations/queries' in extraModules)) {
         return { getMyOrgIds: async () => [] };
