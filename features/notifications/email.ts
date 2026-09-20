@@ -60,28 +60,29 @@ const CATALOGO: Record<
     instruccion: "Revisa el detalle y los comentarios en tu espacio de trabajo.",
     cta: "Ver evaluación",
   },
+  // Sin caller todavía: a diferencia de proyecto_cancelado/rechazado, este
+  // evento no lo dispara ninguna Server Action — corre desde pg_cron
+  // (`notificar_hitos_por_vencer`, M64/M68) una vez al día. Conectarlo
+  // requeriría `pg_net` o una Edge Function con su propio cron; queda
+  // pendiente como decisión de infraestructura, no un ajuste de código chico.
   hito_por_vencer: {
     asunto: "Un hito está por vencer",
     instruccion: "Revisa el avance del equipo antes de la fecha límite.",
     cta: "Ver hito",
   },
-  // Sin caller todavía (M53 genera la notificación in-app desde un trigger
-  // de Postgres, no desde una Server Action) — mismo caso que
-  // `hito_por_vencer`. Queda completo el catálogo para cuando se conecte.
+  // Sin correo a propósito (no por falta de caller): alta frecuencia, ningún
+  // chat manda un correo por cada mensaje nuevo. Queda completo el catálogo
+  // por consistencia con el resto de tipos, no porque falte conectarlo.
   mensaje_nuevo: {
     asunto: "Tienes un mensaje nuevo",
     instruccion: "Respóndele desde el proyecto para no perder el hilo.",
     cta: "Ver mensaje",
   },
-  // Sin caller todavía (M60 genera la notificación in-app desde un trigger de
-  // Postgres, no desde una Server Action) — mismo caso que `mensaje_nuevo`.
   proyecto_cancelado: {
     asunto: "Un proyecto fue cancelado",
     instruccion: "Puedes revisar el detalle o seguir explorando otros proyectos.",
     cta: "Ver proyecto",
   },
-  // Sin caller todavía (M91 genera la notificación in-app desde un trigger
-  // de Postgres, no desde una Server Action) — mismo caso que `mensaje_nuevo`.
   proyecto_rechazado: {
     asunto: "Un moderador pidió cambios en tu proyecto",
     instruccion: "Revisa el motivo y las observaciones antes de reenviarlo a revisión.",
