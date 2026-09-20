@@ -82,12 +82,12 @@ test('ingresar con credenciales inválidas se traduce a un mensaje claro', async
   assert.match(result.error, /Correo o contraseña incorrectos/);
 });
 
-test('ingresar con credenciales válidas redirige a /inicio', async () => {
+test('ingresar con credenciales válidas responde ok (el redirect lo hace el cliente)', async () => {
   const { exports } = load('features/auth/actions.ts', {
     authResponses: { signInWithPassword: [{ data: {}, error: null }] },
   });
-  const to = await expectRedirect(exports.signIn({}, form({ email: 'x@x.cl', password: PASSWORD_VALIDA })));
-  assert.equal(to, '/inicio');
+  const result = await exports.signIn({}, form({ email: 'x@x.cl', password: PASSWORD_VALIDA }));
+  assert.equal(result.ok, true);
 });
 
 test('pedir recuperar contraseña siempre responde ok, exista o no la cuenta', async () => {
