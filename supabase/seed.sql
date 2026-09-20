@@ -147,10 +147,15 @@ values
    '', '', '', '', '', '', '', '')
 on conflict (id) do nothing;
 
--- Datos de perfil (el trigger solo pone el nombre).
+-- Datos de perfil (el trigger solo pone el nombre). Visibilidad pública a
+-- propósito: es la cuenta que las pruebas de RLS usan como "perfil público"
+-- de referencia (ver tests/rls/client.mjs) — el default de la tabla es
+-- 'privado' (M1), así que sin este `visibility` quedaba privada como
+-- cualquier otra cuenta nueva.
 update public.profiles
   set carrera = 'Ingeniería en Computación', semestre = 7,
-      bio = 'Me interesa el análisis de datos y la visualización.'
+      bio = 'Me interesa el análisis de datos y la visualización.',
+      visibility = 'publico'
   where id = '33333333-3333-3333-3333-333333333333';
 
 -- Postulación aceptada al rol "Datos" (c...-1) del proyecto 1.

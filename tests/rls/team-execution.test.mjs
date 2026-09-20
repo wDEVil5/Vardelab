@@ -123,14 +123,26 @@ test('el gestor puede borrar una entrega aunque no sea suya; un patrocinador aje
 
 // --- teams / team_members -------------------------------------------------
 
-test('el equipo de un proyecto en selección es visible públicamente (incluso sin sesión)', () => {
+// M86 revocó la lectura pública de teams/team_members (se podía leer la
+// tabla directo con la anon key y reconstruir quién quedó seleccionado en
+// cada proyecto — sentía injusto para quien postuló y no quedó). Solo
+// integrante/gestor/admin la ven.
+test('un visitante sin sesión NO ve el equipo de un proyecto', () => {
   const rows = countAs({ role: 'anon', sql: `select id from public.teams where id = '${TEAM}';` });
-  assert.equal(rows, 1);
+  assert.equal(rows, 0);
 });
 
-test('los integrantes de ese equipo también son visibles públicamente', () => {
+test('un visitante sin sesión NO ve los integrantes de un equipo', () => {
   const rows = countAs({
     role: 'anon',
+    sql: `select id from public.team_members where team_id = '${TEAM}' and user_id = '${SEED.VALENTINA}';`,
+  });
+  assert.equal(rows, 0);
+});
+
+test('un integrante del equipo sí se ve a sí mismo en team_members', () => {
+  const rows = countAs({
+    role: 'authenticated', userId: SEED.VALENTINA,
     sql: `select id from public.team_members where team_id = '${TEAM}' and user_id = '${SEED.VALENTINA}';`,
   });
   assert.equal(rows, 1);
