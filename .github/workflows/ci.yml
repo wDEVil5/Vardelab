@@ -52,9 +52,16 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Instalar la CLI de Supabase
+        # `env: GITHUB_TOKEN` autentica la resolución de `version: latest`
+        # contra la API de GitHub: sin él, comparte el límite de 60
+        # requests/hora sin autenticar entre todos los runners de GitHub y
+        # falla intermitentemente con "rate limit exceeded". No hace falta
+        # crear ningún secreto: Actions ya provee este token por job.
         uses: supabase/setup-cli@v1
         with:
           version: latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Levantar Supabase local (migraciones + seed)
         run: supabase start
