@@ -33,11 +33,11 @@ export async function getOpenReports() {
 export type OpenReport = Awaited<ReturnType<typeof getOpenReports>>[number];
 
 const REPORTS_SELECT =
-  "id, target_type, target_id, motivo, descripcion, status, resolucion, created_at, reporter_id";
+  "id, target_type, target_id, motivo, descripcion, status, resolucion, created_at, reporter_id, escalado_admin, escalado_nota, escalado_at";
 
 export const REPORTS_PAGE_SIZE = 20;
 
-type ReportStatusFiltro = "abiertos" | "en_revision" | "resueltos" | "todos";
+type ReportStatusFiltro = "abiertos" | "en_revision" | "resueltos" | "todos" | "escalados";
 
 /**
  * Página de reportes para el panel de gestión (`/moderacion/reportes`),
@@ -61,6 +61,7 @@ export async function getReportsPage(page: number, filtro: ReportStatusFiltro) {
   if (filtro === "abiertos") query = query.eq("status", "abierto");
   else if (filtro === "en_revision") query = query.eq("status", "en_revision");
   else if (filtro === "resueltos") query = query.eq("status", "resuelto");
+  else if (filtro === "escalados") query = query.eq("escalado_admin", true);
 
   const { data, error, count } = await query;
 
@@ -77,8 +78,9 @@ export async function getReportCountsByStatus() {
   const supabase = await createClient();
   const estados = ["abierto", "en_revision", "resuelto"] as const;
 
-  const [total, ...porEstado] = await Promise.all([
+  const [total, escalados, ...porEstado] = await Promise.all([
     supabase.from("reports").select("id", { count: "exact", head: true }),
+    supabase.from("reports").select("id", { count: "exact", head: true }).eq("escalado_admin", true),
     ...estados.map((e) =>
       supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", e),
     ),
@@ -89,6 +91,7 @@ export async function getReportCountsByStatus() {
     abiertos: porEstado[0]?.count ?? 0,
     en_revision: porEstado[1]?.count ?? 0,
     resueltos: porEstado[2]?.count ?? 0,
+    escalados: escalados.count ?? 0,
   };
 }
 
@@ -130,9 +133,7 @@ export async function getReportById(id: string) {
 
   const { data, error } = await supabase
     .from("reports")
-    .select(
-      "id, target_type, target_id, motivo, descripcion, status, resolucion, created_at, reporter_id",
-    )
+    .select(REPORTS_SELECT)
     .eq("id", id)
     .maybeSingle();
 
