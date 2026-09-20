@@ -16,12 +16,13 @@ const ESTADO: Record<string, { label: string; tone: BadgeTone }> = {
   resuelto: { label: "Resuelto", tone: "success" },
 };
 
-type FiltroId = "abiertos" | "en_revision" | "resueltos" | "todos";
+type FiltroId = "abiertos" | "en_revision" | "resueltos" | "todos" | "escalados";
 
 const FILTROS: { id: FiltroId; label: string }[] = [
   { id: "abiertos", label: "Abiertos" },
   { id: "en_revision", label: "En revisión" },
   { id: "resueltos", label: "Resueltos" },
+  { id: "escalados", label: "Escalados" },
   { id: "todos", label: "Todos" },
 ];
 
@@ -55,7 +56,13 @@ export function ReportsTable({
   page: number;
   totalPages: number;
   filtro: FiltroId;
-  conteos: { todos: number; abiertos: number; en_revision: number; resueltos: number };
+  conteos: {
+    todos: number;
+    abiertos: number;
+    en_revision: number;
+    resueltos: number;
+    escalados: number;
+  };
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -150,7 +157,10 @@ export function ReportsTable({
                           {report.motivo} · {haceCuanto(report.created_at)}
                         </p>
                       </div>
-                      <Badge tone={estado.tone}>{estado.label}</Badge>
+                      <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                        <Badge tone={estado.tone}>{estado.label}</Badge>
+                        {report.escalado_admin && <Badge tone="brand">Escalado</Badge>}
+                      </div>
                       <span className="shrink-0 text-sm font-medium text-electric">
                         Revisar →
                       </span>
