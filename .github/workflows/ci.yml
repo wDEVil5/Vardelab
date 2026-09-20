@@ -33,6 +33,12 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      - name: Generar tipos de rutas de Next
+        # `tsc` referencia tipos (`LayoutProps`, `PageProps`, etc.) que Next
+        # genera en `.next/dev/types/` — sin este paso no existen todavía en
+        # un checkout limpio y `tsc --noEmit` falla con "Cannot find name".
+        run: npx next typegen
+
       - name: Chequear tipos
         run: npx tsc --noEmit
 
@@ -57,5 +63,8 @@ jobs:
         run: node --test tests/rls/*.test.mjs
 
       - name: Bajar Supabase local
+        # `|| true`: si un paso anterior falló antes de instalar la CLI, no
+        # hay nada que bajar — no tiene sentido que la limpieza tape con su
+        # propio error cuál fue la falla real.
         if: always()
-        run: supabase stop --no-backup
+        run: supabase stop --no-backup || true
