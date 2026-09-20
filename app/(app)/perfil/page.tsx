@@ -28,6 +28,7 @@ import { ChangePasswordDialog } from "@/features/auth/components/change-password
 import { ChangeEmailDialog } from "@/features/auth/components/change-email-dialog";
 import { ProfileSkillsEditor } from "@/features/profile/components/profile-skills-editor";
 import { PortfolioEditor } from "@/features/portfolio/components/portfolio-editor";
+import { DeleteAccountDialog } from "@/features/profile/components/delete-account-dialog";
 
 export const metadata: Metadata = {
   title: "Mi perfil · Vardelab",
@@ -344,6 +345,8 @@ export default async function PerfilPage({ searchParams }: PageProps) {
               <ChangeEmailDialog currentEmail={user.email} />
             </div>
           </section>
+
+          <DeleteAccountDialog rol="estudiante" />
         </div>
       </div>
     </div>
@@ -527,6 +530,8 @@ function PerfilPatrocinador({
             </div>
           </div>
         </section>
+
+        <DeleteAccountDialog rol="patrocinador" />
       </div>
       </div>
     </div>

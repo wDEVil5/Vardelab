@@ -80,3 +80,34 @@ test('quitar una habilidad sin sesión no revienta', async () => {
   assert.match(result.error, /sesión expiró/);
   assert.equal(queries.length, 0);
 });
+
+test('eliminar la cuenta no procede si falla el chequeo de organización propia', async () => {
+  const { exports, adminAuthCalls } = load('features/profile/actions.ts', {
+    currentUser: USER,
+    responses: [{ count: null, error: { message: 'timeout' } }],
+  });
+  const result = await exports.deleteAccount();
+  assert.match(result.error, /No se pudo verificar/);
+  assert.equal(adminAuthCalls.length, 0);
+});
+
+test('eliminar la cuenta se bloquea si es dueño de una organización', async () => {
+  const { exports, adminAuthCalls } = load('features/profile/actions.ts', {
+    currentUser: USER,
+    responses: [{ count: 1 }],
+  });
+  const result = await exports.deleteAccount();
+  assert.match(result.error, /Contacta a soporte/);
+  assert.equal(adminAuthCalls.length, 0);
+});
+
+test('eliminar la cuenta sin organizaciones propias la borra', async () => {
+  const { exports, adminAuthCalls } = load('features/profile/actions.ts', {
+    currentUser: USER,
+    responses: [{ count: 0 }],
+  });
+  const to = await expectRedirect(exports.deleteAccount());
+  assert.equal(to, '/?cuenta-eliminada=1');
+  assert.equal(adminAuthCalls.length, 1);
+  assert.equal(adminAuthCalls[0].userId, 'u1');
+});

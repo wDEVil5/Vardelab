@@ -187,6 +187,10 @@ export function load(relativePath, {
                   adminAuthCalls.push({ userId, opts });
                   return adminAuthResponses.shift() ?? { error: null };
                 },
+                async deleteUser(userId) {
+                  adminAuthCalls.push({ method: 'deleteUser', userId });
+                  return adminAuthResponses.shift() ?? { error: null };
+                },
               },
             },
           }),
