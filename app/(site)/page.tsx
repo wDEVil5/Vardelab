@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/reveal";
 import { Faq } from "@/components/faq";
 import { FadeContent } from "@/components/fade-content";
+import { ParallaxBlock } from "@/components/parallax-image";
 import { ProcessStack, type ProcesoPaso } from "@/components/process-stack";
 import {
   PrinciplesShowcase,
@@ -137,6 +138,93 @@ export default async function Home() {
 
 
 
+      {/* 3 · TU PANEL (muestra el producto real, no solo lo describe) */}
+      <section className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-6 sm:py-14">
+        <Reveal>
+          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[linear-gradient(135deg,#0d1b2e_0%,#0a1420_100%)] py-8 text-white sm:py-10 md:py-20">
+            <div className="grid items-center gap-8 md:grid-cols-[1fr_1.15fr] md:gap-10">
+              <div className="px-6 sm:px-10 md:pr-6">
+                <span className="text-xs font-semibold uppercase tracking-wide text-electric sm:text-sm">
+                  Tu recorrido
+                </span>
+                <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+                  Todo lo que haces, claro desde el primer día.
+                </h2>
+                <p className="mt-3 max-w-md text-base leading-relaxed text-white/70">
+                  Desde que postulas hasta que entregas, tienes en un solo lugar
+                  el proyecto, tus próximos pasos y el avance que vas
+                  construyendo.
+                </p>
+                <ul className="mt-8 flex flex-col gap-5">
+                  {[
+                    "Tu proyecto y el avance de cada hito.",
+                    "Tus postulaciones, respuestas y próximos pasos.",
+                    "Entregas claras para saber qué hacer y cuándo.",
+                    "Evidencia de lo que aprendiste y aportaste.",
+                  ].map((item) => (
+                    <li key={item} className="flex items-center gap-3 text-base text-white/80">
+                      <span
+                        className="flex size-5 shrink-0 items-center justify-center rounded-full bg-sprout/20 text-sprout"
+                        aria-hidden
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="size-3"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2.5}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M5 13l4 4L19 7" />
+                        </svg>
+                      </span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <div className="hidden md:block">
+                  <Link
+                    href="/proyectos"
+                    className={cn(
+                      buttonClasses({ variant: "primary" }),
+                      "mt-9 h-11 px-6 text-base",
+                    )}
+                  >
+                    Explorar proyectos
+                  </Link>
+                </div>
+              </div>
+
+              <div className="px-6 sm:px-10 md:px-0">
+                <ParallaxBlock className="overflow-hidden rounded-2xl bg-white shadow-2xl md:w-[142%]">
+                  <img
+                    src="/landing/foto-inicio.webp"
+                    alt="Panel del estudiante en Vardelab: progreso del proyecto, postulaciones y próximas entregas."
+                    width={1800}
+                    height={939}
+                    className="block w-full"
+                    loading="lazy"
+                  />
+                </ParallaxBlock>
+              </div>
+
+              <div className="flex justify-center px-6 md:hidden">
+                <Link
+                  href="/proyectos"
+                  className={cn(
+                    buttonClasses({ variant: "primary" }),
+                    "h-11 px-6 text-base",
+                  )}
+                >
+                  Explorar proyectos
+                </Link>
+              </div>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
       {/* 4 · CÓMO FUNCIONA (flujo del estudiante como protagonista) */}
       <section id="como-funciona" className="scroll-mt-20 bg-white sm:scroll-mt-32">
         <div className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-6 sm:py-16">
@@ -167,7 +255,7 @@ export default async function Home() {
                 Cómo surgió
               </span>
               <h2 className="mt-3 max-w-2xl text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-                Nació de una brecha que se ve en la carrera.
+                Hay cosas que no se aprenden hasta que toca hacerlas de verdad.
               </h2>
 
               <div className="mt-10 grid max-w-4xl gap-8 sm:gap-10">
@@ -176,31 +264,47 @@ export default async function Home() {
                     La brecha
                   </p>
                   <p className="text-base leading-relaxed text-muted sm:text-lg">
-                    Muchos estudiantes llegan a la práctica o al primer trabajo
-                    sin haber colaborado aún en un proyecto real: herramientas,
-                    coordinación y la seguridad de decir “esto sí lo hice”.
+                    En la universidad puedes aprender herramientas, aprobar
+                    proyectos y acumular conocimientos, pero aun así llegar a
+                    tu primera práctica sin haber trabajado con un usuario real,
+                    un plazo incierto o un equipo que necesita coordinarse. Y
+                    cuando llega el momento de postular, aparece una pregunta
+                    difícil: “¿Qué experiencia puedo mostrar?”
                   </p>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-[7rem_1fr] sm:gap-8">
                   <p className="text-xs font-semibold tracking-wide text-electric uppercase sm:pt-1">
-                    La idea
+                    Lo que también pasaba
                   </p>
                   <p className="text-base leading-relaxed text-muted sm:text-lg">
-                    Vardelab existe para acortar esa distancia con microdesafíos
-                    acotados junto a{" "}
-                    <strong className="font-semibold text-ink">organizaciones</strong>,{" "}
-                    <strong className="font-semibold text-ink">pymes</strong>,{" "}
-                    emprendimientos,{" "}
-                    <strong className="font-semibold text-ink">fundaciones</strong> e{" "}
-                    <strong className="font-semibold text-ink">instituciones</strong>.
-                    El foco es hacer en un marco claro, no vender un certificado.
+                    Muchas organizaciones, fundaciones, emprendimientos y
+                    unidades universitarias tienen necesidades concretas que no
+                    justifican contratar un equipo completo, pero sí podrían
+                    convertirse en una experiencia valiosa: mejorar un sitio,
+                    ordenar datos, probar una idea o crear una herramienta
+                    pequeña.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-[7rem_1fr] sm:gap-8">
+                  <p className="text-xs font-semibold tracking-wide text-electric uppercase sm:pt-1">
+                    Por eso
+                  </p>
+                  <p className="text-base leading-relaxed text-muted sm:text-lg">
+                    Vardelab conecta esas dos realidades. Convierte una necesidad
+                    real en un microproyecto con alcance, roles, hitos,
+                    acompañamiento y un resultado verificable. No promete
+                    reemplazar una práctica ni entregar experiencia de papel:
+                    crea un espacio seguro para hacer, aprender, recibir
+                    retroalimentación y demostrar qué aportaste.
                   </p>
                 </div>
 
                 <blockquote className="border-l-2 border-electric/40 pl-5 sm:ml-36">
                   <p className="text-lg font-semibold tracking-tight text-ink sm:text-xl">
-                    Un espacio para hacer, y ganar confianza haciendo.
+                    La confianza profesional no aparece antes de empezar. Se
+                    construye haciendo.
                   </p>
                 </blockquote>
               </div>
