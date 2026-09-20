@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Edición del perfil propio. La RLS `profiles_update_own` (M1) exige
@@ -521,4 +522,50 @@ export async function deleteProfileSkill(
 /** Misma mutación, para el paso de habilidades del onboarding (M87) — ver el comentario en `addOnboardingSkill`. */
 export async function removeOnboardingSkill(skillId: string): Promise<DeleteProfileSkillState> {
   return removeProfileSkill(skillId);
+}
+
+export type DeleteAccountState = { error?: string };
+
+/**
+ * Elimina la cuenta propia (auditoría de punta a punta, GDPR §10.1). Bloqueado
+ * si el usuario es dueño de alguna organización: `organizations.owner_id` es
+ * `on delete cascade`, así que borrar la cuenta se llevaría puesta la
+ * organización entera y, en cascada, los proyectos y evaluaciones de
+ * estudiantes que no pidieron borrar nada. Para ese caso se pide resolver la
+ * organización primero (transferirla o cerrarla) con soporte — no vale la
+ * pena construir un flujo de transferencia de dueño para un piloto chico.
+ */
+export async function deleteAccount(): Promise<DeleteAccountState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/ingresar");
+
+  const { count, error: countError } = await supabase
+    .from("organizations")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_id", user.id);
+  // Fail-closed: si no se pudo confirmar que NO es dueño de ninguna
+  // organización, no se procede a borrar la cuenta.
+  if (countError) {
+    console.error("[deleteAccount]", countError.message);
+    return { error: "No se pudo verificar tu cuenta. Inténtalo de nuevo." };
+  }
+  if (count && count > 0) {
+    return {
+      error:
+        "Eres dueño de una organización. Contacta a soporte para transferirla o cerrarla antes de eliminar tu cuenta.",
+    };
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.deleteUser(user.id);
+  if (error) {
+    console.error("[deleteAccount]", error.message);
+    return { error: "No se pudo eliminar la cuenta. Inténtalo de nuevo." };
+  }
+
+  await supabase.auth.signOut();
+  redirect("/?cuenta-eliminada=1");
 }
