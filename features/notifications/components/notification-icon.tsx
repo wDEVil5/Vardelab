@@ -75,6 +75,24 @@ const TRAZOS: Record<Notification["tipo"], ReactNode> = {
       <path d="M8 12h8" />
     </>
   ),
+  reporte_escalado: (
+    <>
+      <path d="M12 9v4M12 16.5h.01" />
+      <path d="M10.3 3.9L2.9 17a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+    </>
+  ),
+  reporte_recibido: (
+    <>
+      <path d="M12 9v4M12 16.5h.01" />
+      <path d="M10.3 3.9L2.9 17a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+    </>
+  ),
+  reporte_resuelto: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 12.5l2.5 2.5 4.5-5" />
+    </>
+  ),
 };
 
 const TONO: Record<Notification["tipo"], string> = {
@@ -90,6 +108,9 @@ const TONO: Record<Notification["tipo"], string> = {
   organizacion_verificada: "bg-sprout/15 text-sprout",
   organizacion_no_verificada: "bg-coral/15 text-coral",
   postulacion_removida: "bg-ink/10 text-ink",
+  reporte_escalado: "bg-coral/15 text-coral",
+  reporte_recibido: "bg-electric/10 text-electric",
+  reporte_resuelto: "bg-sprout/15 text-sprout",
 };
 
 export function NotificationIcon({ tipo }: { tipo: Notification["tipo"] }) {

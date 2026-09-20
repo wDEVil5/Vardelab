@@ -102,6 +102,28 @@ const CATALOGO: Record<
     instruccion: "Puedes seguir explorando otros proyectos disponibles.",
     cta: "Ver mis postulaciones",
   },
+  // Sin caller todavía (M93 genera la notificación in-app desde un trigger
+  // de Postgres, no desde una Server Action) — mismo caso que
+  // `mensaje_nuevo`.
+  reporte_escalado: {
+    asunto: "Un moderador escaló un reporte",
+    instruccion: "Revisa el caso y decide cómo resolverlo.",
+    cta: "Ver reporte",
+  },
+  // Sin caller todavía (M95 genera la notificación in-app desde un trigger
+  // de Postgres, no desde una Server Action) — a diferencia de
+  // `reporte_resuelto`, este va al staff, que ya revisa el panel de
+  // moderación activamente.
+  reporte_recibido: {
+    asunto: "Nuevo reporte recibido",
+    instruccion: "Revisa el caso desde la cola de reportes.",
+    cta: "Ver reporte",
+  },
+  reporte_resuelto: {
+    asunto: "Tu reporte fue resuelto",
+    instruccion: "Puedes ver el detalle desde tu panel.",
+    cta: "Ver mis reportes",
+  },
 };
 
 type PlantillaConfig = {
