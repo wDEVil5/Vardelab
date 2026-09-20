@@ -76,7 +76,7 @@ Un patrocinador describe una necesidad mediante una **plantilla obligatoria**; u
 
 > **Fase actual: MVP funcional de punta a punta — corre en local, falta pulir diseño y desplegar a producción.**
 
-La **especificación de producto (PRD) está completa** y el **prototipo en Figma** (todas las pantallas del MVP, mobile + desktop) también. El proyecto avanzó en código sobre esa base: **scaffold** (Next.js + Supabase), **modelo de datos completo** (75+ migraciones · 24 tablas de dominio con Row Level Security en el 100%), **tipos TypeScript** generados desde el esquema y **despliegue de migraciones por CI**. Ya está construido el **circuito completo del producto**, de punta a punta:
+La **especificación de producto (PRD) está completa** y el **prototipo en Figma** (todas las pantallas del MVP, mobile + desktop) también. El proyecto avanzó en código sobre esa base: **scaffold** (Next.js + Supabase), **modelo de datos completo** (90+ migraciones · 25 tablas de dominio con Row Level Security en el 100%), **tipos TypeScript** generados desde el esquema y **despliegue de migraciones por CI**. Ya está construido el **circuito completo del producto**, de punta a punta:
 
 - **Público** — landing, catálogo con búsqueda/filtros, ficha de proyecto y perfil público de portafolio (SSR).
 - **Autenticación** — registro con rol, ingreso, sesión, **confirmación de correo** y **recuperación de contraseña**.
@@ -86,7 +86,7 @@ La **especificación de producto (PRD) está completa** y el **prototipo en Figm
 - **Administrador** — métricas del piloto, vista completa de proyectos y organizaciones (incluye aprobar verificaciones), gestión de catálogos, usuarios y permisos, registro de auditoría y configuración del piloto.
 - **Transversal** — notificaciones in-app y por correo (postulaciones, mensajes, hitos, verificación) y mensajería en tiempo real por proyecto.
 
-Corre en local contra Supabase. Falta el **despliegue a producción**, terminar de alinear con Figma algunas pantallas secundarias, y las **pruebas automatizadas de políticas RLS**.
+Corre en local contra Supabase, con **150+ pruebas automatizadas** (lógica de negocio + políticas RLS reales contra Postgres) corriendo en cada PR vía CI. Falta el **despliegue a producción** y terminar de alinear con Figma algunas pantallas secundarias.
 
 | Fase | Descripción | Estado |
 |------|-------------|--------|
@@ -154,7 +154,7 @@ flowchart TD
 
 ## 📁 Estructura del repositorio
 
-> `app/`, `components/`, `features/`, `lib/supabase/`, `types/` y `supabase/` están en uso. `tests/` (incluidas las pruebas de políticas RLS) se completa durante la Fase 2.
+> `app/`, `components/`, `features/`, `lib/supabase/`, `types/`, `supabase/` y `tests/` (lógica de negocio + políticas RLS reales) están en uso, con CI corriendo en cada PR.
 
 ```
 vardelab/
@@ -192,8 +192,8 @@ npm run dev        # http://localhost:3000
 > `supabase start` aplica automáticamente las migraciones de `supabase/migrations/`. Para reconstruir la base desde cero o regenerar los tipos tras cambiar el esquema:
 >
 > ```bash
-> npx supabase db reset                                                # recrea la base y reaplica todas las migraciones
-> npx supabase gen types typescript --local > types/database.types.ts  # regenera los tipos TS
+> npx supabase db reset                                                                    # recrea la base y reaplica todas las migraciones
+> npx supabase gen types typescript --local 2>/dev/null > types/database.types.ts          # regenera los tipos TS (stderr aparte: si se mezcla con stdout corrompe el archivo)
 > ```
 
 **Variables de entorno** (`.env.example`):
