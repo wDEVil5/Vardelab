@@ -138,12 +138,20 @@ test('un visitante sin sesión no puede buscar un usuario por correo', () => {
   }));
 });
 
-test('un usuario autenticado sí puede buscar por correo (lo necesita la invitación a organizaciones)', () => {
+test('quien gestiona una organización sí puede buscar por correo (lo necesita la invitación a organizaciones)', () => {
   const rows = queryAs({
-    role: 'authenticated', userId: SEED.DIEGO,
+    role: 'authenticated', userId: SEED.DIEGO, // dueño de la org 002
     sql: `select public.find_user_id_by_email('estudiante@demo.cl');`,
   });
   assert.deepEqual(rows, [SEED.VALENTINA]);
+});
+
+test('un usuario autenticado sin ninguna organización no puede usarla como oráculo de correos (M96)', () => {
+  const rows = queryAs({
+    role: 'authenticated', userId: SEED.MARCOS, // moderador puro, sin org
+    sql: `select public.find_user_id_by_email('estudiante@demo.cl');`,
+  });
+  assert.deepEqual(rows, []); // null: psql imprime una fila vacía, el helper la descarta
 });
 
 // --- org_recipient_ids (M39) --------------------------------------------------
