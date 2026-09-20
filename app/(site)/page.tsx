@@ -113,7 +113,11 @@ export default async function Home() {
             </Reveal>
             <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {destacados.map((project, i) => (
-                <Reveal key={project.id} delayMs={i * 80} className="h-full">
+                <Reveal
+                  key={project.id}
+                  delayMs={i * 80}
+                  className={cn("h-full", i >= 3 && "hidden sm:block")}
+                >
                   <ProjectCard project={project} />
                 </Reveal>
               ))}
