@@ -467,19 +467,19 @@ const TRANSFORMACION = [
 // Propuesta de valor (tres bloques). Sin iconos: tipografía + chip en la central.
 const PROPUESTA = [
   {
-    titulo: "Convierte una necesidad en un desafío claro",
+    titulo: "Define un desafío que se pueda hacer",
     texto:
-      "Sales con un desafío publicable: objetivo, alcance, habilidades pedidas y resultado esperado.",
+      "Convierte una necesidad concreta en un proyecto con objetivo, alcance, roles, habilidades y resultado esperado.",
   },
   {
-    titulo: "Conserva visibilidad durante el proceso",
+    titulo: "Acompaña el avance sin perder el hilo",
     texto:
-      "Ves postulaciones, avances por hitos y validaciones en el momento que corresponde, sin improvisar el seguimiento.",
+      "Revisa postulaciones, hitos, entregas y validaciones en un solo lugar, con claridad durante todo el proceso.",
   },
   {
-    titulo: "Obtén un resultado utilizable",
+    titulo: "Cierra con un resultado que sirve",
     texto:
-      "Cierras con un entregable concreto (prototipo, análisis, propuesta o proceso documentado) alineado a lo que definiste.",
+      "Termina con un entregable concreto: prototipo, análisis, propuesta o proceso documentado, alineado con la necesidad inicial.",
   },
 ];
 
