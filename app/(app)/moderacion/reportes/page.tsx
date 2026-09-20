@@ -16,7 +16,7 @@ type PageProps = {
   searchParams: Promise<{ estado?: string; page?: string }>;
 };
 
-const FILTROS_VALIDOS = ["abiertos", "en_revision", "resueltos", "todos"] as const;
+const FILTROS_VALIDOS = ["abiertos", "en_revision", "resueltos", "todos", "escalados"] as const;
 
 /**
  * Cola de reportes (Fase 2 · confianza). KPIs reales (sin "Alta prioridad": no
