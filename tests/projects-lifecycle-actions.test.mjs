@@ -70,10 +70,12 @@ test('rechazar un proyecto con observaciones mal formadas no se aplica', async (
 test('rechazar un proyecto en revisión lo devuelve a borrador con sus observaciones', async () => {
   const { exports } = load('features/projects/actions.ts', {
     responses: [
-      { data: [{ id: 'p1' }], error: null },
+      { data: [{ id: 'p1', titulo: 'Proyecto X', org_id: 'org1' }], error: null },
       { error: null },
       { error: null },
     ],
+    rpcResponses: [{ data: ['u2'], error: null }],
+    currentUser: { id: 'u1' },
   });
   const result = await exports.rejectProject({}, form({
     projectId: 'p1', comentario: 'Falta detallar el alcance',
@@ -132,7 +134,12 @@ test('cancelar un proyecto ya completado o cancelado no se reprocesa', async () 
 
 test('cancelar un proyecto activo funciona', async () => {
   const { exports, paths } = load('features/projects/actions.ts', {
-    responses: [{ data: [{ id: 'p1' }], error: null }],
+    responses: [
+      { data: [{ id: 'p1', titulo: 'Proyecto X', org_id: 'org1' }], error: null },
+      { data: { team_members: [{ user_id: 'u2' }] } },
+    ],
+    rpcResponses: [{ data: ['u3'], error: null }],
+    currentUser: { id: 'u1' },
   });
   const result = await exports.cancelProject({}, form({ projectId: 'p1' }));
   assert.equal(result.error, undefined);
