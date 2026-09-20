@@ -214,7 +214,7 @@ export function PortfolioEditor({
                     }}
                     aria-label="Quitar evidencia"
                     title="Quitar evidencia"
-                    className="flex size-8 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50"
+                    className="flex size-8 items-center justify-center rounded-lg text-coral transition-colors hover:bg-coral/10"
                   >
                     <PortafolioIconSvg name="papelera" />
                   </button>
