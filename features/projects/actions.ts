@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { sendEmailToUser } from "@/features/notifications/email";
 
 /**
  * Acciones de proyectos (lado del patrocinador).
@@ -671,6 +673,9 @@ export async function rejectProject(
   }
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("projects")
     .update({
@@ -681,7 +686,7 @@ export async function rejectProject(
     })
     .eq("id", projectId)
     .eq("status", "en_revision")
-    .select("id");
+    .select("id, titulo, org_id");
 
   if (error) {
     console.error("[rejectProject]", error.message);
@@ -690,6 +695,23 @@ export async function rejectProject(
   if (!data || data.length === 0) {
     return { error: "No se pudo rechazar (¿ya no está en revisión?)." };
   }
+
+  // Correo a quien gestiona la organización, mismo criterio que `applyToRole`
+  // (M43): la notificación in-app ya la crea el trigger `notify_proyecto_rechazado`
+  // (M91), acá se rearma el mismo texto a mano por no tener `pg_net`.
+  const [rechazado] = data;
+  const texto = `El proyecto "${rechazado.titulo}" volvió a borrador: un moderador pidió cambios. Motivo: ${comentario}`;
+  const link = `/mis-proyectos/${projectId}`;
+  after(async () => {
+    const { data: destinatarios } = await supabase.rpc("org_recipient_ids", {
+      _org_id: rechazado.org_id,
+    });
+    await Promise.all(
+      (destinatarios ?? [])
+        .filter((id) => id !== user?.id)
+        .map((id) => sendEmailToUser(id, "proyecto_rechazado", texto, link)),
+    );
+  });
 
   // Reemplaza las observaciones de la ronda anterior por las nuevas. Falla
   // silenciosa (igual que en `approveProject`): el motivo general ya quedó
@@ -899,13 +921,16 @@ export async function cancelProject(
   if (!projectId) return { error: "Falta el proyecto." };
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("projects")
     .update({ status: "cancelado" })
     .eq("id", projectId)
     .neq("status", "completado")
     .neq("status", "cancelado")
-    .select("id");
+    .select("id, titulo, org_id");
 
   if (error) {
     console.error("[cancelProject]", error.message);
@@ -914,6 +939,27 @@ export async function cancelProject(
   if (!data || data.length === 0) {
     return { error: "No se pudo cancelar (¿ya está completado o cancelado?)." };
   }
+
+  // Correo al equipo del proyecto y a quien gestiona la organización, mismo
+  // criterio que `applyToRole` (M43) y el trigger `notify_proyecto_cancelado`
+  // (M60): la notificación in-app ya la crea el trigger, acá se rearma el
+  // mismo texto a mano por no tener `pg_net`.
+  const [cancelado] = data;
+  const texto = `El proyecto "${cancelado.titulo}" fue cancelado.`;
+  after(async () => {
+    const [{ data: equipo }, { data: destinatariosOrg }] = await Promise.all([
+      supabase.from("teams").select("team_members(user_id)").eq("project_id", projectId).maybeSingle(),
+      supabase.rpc("org_recipient_ids", { _org_id: cancelado.org_id }),
+    ]);
+    const idsEquipo = (equipo?.team_members ?? []).map((m) => m.user_id);
+    const destinatarios = new Set([...idsEquipo, ...(destinatariosOrg ?? [])]);
+    destinatarios.delete(user?.id ?? "");
+    await Promise.all(
+      [...destinatarios].map((id) =>
+        sendEmailToUser(id, "proyecto_cancelado", texto, `/mis-proyectos/${projectId}`),
+      ),
+    );
+  });
 
   revalidatePath(`/mis-proyectos/${projectId}`);
   revalidatePath("/mis-proyectos");
