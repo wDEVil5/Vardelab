@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -43,8 +44,16 @@ export async function requireUser(
  * Pensado para Server Components (header, guardas de página). Usa
  * `auth.getUser()`, que valida el token contra el servidor de Auth (no confía
  * solo en la cookie).
+ *
+ * Envuelta en `cache()` de React: memoiza por el ciclo de vida de un único
+ * render de servidor (nunca entre requests ni entre usuarios distintos), así
+ * que las varias llamadas por request (layout + cada página que también la
+ * necesita) resuelven una sola vez el round-trip a `auth`/`profiles`/
+ * `user_roles` en vez de repetirlo. No compite con el `force-dynamic` de
+ * `app/(app)/layout.tsx` (ese evita el caché *entre* requests; esto memoiza
+ * *dentro* de uno solo).
  */
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async () => {
   const supabase = await createClient();
 
   const {
@@ -80,4 +89,4 @@ export async function getCurrentUser() {
     esModerador: rolesList.includes("moderador"),
     esAdmin: rolesList.includes("admin"),
   };
-}
+});
