@@ -133,6 +133,18 @@ test('cambiar contraseña con la actual incorrecta no la cambia', async () => {
   assert.equal(authCalls.some((c) => c.method === 'updateUser'), false);
 });
 
+test('cambiar contraseña con demasiados intentos de reautenticación se bloquea sin llamar a Supabase', async () => {
+  const { exports, authCalls } = load('features/auth/actions.ts', {
+    currentUser: { id: 'u1', email: 'x@x.cl' },
+    rateLimitOk: false,
+  });
+  const result = await exports.changePassword({}, form({
+    currentPassword: 'ActualBuena1', password: PASSWORD_VALIDA, confirmPassword: PASSWORD_VALIDA,
+  }));
+  assert.match(result.error, /Demasiados intentos/);
+  assert.equal(authCalls.length, 0);
+});
+
 test('cambiar contraseña con confirmación que no coincide no la cambia', async () => {
   const { exports } = load('features/auth/actions.ts', { currentUser: { id: 'u1', email: 'x@x.cl' } });
   const result = await exports.changePassword({}, form({
@@ -176,6 +188,18 @@ test('pedir cambiar el correo a uno ya usado por otra cuenta se traduce a un men
     currentPassword: 'ActualBuena1', newEmail: 'ocupado@x.cl',
   }));
   assert.match(result.error, /Ya existe una cuenta/);
+});
+
+test('pedir cambiar el correo con demasiados intentos de reautenticación se bloquea sin llamar a Supabase', async () => {
+  const { exports, authCalls } = load('features/auth/actions.ts', {
+    currentUser: { id: 'u1', email: 'actual@x.cl' },
+    rateLimitOk: false,
+  });
+  const result = await exports.requestEmailChange({}, form({
+    currentPassword: 'ActualBuena1', newEmail: 'nuevo@x.cl',
+  }));
+  assert.match(result.error, /Demasiados intentos/);
+  assert.equal(authCalls.length, 0);
 });
 
 test('pedir cambiar el correo con todo correcto dispara la confirmación doble', async () => {
