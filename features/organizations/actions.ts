@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, requireUser } from "@/features/auth/queries";
+import { getMyOrgIds } from "@/features/organizations/queries";
 import { INVITACIONES_HABILITADAS } from "@/features/organizations/config";
 import { sendEmail } from "@/features/notifications/email";
 
@@ -188,6 +189,17 @@ export async function deleteOrganization(
 ): Promise<DeleteOrgState> {
   const id = String(formData.get("orgId") ?? "");
   if (!id) return { error: "Falta la organización." };
+
+  // Verifica propiedad ANTES de tocar cualquier dato scoped por el `orgId`
+  // recibido del formulario: sin esto, el conteo de proyectos de abajo corría
+  // para cualquier `orgId` (la RLS de `projects` deja ver los publicados de
+  // cualquier organización), permitiendo sondear cuántos proyectos publicados
+  // tiene una organización ajena antes de que la policy de `delete` bloqueara
+  // el borrado real.
+  const myOrgIds = await getMyOrgIds();
+  if (!myOrgIds.includes(id)) {
+    return { error: "No puedes eliminar esta organización." };
+  }
 
   const supabase = await createClient();
 
