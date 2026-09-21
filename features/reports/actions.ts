@@ -1,9 +1,9 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/features/auth/queries";
 import { getMyOrgIds } from "@/features/organizations/queries";
 import { sendEmailToUser } from "@/features/notifications/email";
 
@@ -37,10 +37,7 @@ export async function submitReport(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  const user = await requireUser(supabase);
 
   if (targetType === "perfil" && targetId === user.id) {
     return { error: "No puedes reportar tu propio perfil." };
@@ -135,10 +132,7 @@ export async function escalateReport(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  const user = await requireUser(supabase);
 
   const { data, error } = await supabase
     .from("reports")
