@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/features/auth/queries";
 import { getPilotConfig, getConfigChangeHistory } from "@/features/admin/queries";
 import { PilotConfigForm } from "@/features/admin/components/pilot-config-form";
 
@@ -16,10 +15,6 @@ export const metadata: Metadata = {
  * correo transaccional, aún pendiente).
  */
 export default async function AdminConfiguracionPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/ingresar");
-  if (!user.esAdmin) redirect("/");
-
   const [config, historial] = await Promise.all([
     getPilotConfig(),
     getConfigChangeHistory(3),
