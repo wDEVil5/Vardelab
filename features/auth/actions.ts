@@ -48,8 +48,10 @@ export async function signUp(
 
   // 5 registros por IP cada hora: acota la creación masiva de cuentas sin
   // afectar a alguien que se equivoca un par de veces con su propio correo.
+  // Fail-closed: signup es de bajo tráfico legítimo, mejor bloquear de más
+  // ante un error de infraestructura que abrir la puerta a altas masivas.
   const ip = await getClientIp();
-  if (!(await checkRateLimit("signup:ip", ip, 5, 3600))) {
+  if (!(await checkRateLimit("signup:ip", ip, 5, 3600, { failClosed: true }))) {
     return { error: RATE_LIMIT_MESSAGE };
   }
 
@@ -153,11 +155,13 @@ export async function requestPasswordReset(
   // de Supabase probando muchos correos, como que "bombardeen" una cuenta
   // ajena de recuperaciones. El mensaje sigue siendo el mismo `{ ok: true }`
   // de siempre — no delata si el límite saltó por rate limit o por éxito.
+  // Fail-closed: reset es de bajo tráfico legítimo y el `{ok:true}` ya oculta
+  // el motivo, así que bloquear de más ante un error de infra no se nota.
   const ip = await getClientIp();
-  if (!(await checkRateLimit("reset:ip", ip, 10, 900))) {
+  if (!(await checkRateLimit("reset:ip", ip, 10, 900, { failClosed: true }))) {
     return { ok: true };
   }
-  if (!(await checkRateLimit("reset:email", email, 3, 900))) {
+  if (!(await checkRateLimit("reset:email", email, 3, 900, { failClosed: true }))) {
     return { ok: true };
   }
 
@@ -255,8 +259,10 @@ export async function changePassword(
   // alguien que use el equipo desatendido no debería poder cambiarla sin
   // saber la actual). Mismo límite que `signIn` por correo: sin esto, una
   // sesión activa (robada o desatendida) sería un oráculo de contraseña sin
-  // límite de intentos.
-  if (!(await checkRateLimit("reauth:email", user.email, 8, 900))) {
+  // límite de intentos. Fail-closed: esta reautenticación es de bajo tráfico
+  // legítimo (solo se dispara al cambiar contraseña/correo), mejor bloquear
+  // de más ante un error de infra que abrir el oráculo.
+  if (!(await checkRateLimit("reauth:email", user.email, 8, 900, { failClosed: true }))) {
     return { error: RATE_LIMIT_MESSAGE };
   }
   const { error: authError } = await supabase.auth.signInWithPassword({
@@ -312,8 +318,8 @@ export async function requestEmailChange(
   }
 
   // Mismo resguardo que en `changePassword`: sin límite de intentos, una
-  // sesión activa sería un oráculo de contraseña.
-  if (!(await checkRateLimit("reauth:email", user.email, 8, 900))) {
+  // sesión activa sería un oráculo de contraseña. Fail-closed, mismo motivo.
+  if (!(await checkRateLimit("reauth:email", user.email, 8, 900, { failClosed: true }))) {
     return { error: RATE_LIMIT_MESSAGE };
   }
   const { error: authError } = await supabase.auth.signInWithPassword({
