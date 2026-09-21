@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmailToUser } from "@/features/notifications/email";
-import { getCurrentUser } from "@/features/auth/queries";
+import { getCurrentUser, requireUser } from "@/features/auth/queries";
 
 /**
  * Acciones de postulación (Server Actions).
@@ -151,18 +151,17 @@ export async function applyToRole(
  * garantiza que solo el autor pueda tocar su fila; el filtro por `status` y
  * `applicant_id` acota la operación en el propio update.
  */
-export async function withdrawApplication(formData: FormData): Promise<void> {
+export type WithdrawApplicationState = { error?: string; ok?: boolean };
+
+export async function withdrawApplication(
+  _prevState: WithdrawApplicationState,
+  formData: FormData,
+): Promise<WithdrawApplicationState> {
   const applicationId = String(formData.get("applicationId") ?? "");
-  if (!applicationId) return;
+  if (!applicationId) return { error: "Falta la postulación." };
 
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/ingresar");
-  }
+  const user = await requireUser(supabase);
 
   const { error } = await supabase
     .from("applications")
@@ -173,9 +172,11 @@ export async function withdrawApplication(formData: FormData): Promise<void> {
 
   if (error) {
     console.error("[withdrawApplication]", error.message);
+    return { error: "No se pudo retirar la postulación. Inténtalo de nuevo." };
   }
 
   revalidatePath("/mis-postulaciones");
+  return { ok: true };
 }
 
 /**
