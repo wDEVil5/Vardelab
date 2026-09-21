@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/features/auth/queries";
 import { getSkillsCatalog, getModalidadUsage } from "@/features/admin/queries";
 import { CatalogosTabs } from "@/features/admin/components/catalogos-tabs";
 
@@ -15,10 +13,6 @@ export const metadata: Metadata = {
  * las trata como tres catálogos simétricos, pero el modelo real no lo es.
  */
 export default async function AdminCatalogosPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/ingresar");
-  if (!user.esAdmin) redirect("/");
-
   const [skills, modalidades] = await Promise.all([getSkillsCatalog(), getModalidadUsage()]);
 
   return (

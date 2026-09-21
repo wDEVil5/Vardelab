@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/features/auth/queries";
 import { getAuditLog } from "@/features/admin/queries";
 import { AuditLogTable } from "@/features/admin/components/audit-log-table";
 
@@ -25,10 +23,6 @@ function esOtorgamientoDeAdmin(metadata: unknown): boolean {
  * sensible que hoy se audita), no un contador decorativo en cero.
  */
 export default async function AdminAuditoriaPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/ingresar");
-  if (!user.esAdmin) redirect("/");
-
   const eventos = await getAuditLog();
 
   const cambiosDeRol = eventos.filter((e) => e.accion === "rol_actualizado").length;
