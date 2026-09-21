@@ -16,9 +16,12 @@ export const metadata: Metadata = {
  * inventar un campo.
  */
 export default async function AdminUsuariosPage() {
+  // El guard de rol (esAdmin) vive en el layout de `/admin`; acá solo queda
+  // el chequeo de sesión, necesario para que TypeScript angoste `user` antes
+  // de leer `user.id` más abajo (en la práctica nunca es null: el layout ya
+  // lo garantiza).
   const user = await getCurrentUser();
   if (!user) redirect("/ingresar");
-  if (!user.esAdmin) redirect("/");
 
   const usuarios = await getUsersForAdmin();
 

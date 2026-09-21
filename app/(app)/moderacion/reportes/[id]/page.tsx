@@ -44,9 +44,12 @@ function haceCuanto(iso: string): string {
 export default async function DetalleReportePage({ params }: PageProps) {
   const { id } = await params;
 
+  // El guard de rol (moderador/admin) vive en el layout de `/moderacion`;
+  // acá solo queda el chequeo de sesión, necesario para que TypeScript
+  // angoste `user` antes de leer `user.esAdmin` más abajo (en la práctica
+  // nunca es null: el layout ya lo garantiza).
   const user = await getCurrentUser();
   if (!user) redirect("/ingresar");
-  if (!user.esModerador && !user.esAdmin) redirect("/");
 
   const report = await getReportById(id);
   if (!report) redirect("/moderacion/reportes");
