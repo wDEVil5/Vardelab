@@ -169,3 +169,35 @@ test('org_recipient_ids devuelve al dueño de la organización', () => {
 test('pilot_registro_abierto se puede leer sin sesión (lo necesita el registro)', () => {
   assert.doesNotThrow(() => queryAs({ role: 'anon', sql: `select public.pilot_registro_abierto();` }));
 });
+
+// --- get_pilot_metrics (M98) --------------------------------------------------
+
+test('get_pilot_metrics rechaza a quien no es admin', () => {
+  expectError(
+    () => queryAs({
+      role: 'authenticated', userId: SEED.CAMILA,
+      sql: `select public.get_pilot_metrics();`,
+    }),
+    /No autorizado/,
+  );
+});
+
+test('get_pilot_metrics agrega bien los conteos reales del seed', () => {
+  const rows = queryAs({
+    role: 'authenticated', userId: SEED.ADMIN,
+    sql: `select public.get_pilot_metrics();`,
+  });
+  const metrics = JSON.parse(rows[0]);
+  // Valores del seed (supabase/seed.sql): 4 proyectos, 2 postulaciones (ambas
+  // aceptadas), 2 equipos, 6 hitos (1 aprobado), sin reportes ni evidencias.
+  assert.equal(metrics.totalProyectos, 4);
+  assert.equal(metrics.equiposFormados, 2);
+  assert.equal(metrics.evidenciasPortafolio, 0);
+  assert.deepEqual(metrics.postulaciones, { total: 2, aceptadas: 2 });
+  assert.deepEqual(metrics.hitos, { total: 6, aprobados: 1 });
+  assert.deepEqual(metrics.reportes, { abiertos: 0, resueltos: 0 });
+  assert.equal(
+    metrics.porEstado.publicado + metrics.porEstado.seleccion,
+    4,
+  );
+});
