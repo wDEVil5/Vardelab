@@ -7,41 +7,46 @@ import { isUuid } from "@/lib/utils";
 /** Meta orientativa del piloto (PRD §15): 7+ proyectos completados. */
 const META_NORTH_STAR = 7;
 
+type PilotMetricsRaw = {
+  porEstado: Partial<Record<(typeof ESTADOS_PROYECTO)[number], number>>;
+  totalProyectos: number;
+  equiposFormados: number;
+  evidenciasPortafolio: number;
+  postulaciones: { total: number; aceptadas: number };
+  hitos: { total: number; aprobados: number };
+  reportes: { abiertos: number; resueltos: number };
+};
+
+const METRICAS_VACIAS: PilotMetricsRaw = {
+  porEstado: {},
+  totalProyectos: 0,
+  equiposFormados: 0,
+  evidenciasPortafolio: 0,
+  postulaciones: { total: 0, aceptadas: 0 },
+  hitos: { total: 0, aprobados: 0 },
+  reportes: { abiertos: 0, resueltos: 0 },
+};
+
 /**
- * Métricas agregadas del piloto (D-01, RF-14). Usa el cliente de
- * `service_role` porque varias tablas (`teams`, `team_members`) no dejan ver
- * filas ajenas a un admin por RLS (solo al gestor/integrante) — el panel
- * admin necesita el agregado completo, no solo lo propio. Cuenta en memoria
- * sobre columnas livianas: a escala de piloto (decenas de filas) es simple y
- * suficiente; con volumen real esto pasaría a una vista o función SQL.
+ * Métricas agregadas del piloto (D-01, RF-14). Agregadas en SQL
+ * (`get_pilot_metrics`, M98) en vez de traer las filas completas de 6 tablas
+ * y contar en memoria — mismo anti-patrón que tenía el catálogo antes de
+ * M78. La función reautoriza como admin adentro (`security definer`), así
+ * que ya no hace falta el cliente `service_role` acá.
  */
 export async function getPilotMetrics() {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_pilot_metrics");
 
-  const [
-    { data: proyectos },
-    { data: aplicaciones },
-    { data: equipos },
-    { data: hitos },
-    { data: evidencias },
-    { data: reportes },
-  ] = await Promise.all([
-    supabase.from("projects").select("status"),
-    supabase.from("applications").select("status"),
-    supabase.from("teams").select("id"),
-    supabase.from("milestones").select("estado"),
-    supabase.from("portfolio_items").select("id"),
-    supabase.from("reports").select("status"),
-  ]);
+  const metrics = (error ? null : (data as unknown as PilotMetricsRaw)) ?? METRICAS_VACIAS;
+  if (error) {
+    console.error("[getPilotMetrics]", error.message);
+  }
 
   const porEstado = Object.fromEntries(
-    ESTADOS_PROYECTO.map((estado) => [
-      estado,
-      (proyectos ?? []).filter((p) => p.status === estado).length,
-    ]),
+    ESTADOS_PROYECTO.map((estado) => [estado, metrics.porEstado[estado] ?? 0]),
   ) as Record<(typeof ESTADOS_PROYECTO)[number], number>;
 
-  const totalProyectos = proyectos?.length ?? 0;
   const completados = porEstado.completado;
   // Lista explícita de estados en vez de "todo lo que no es borrador/en_revisión":
   // esa resta también contaba `suspendido`/`cancelado` como "publicados", que no
@@ -55,29 +60,20 @@ export async function getPilotMetrics() {
     porEstado.revision_final +
     porEstado.completado;
 
-  const totalAplicaciones = aplicaciones?.length ?? 0;
-  const aceptadas = (aplicaciones ?? []).filter((a) => a.status === "aceptada").length;
-
-  const totalHitos = hitos?.length ?? 0;
-  const hitosAprobados = (hitos ?? []).filter((h) => h.estado === "aprobado").length;
-
-  const reportesAbiertos = (reportes ?? []).filter((r) => r.status !== "resuelto").length;
-  const reportesResueltos = (reportes ?? []).filter((r) => r.status === "resuelto").length;
-
   return {
-    totalProyectos,
+    totalProyectos: metrics.totalProyectos,
     publicados,
     completados,
-    equiposFormados: equipos?.length ?? 0,
-    evidenciasPortafolio: evidencias?.length ?? 0,
+    equiposFormados: metrics.equiposFormados,
+    evidenciasPortafolio: metrics.evidenciasPortafolio,
     porEstado: ESTADOS_PROYECTO.map((estado) => ({
       estado,
       etiqueta: ETIQUETA_ESTADO[estado],
       total: porEstado[estado],
     })).filter((e) => e.total > 0),
-    postulaciones: { total: totalAplicaciones, aceptadas },
-    hitos: { total: totalHitos, aprobados: hitosAprobados },
-    reportes: { abiertos: reportesAbiertos, resueltos: reportesResueltos },
+    postulaciones: metrics.postulaciones,
+    hitos: metrics.hitos,
+    reportes: metrics.reportes,
     northStar: {
       completados,
       meta: META_NORTH_STAR,
