@@ -289,3 +289,12 @@ on conflict (user_id, role) do nothing;
 -- carrera/semestre/bio que el seed ya le cargó arriba, y pisándolos si los
 -- completa.
 update public.profiles set onboarding_completado = true;
+
+-- Secretos de desarrollo local para el webhook de "hito por vencer" (M97),
+-- en Supabase Vault (ver el comentario de la migración M97 sobre por qué no
+-- es un GUC de Postgres). `host.docker.internal` es cómo el contenedor de
+-- Postgres alcanza el `npm run dev` corriendo en la máquina host, fuera de
+-- Docker. El secreto es el mismo valor de prueba que .env.local pone en
+-- CRON_WEBHOOK_SECRET — solo sirve en este ambiente.
+select vault.create_secret('http://host.docker.internal:3000/api/cron/hitos-por-vencer', 'cron_webhook_url');
+select vault.create_secret('dev-local-cron-secret', 'cron_webhook_secret');
