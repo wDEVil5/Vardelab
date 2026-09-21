@@ -86,7 +86,7 @@ La **especificación de producto (PRD) está completa** y el **prototipo en Figm
 - **Administrador** — métricas del piloto, vista completa de proyectos y organizaciones (incluye aprobar verificaciones), gestión de catálogos, usuarios y permisos, registro de auditoría y configuración del piloto.
 - **Transversal** — notificaciones in-app y por correo (postulaciones, mensajes, hitos, verificación) y mensajería en tiempo real por proyecto.
 
-Corre en local contra Supabase, con **150+ pruebas automatizadas** (lógica de negocio + políticas RLS reales contra Postgres) corriendo en cada PR vía CI. Falta el **despliegue a producción** y terminar de alinear con Figma algunas pantallas secundarias.
+Corre en local contra Supabase, con **260+ pruebas automatizadas** (lógica de negocio + políticas RLS reales contra Postgres) corriendo en cada PR vía CI. Falta el **despliegue a producción** y terminar de alinear con Figma algunas pantallas secundarias.
 
 | Fase | Descripción | Estado |
 |------|-------------|--------|
