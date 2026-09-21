@@ -151,6 +151,10 @@ export function load(relativePath, {
       if (name === 'next/headers') {
         return { headers: async () => ({ get: () => null }) };
       }
+      // `cache()` de React memoiza por render; en un test cada `load()` ya es
+      // una carga aislada de por sí, así que la identidad basta (no hace
+      // falta reproducir la memoización real para probar el comportamiento).
+      if (name === 'react') return { cache: (fn) => fn };
       if (name === '@/lib/supabase/server') return { createClient: async () => db };
       if (name === '@/features/auth/queries') {
         return {
