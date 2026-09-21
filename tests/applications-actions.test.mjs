@@ -123,3 +123,32 @@ test('quitar a un integrante inexistente no intenta borrar nada', async () => {
   assert.ok(result.error);
   assert.equal(queries.length, 1);
 });
+
+// --- withdrawApplication ------------------------------------------------------
+
+test('retirar una postulación sin id no llega a tocar la base', async () => {
+  const { exports, queries } = load('features/applications/actions.ts');
+  const result = await exports.withdrawApplication({}, form({}));
+  assert.ok(result.error);
+  assert.equal(queries.length, 0);
+});
+
+test('retirar una postulación funciona y responde ok (no error tragado en silencio)', async () => {
+  const { exports } = load('features/applications/actions.ts', {
+    currentUser: { id: 'u1' },
+    responses: [{ error: null }],
+  });
+  const result = await exports.withdrawApplication({}, form({ applicationId: 'a1' }));
+  assert.equal(result.ok, true);
+  assert.equal(result.error, undefined);
+});
+
+test('si falla el update, withdrawApplication devuelve el error en vez de tragárselo', async () => {
+  const { exports } = load('features/applications/actions.ts', {
+    currentUser: { id: 'u1' },
+    responses: [{ error: { message: 'db caída' } }],
+  });
+  const result = await exports.withdrawApplication({}, form({ applicationId: 'a1' }));
+  assert.ok(result.error);
+  assert.equal(result.ok, undefined);
+});

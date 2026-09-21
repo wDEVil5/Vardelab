@@ -111,3 +111,50 @@ test('eliminar la cuenta sin organizaciones propias la borra', async () => {
   assert.equal(adminAuthCalls.length, 1);
   assert.equal(adminAuthCalls[0].userId, 'u1');
 });
+
+// --- setProfileVisibility ------------------------------------------------------
+
+test('un valor de visibilidad inválido no llega a tocar la base', async () => {
+  const { exports, queries } = load('features/profile/actions.ts', { currentUser: USER });
+  const result = await exports.setProfileVisibility({}, form({ visibility: 'invalido' }));
+  assert.ok(result.error);
+  assert.equal(queries.length, 0);
+});
+
+test('cambiar la visibilidad funciona sin error', async () => {
+  const { exports } = load('features/profile/actions.ts', {
+    currentUser: USER,
+    responses: [{ error: null }],
+  });
+  const result = await exports.setProfileVisibility({}, form({ visibility: 'privado' }));
+  assert.equal(result.error, undefined);
+});
+
+test('si falla el update, setProfileVisibility devuelve el error en vez de tragárselo', async () => {
+  const { exports } = load('features/profile/actions.ts', {
+    currentUser: USER,
+    responses: [{ error: { message: 'db caída' } }],
+  });
+  const result = await exports.setProfileVisibility({}, form({ visibility: 'privado' }));
+  assert.ok(result.error);
+});
+
+// --- skipOnboarding --------------------------------------------------------------
+
+test('omitir el onboarding funciona sin error', async () => {
+  const { exports } = load('features/profile/actions.ts', {
+    currentUser: USER,
+    responses: [{ error: null }],
+  });
+  const result = await exports.skipOnboarding();
+  assert.equal(result.error, undefined);
+});
+
+test('si falla el update, skipOnboarding devuelve el error en vez de tragárselo', async () => {
+  const { exports } = load('features/profile/actions.ts', {
+    currentUser: USER,
+    responses: [{ error: { message: 'db caída' } }],
+  });
+  const result = await exports.skipOnboarding();
+  assert.ok(result.error);
+});
