@@ -1092,6 +1092,7 @@ export type Database = {
         Returns: number
       }
       find_user_id_by_email: { Args: { _email: string }; Returns: string }
+      get_pilot_metrics: { Args: never; Returns: Json }
       has_own_skill: { Args: { _skill_id: string }; Returns: boolean }
       has_role: {
         Args: {
