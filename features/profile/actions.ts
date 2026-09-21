@@ -127,28 +127,36 @@ export async function updateSponsorProfile(
  * la página pública `/u/[id]`: mientras es `privado`, la RLS no deja verlo a
  * terceros. El nuevo estado llega en el formulario. RLS `profiles_update_own`.
  */
-export async function setProfileVisibility(formData: FormData): Promise<void> {
+export type ProfileVisibilityState = { error?: string };
+
+export async function setProfileVisibility(
+  _prevState: ProfileVisibilityState,
+  formData: FormData,
+): Promise<ProfileVisibilityState> {
   const nueva = String(formData.get("visibility") ?? "");
-  if (nueva !== "publico" && nueva !== "privado") return;
+  if (nueva !== "publico" && nueva !== "privado") {
+    return { error: "Valor de visibilidad inválido." };
+  }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
+  const user = await requireUser(supabase);
 
   const { error } = await supabase
     .from("profiles")
     .update({ visibility: nueva })
     .eq("id", user.id);
 
-  if (error) console.error("[setProfileVisibility]", error.message);
+  if (error) {
+    console.error("[setProfileVisibility]", error.message);
+    return { error: "No se pudo actualizar la visibilidad. Inténtalo de nuevo." };
+  }
 
   revalidatePath("/perfil");
   // El toggle decide si /u/[id] existe siquiera para terceros (RLS): sin
   // revalidar esa ruta también, una vista cacheada de antes de cambiarlo
   // podía seguir mostrando el estado viejo hasta la siguiente carga fresca.
   revalidatePath(`/u/${user.id}`);
+  return {};
 }
 
 export type OnboardingState = { error?: string };
@@ -265,21 +273,22 @@ export async function completeSponsorOnboarding(
 }
 
 /** Omitir el onboarding sin guardar nada: solo marca el flag. */
-export async function skipOnboarding(): Promise<void> {
+export async function skipOnboarding(): Promise<{ error?: string }> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
+  const user = await requireUser(supabase);
 
   const { error } = await supabase
     .from("profiles")
     .update({ onboarding_completado: true })
     .eq("id", user.id);
 
-  if (error) console.error("[skipOnboarding]", error.message);
+  if (error) {
+    console.error("[skipOnboarding]", error.message);
+    return { error: "No se pudo omitir el paso. Inténtalo de nuevo." };
+  }
 
   revalidatePath("/inicio");
+  return {};
 }
 
 /**
