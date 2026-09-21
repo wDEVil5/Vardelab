@@ -152,7 +152,17 @@ export function load(relativePath, {
         return { headers: async () => ({ get: () => null }) };
       }
       if (name === '@/lib/supabase/server') return { createClient: async () => db };
-      if (name === '@/features/auth/queries') return { getCurrentUser: async () => currentUser };
+      if (name === '@/features/auth/queries') {
+        return {
+          getCurrentUser: async () => currentUser,
+          // Simula `requireUser`: mismo `currentUser` de esta carga de test.
+          // Sin sesión, dispara la misma señal de redirect que usa `redirect()`.
+          requireUser: async (_supabase, next) => {
+            if (!currentUser) throw new RedirectSignal(next ? `/ingresar?next=${next}` : '/ingresar');
+            return currentUser;
+          },
+        };
+      }
       if (name === '@/features/auth/constants') return { POST_AUTH_REDIRECT: '/inicio' };
       if (name === '@/features/organizations/config') return { INVITACIONES_HABILITADAS: true };
       if (name === '@/features/organizations/queries' && !('@/features/organizations/queries' in extraModules)) {

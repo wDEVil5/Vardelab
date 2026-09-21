@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireUser } from "@/features/auth/queries";
 
 /**
  * Edición del perfil propio. La RLS `profiles_update_own` (M1) exige
@@ -47,10 +48,7 @@ export async function updateProfile(
 
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  const user = await requireUser(supabase);
 
   const { error } = await supabase
     .from("profiles")
@@ -104,10 +102,7 @@ export async function updateSponsorProfile(
   if (sitio) enlaces.sitio = sitio;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  const user = await requireUser(supabase);
 
   const { error } = await supabase
     .from("profiles")
@@ -197,10 +192,7 @@ export async function completeOnboarding(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  const user = await requireUser(supabase);
 
   const { error } = await supabase
     .from("profiles")
@@ -252,10 +244,7 @@ export async function completeSponsorOnboarding(
   if (sitio) enlaces.sitio = sitio;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  const user = await requireUser(supabase);
 
   const { error } = await supabase
     .from("profiles")
@@ -346,10 +335,7 @@ export async function uploadAvatar(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  const user = await requireUser(supabase);
 
   const { error: uploadError } = await supabase.storage
     .from("avatars")
@@ -391,10 +377,7 @@ export async function selectAvatarPreset(
   if (!presetId) return { error: "Selecciona un avatar." };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  const user = await requireUser(supabase);
 
   const { data: preset, error: presetError } = await supabase
     .from("avatar_presets")
@@ -435,10 +418,7 @@ async function insertProfileSkill(skillId: string, nivel: string): Promise<AddSk
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  const user = await requireUser(supabase);
 
   const { error } = await supabase.from("profile_skills").insert({
     profile_id: user.id,
@@ -537,10 +517,7 @@ export type DeleteAccountState = { error?: string };
  */
 export async function deleteAccount(): Promise<DeleteAccountState> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  const user = await requireUser(supabase);
 
   const { count, error: countError } = await supabase
     .from("organizations")

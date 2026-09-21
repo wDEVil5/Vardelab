@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/features/auth/queries";
 import { isPasswordValid } from "@/features/auth/password";
 import { SITE_URL } from "@/lib/site";
 import { checkRateLimit, getClientIp, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit";
@@ -246,10 +247,7 @@ export async function changePassword(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar?next=/perfil");
+  const user = await requireUser(supabase, "/perfil");
   if (!user.email) {
     return { error: "No se pudo verificar tu cuenta. Inténtalo de nuevo." };
   }
@@ -306,10 +304,7 @@ export async function requestEmailChange(
   if (!newEmail) return { error: "Ingresa el nuevo correo." };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar?next=/perfil");
+  const user = await requireUser(supabase, "/perfil");
   if (!user.email) {
     return { error: "No se pudo verificar tu cuenta. Inténtalo de nuevo." };
   }
