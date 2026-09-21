@@ -1,8 +1,8 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/features/auth/queries";
 import type { Database } from "@/types/database.types";
 import { sendPlainEmail } from "@/features/notifications/email";
 
@@ -105,10 +105,7 @@ export async function updateLeadStatus(formData: FormData): Promise<void> {
 
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  await requireUser(supabase);
 
   const { error } = await supabase
     .from("leads")

@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/features/auth/queries";
 
 /**
  * Acciones del portafolio (lado del estudiante). La RLS `portfolio_items_write_own`
@@ -27,10 +27,7 @@ export async function addPortfolioItem(
   if (!titulo) return { error: "La evidencia necesita un título." };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  const user = await requireUser(supabase);
 
   const { error } = await supabase.from("portfolio_items").insert({
     profile_id: user.id,
