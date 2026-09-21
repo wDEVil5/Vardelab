@@ -253,7 +253,12 @@ export async function changePassword(
   // Re-autentica con la contraseña actual antes de cambiarla: la sesión ya
   // está activa, pero eso no basta para una acción sensible como esta (ej.
   // alguien que use el equipo desatendido no debería poder cambiarla sin
-  // saber la actual).
+  // saber la actual). Mismo límite que `signIn` por correo: sin esto, una
+  // sesión activa (robada o desatendida) sería un oráculo de contraseña sin
+  // límite de intentos.
+  if (!(await checkRateLimit("reauth:email", user.email, 8, 900))) {
+    return { error: RATE_LIMIT_MESSAGE };
+  }
   const { error: authError } = await supabase.auth.signInWithPassword({
     email: user.email,
     password: currentPassword,
@@ -306,6 +311,11 @@ export async function requestEmailChange(
     return { error: "Ese ya es tu correo actual." };
   }
 
+  // Mismo resguardo que en `changePassword`: sin límite de intentos, una
+  // sesión activa sería un oráculo de contraseña.
+  if (!(await checkRateLimit("reauth:email", user.email, 8, 900))) {
+    return { error: RATE_LIMIT_MESSAGE };
+  }
   const { error: authError } = await supabase.auth.signInWithPassword({
     email: user.email,
     password: currentPassword,
