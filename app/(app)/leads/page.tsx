@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/features/auth/queries";
 import { getLeadCountsByEstado, getLeadsPage } from "@/features/leads/queries";
 import { LeadsTable } from "@/features/leads/components/leads-table";
 
@@ -24,10 +22,6 @@ const ESTADOS_VALIDOS = ["nuevo", "contactado", "descartado", "todos"] as const;
  * interminable, mismo hallazgo que en proyectos/organizaciones del admin.
  */
 export default async function LeadsPage({ searchParams }: PageProps) {
-  const user = await getCurrentUser();
-  if (!user) redirect("/ingresar");
-  if (!user.esModerador && !user.esAdmin) redirect("/");
-
   const sp = await searchParams;
   const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
   const estado = ESTADOS_VALIDOS.includes(sp.estado as (typeof ESTADOS_VALIDOS)[number])

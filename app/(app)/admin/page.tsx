@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/features/auth/queries";
 import { getPilotMetrics } from "@/features/admin/queries";
 import { ExportMetricsButton } from "@/features/admin/components/export-metrics-button";
 import { cn } from "@/lib/utils";
@@ -17,10 +15,6 @@ export const metadata: Metadata = {
  * portafolio, seguridad), en la misma barra inferior del mockup.
  */
 export default async function AdminMetricasPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/ingresar");
-  if (!user.esAdmin) redirect("/");
-
   const m = await getPilotMetrics();
 
   const pctAceptadas = porcentaje(m.postulaciones.aceptadas, m.postulaciones.total);

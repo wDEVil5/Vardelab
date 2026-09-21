@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/features/auth/queries";
 import { getProjectsForAdminPage } from "@/features/admin/queries";
 import { ProjectsTable } from "@/features/admin/components/projects-table";
 
@@ -25,10 +23,6 @@ type PageProps = {
  * lista interminable.
  */
 export default async function AdminProyectosPage({ searchParams }: PageProps) {
-  const user = await getCurrentUser();
-  if (!user) redirect("/ingresar");
-  if (!user.esAdmin) redirect("/");
-
   const sp = await searchParams;
   const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
   const filters = { q: sp.q, status: sp.status };

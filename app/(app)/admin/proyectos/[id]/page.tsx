@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { getCurrentUser } from "@/features/auth/queries";
 import {
   getProjectDetailForAdmin,
   MODALIDAD_LABEL,
@@ -39,10 +38,6 @@ type PageProps = { params: Promise<{ id: string }> };
  */
 export default async function AdminProyectoDetallePage({ params }: PageProps) {
   const { id } = await params;
-
-  const user = await getCurrentUser();
-  if (!user) redirect("/ingresar");
-  if (!user.esAdmin) redirect("/");
 
   const project = await getProjectDetailForAdmin(id);
   if (!project) notFound();
