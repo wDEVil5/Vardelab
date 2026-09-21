@@ -4,9 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser, requireUser } from "@/features/auth/queries";
 import { INVITACIONES_HABILITADAS } from "@/features/organizations/config";
 import { sendEmail } from "@/features/notifications/email";
-import { getCurrentUser } from "@/features/auth/queries";
 
 /**
  * Acciones de organizaciones (lado del patrocinador).
@@ -245,10 +245,7 @@ export async function uploadOrgLogo(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  await requireUser(supabase);
 
   const { error: uploadError } = await supabase.storage
     .from("org-logos")
@@ -305,10 +302,7 @@ export async function inviteOrganizationMember(
   if (!EMAIL_RE.test(email)) return { error: "Ingresa un correo válido." };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  const user = await requireUser(supabase);
 
   const { data: userId, error: lookupError } = await supabase.rpc(
     "find_user_id_by_email",

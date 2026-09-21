@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/features/auth/queries";
 import { sendEmailToUser } from "@/features/notifications/email";
 
 /**
@@ -50,10 +50,7 @@ export async function evaluateMember(
   const puntaje = Math.round((calidad + colaboracion + cumplimientoHitos) / 3);
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  const user = await requireUser(supabase);
 
   // Si ya existía una evaluación para este (proyecto, evaluado, evaluador),
   // esto es una edición, no un evento nuevo — el trigger de M39 solo notifica
