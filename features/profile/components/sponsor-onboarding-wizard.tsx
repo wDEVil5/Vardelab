@@ -73,7 +73,15 @@ export function SponsorOnboardingWizard() {
 
   async function omitir() {
     setSkipping(true);
-    await skipOnboarding();
+    setError("");
+    const result = await skipOnboarding();
+    if (result.error) {
+      setSkipping(false);
+      setError(result.error);
+      // La pantalla de bienvenida no tiene dónde mostrar el error; el paso
+      // del formulario sí (ver más abajo), así que el fallo cae ahí.
+      setFase("form");
+    }
   }
 
   return (
