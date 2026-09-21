@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -202,13 +203,14 @@ export default async function Home() {
 
               <div className="px-6 sm:px-10 md:px-0">
                 <ParallaxBlock className="overflow-hidden rounded-2xl bg-white shadow-2xl md:w-[142%]">
-                  <img
+                  <Image
                     src="/landing/foto-inicio.webp"
                     alt="Panel del estudiante en Vardelab: progreso del proyecto, postulaciones y próximas entregas."
                     width={1800}
                     height={939}
                     className="block w-full"
-                    loading="lazy"
+                    sizes="100vw"
+                    priority
                   />
                 </ParallaxBlock>
               </div>
