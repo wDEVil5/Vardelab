@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -16,6 +17,25 @@ export async function isRegistroAbierto(caller: string): Promise<boolean> {
   }
 
   return error ? true : data !== false;
+}
+
+/**
+ * Guard liviano para Server Actions: exige sesión (sin ir hasta `profiles`,
+ * a diferencia de `getCurrentUser()`) y redirige si no la hay. Reemplaza el
+ * bloque `auth.getUser()` + `if (!user) redirect(...)` que se repetía igual
+ * en 20+ Server Actions. Recibe el `supabase` ya creado por el caller (no
+ * crea uno nuevo) porque el caller siempre lo necesita después para sus
+ * propias consultas.
+ */
+export async function requireUser(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  next?: string,
+) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect(next ? `/ingresar?next=${next}` : "/ingresar");
+  return user;
 }
 
 /**

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/features/auth/queries";
 
 /**
  * Acciones de entregas (lado del estudiante/equipo). La RLS
@@ -56,10 +57,7 @@ export async function addSubmission(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
+  const user = await requireUser(supabase);
 
   // Ruta `${proyecto}/${hito}/...`: la política de Storage (M48) deriva el
   // proyecto del primer segmento para decidir quién puede subir/ver/borrar,
