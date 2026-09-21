@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { OrgLogo } from "@/components/ui/org-logo";
@@ -8,8 +8,10 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { Modal } from "@/components/ui/modal";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { withdrawApplication } from "@/features/applications/actions";
+import { withdrawApplication, type WithdrawApplicationState } from "@/features/applications/actions";
 import type { MyApplication } from "@/features/applications/queries";
+
+const WITHDRAW_INITIAL: WithdrawApplicationState = {};
 
 // Estado de la postulación → etiqueta y tono del badge.
 const ESTADO: Record<string, { label: string; tone: BadgeTone }> = {
@@ -74,8 +76,21 @@ function haceCuanto(iso: string): string {
 export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
   const [filtro, setFiltro] = useState<FiltroId>("todas");
   const [retirarId, setRetirarId] = useState<string | null>(null);
+  const [withdrawState, withdrawAction] = useActionState(withdrawApplication, WITHDRAW_INITIAL);
   const visibles = apps.filter((a) => coincide(a.status, filtro));
   const postulacionParaRetirar = apps.find((a) => a.id === retirarId);
+
+  // El modal se cierra recién cuando el retiro sí funcionó — antes se cerraba
+  // apenas se enviaba el form (`onSubmit`), así que un error nunca llegaba a
+  // mostrarse: el modal ya había desaparecido para cuando la Server Action
+  // respondía. Ajuste de estado durante el render (no en un efecto): React
+  // lo trata como parte del mismo render, sin el "cascading render" que sí
+  // tendría un `setState` dentro de `useEffect`.
+  const [withdrawStateVisto, setWithdrawStateVisto] = useState(withdrawState);
+  if (withdrawState !== withdrawStateVisto) {
+    setWithdrawStateVisto(withdrawState);
+    if (withdrawState.ok) setRetirarId(null);
+  }
 
   const conteo = (f: FiltroId) =>
     apps.filter((a) => coincide(a.status, f)).length;
@@ -237,11 +252,7 @@ export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
                   Podrás volver a postular más adelante si el proyecto sigue
                   abierto.
                 </p>
-                <form
-                  action={withdrawApplication}
-                  onSubmit={() => setRetirarId(null)}
-                  className="flex justify-end gap-2"
-                >
+                <form action={withdrawAction} className="flex justify-end gap-2">
                   <input
                     type="hidden"
                     name="applicationId"
@@ -262,6 +273,11 @@ export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
                     Retirar postulación
                   </SubmitButton>
                 </form>
+                {withdrawState.error && (
+                  <p role="alert" className="text-right text-sm text-coral">
+                    {withdrawState.error}
+                  </p>
+                )}
               </div>
             </Modal>
           )}
