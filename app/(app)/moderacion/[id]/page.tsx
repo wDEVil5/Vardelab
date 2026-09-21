@@ -3,7 +3,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
-import { getCurrentUser } from "@/features/auth/queries";
 import { getProjectForModeration } from "@/features/projects/queries";
 import { ModerationReviewControls } from "@/features/projects/components/moderation-review-controls";
 
@@ -46,10 +45,6 @@ function haceCuanto(iso: string): string {
  */
 export default async function RevisarProyectoPage({ params }: PageProps) {
   const { id } = await params;
-
-  const user = await getCurrentUser();
-  if (!user) redirect("/ingresar");
-  if (!user.esModerador && !user.esAdmin) redirect("/");
 
   const project = await getProjectForModeration(id);
   if (!project) redirect("/moderacion");

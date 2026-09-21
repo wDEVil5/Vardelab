@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { VerifiedInfoBadge } from "@/components/ui/verified-info-popover";
-import { getCurrentUser } from "@/features/auth/queries";
 import { getOrganizationDetailForAdmin } from "@/features/admin/queries";
 import { OrgVerificationActions } from "@/features/admin/components/org-verification-actions";
 import { externalUrl } from "@/lib/utils";
@@ -45,10 +44,6 @@ type PageProps = { params: Promise<{ id: string }> };
  */
 export default async function AdminOrganizacionDetallePage({ params }: PageProps) {
   const { id } = await params;
-
-  const user = await getCurrentUser();
-  if (!user) redirect("/ingresar");
-  if (!user.esAdmin) redirect("/");
 
   const org = await getOrganizationDetailForAdmin(id);
   if (!org) notFound();
