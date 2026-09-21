@@ -28,8 +28,18 @@ test('crear una organización válida redirige al listado', async () => {
   assert.equal(to, '/mis-organizaciones?creada=1');
 });
 
+test('eliminar una organización ajena no llega a consultar sus proyectos', async () => {
+  const { exports, queries } = load('features/organizations/actions.ts', {
+    extraModules: { '@/features/organizations/queries': { getMyOrgIds: async () => ['otra-org'] } },
+  });
+  const result = await exports.deleteOrganization({}, form({ orgId: 'o1' }));
+  assert.match(result.error, /No puedes eliminar/);
+  assert.equal(queries.length, 0);
+});
+
 test('eliminar una organización con proyectos no la deja borrar', async () => {
   const { exports } = load('features/organizations/actions.ts', {
+    extraModules: { '@/features/organizations/queries': { getMyOrgIds: async () => ['o1'] } },
     responses: [{ count: 2 }],
   });
   const result = await exports.deleteOrganization({}, form({ orgId: 'o1' }));
@@ -38,6 +48,7 @@ test('eliminar una organización con proyectos no la deja borrar', async () => {
 
 test('eliminar una organización sin proyectos sí la borra', async () => {
   const { exports } = load('features/organizations/actions.ts', {
+    extraModules: { '@/features/organizations/queries': { getMyOrgIds: async () => ['o1'] } },
     responses: [{ count: 0 }, { error: null }],
   });
   const to = await expectRedirect(exports.deleteOrganization({}, form({ orgId: 'o1' })));
