@@ -63,7 +63,10 @@ export default function TerminosPage() {
                 Vardelab puede revisar, rechazar, suspender o retirar contenido
                 que incumpla estas reglas o ponga en riesgo a las personas. Los
                 usuarios pueden reportar problemas mediante los canales disponibles
-                en la plataforma.
+                en la plataforma. Esto incluye la mensajería entre estudiante y
+                organización dentro de un proyecto: un moderador puede acceder a
+                una conversación puntual cuando existe un reporte que lo justifica,
+                nunca de forma abierta o sin motivo.
               </p>
             </section>
 

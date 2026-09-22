@@ -23,7 +23,7 @@ export default function PrivacidadPage() {
             Esta política corresponde a la versión piloto de Vardelab y podrá
             actualizarse a medida que evolucione la plataforma.
           </div>
-          <p className="mt-5 text-sm text-muted">Última actualización: 17 de septiembre de 2026.</p>
+          <p className="mt-5 text-sm text-muted">Última actualización: 22 de septiembre de 2026.</p>
 
           <div className="mt-10 space-y-8 text-sm leading-relaxed text-muted sm:text-base">
             <section>
@@ -42,7 +42,9 @@ export default function PrivacidadPage() {
                 Usamos estos datos para crear cuentas, permitir postulaciones,
                 formar equipos, gestionar proyectos, enviar avisos necesarios,
                 moderar contenido, responder solicitudes y generar métricas
-                agregadas del piloto.
+                agregadas del piloto. La mensajería entre estudiante y
+                organización puede ser revisada por un moderador únicamente
+                cuando existe un reporte asociado a esa conversación.
               </p>
             </section>
 
