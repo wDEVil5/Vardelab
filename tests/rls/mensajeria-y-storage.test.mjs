@@ -153,7 +153,7 @@ test('un patrocinador ajeno no ve los mensajes de un proyecto que no gestiona', 
   assert.deepEqual(rows, []);
 });
 
-test('un moderador sin relación con el proyecto no ve sus mensajes (a diferencia de las observaciones)', () => {
+test('un moderador sin relación con el proyecto sí ve sus mensajes (M99: acceso base en RLS, mismo bypass que admin)', () => {
   const rows = queryAs({
     role: 'authenticated', userId: SEED.CAMILA,
     sql: `
@@ -163,7 +163,7 @@ test('un moderador sin relación con el proyecto no ve sus mensajes (a diferenci
       select id from public.project_messages where id = '${MESSAGE}';
     `,
   });
-  assert.deepEqual(rows, []);
+  assert.deepEqual(rows, [MESSAGE]);
 });
 
 // --- project_observations ------------------------------------------------------
