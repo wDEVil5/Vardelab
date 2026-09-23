@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/features/auth/queries";
 import { getMyOrgIds } from "@/features/organizations/queries";
 import { sendEmailToUser } from "@/features/notifications/email";
+import { checkRateLimit, getClientIp, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit";
 
 /**
  * Acciones de reportes (M7 + M22). Cualquier usuario con sesión puede reportar
@@ -48,6 +49,20 @@ export async function submitReport(
 
   const supabase = await createClient();
   const user = await requireUser(supabase);
+
+  // Anti-abuso (mismo criterio que M83): limita reportes repetidos contra el
+  // MISMO objetivo. Por usuario, para no dejar spamear con una sola cuenta;
+  // por IP, para que un grupo de cuentas creadas desde la misma red no
+  // esquive el límite anterior creando una cuenta nueva por reporte — la IP
+  // no depende de con qué cuenta se hizo login, así que las agrupa a todas.
+  const objetivo = `${targetType}:${targetId}`;
+  const ip = await getClientIp();
+  if (
+    !(await checkRateLimit("report:target:user", `${user.id}:${objetivo}`, 2, 86400, { failClosed: true })) ||
+    !(await checkRateLimit("report:target:ip", `${ip}:${objetivo}`, 5, 3600, { failClosed: true }))
+  ) {
+    return { error: RATE_LIMIT_MESSAGE };
+  }
 
   if (targetType === "perfil" && targetId === user.id) {
     return { error: "No puedes reportar tu propio perfil." };
