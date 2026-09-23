@@ -155,7 +155,6 @@ export default async function SeguimientoProyectoPage({ params }: PageProps) {
           {/* Mensajes con el equipo (M30), en el lado derecho junto a la
               actividad reciente. */}
           <div className="rounded-2xl border border-border bg-white p-6">
-            <h2 className="mb-3 text-sm font-semibold text-ink">Mensajes</h2>
             <MessageThread
               projectId={project.id}
               redirectPath={redirectPath}

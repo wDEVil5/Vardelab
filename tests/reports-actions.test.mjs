@@ -39,6 +39,18 @@ test('no se puede reportar el propio proyecto', async () => {
   assert.match(result.error, /propio proyecto/);
 });
 
+test('reportar la conversación de un proyecto funciona con target_type propio (M100)', async () => {
+  const { exports } = load('features/reports/actions.ts', {
+    currentUser: USER,
+    extraModules: SIN_ORGS,
+    responses: [{ error: null }],
+  });
+  const result = await exports.submitReport({}, form({
+    targetType: 'conversacion', targetId: 'p1', motivo: 'Reportado desde la conversación del proyecto',
+  }));
+  assert.equal(result.ok, true);
+});
+
 test('reportar el perfil de otra persona funciona', async () => {
   const { exports } = load('features/reports/actions.ts', {
     currentUser: USER,
