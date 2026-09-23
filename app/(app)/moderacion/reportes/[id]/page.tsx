@@ -9,6 +9,7 @@ import {
   getReporterName,
 } from "@/features/reports/queries";
 import { ReportReviewControls } from "@/features/reports/components/report-review-controls";
+import { ViewConversationLink } from "@/features/reports/components/view-conversation-link";
 
 export const metadata: Metadata = {
   title: "Detalle de reporte · Vardelab",
@@ -25,6 +26,8 @@ const ESTADO: Record<string, { label: string; tone: BadgeTone }> = {
 const TARGET_LABEL: Record<string, string> = {
   proyecto: "Proyecto",
   perfil: "Perfil",
+  organizacion: "Organización",
+  conversacion: "Conversación de proyecto",
 };
 
 // Tiempo relativo, sin ambigüedad.
@@ -102,6 +105,12 @@ export default async function DetalleReportePage({ params }: PageProps) {
             <p className="mt-1 text-sm text-muted">
               El contenido ya no existe o no es accesible.
             </p>
+          )}
+          {target && report.target_type === "conversacion" && report.target_id && (
+            <ViewConversationLink
+              projectId={report.target_id}
+              reportId={report.id}
+            />
           )}
           <p className="mt-2 text-sm text-muted">
             Reportado por {reporterName ?? "un usuario"} · {haceCuanto(report.created_at)}

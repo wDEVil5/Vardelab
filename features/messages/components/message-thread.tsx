@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import { sendMessage, type SendMessageState } from "@/features/messages/actions";
 import { cn } from "@/lib/utils";
 import type { ProjectMessage } from "@/features/messages/queries";
+import { ReportConversationButton } from "@/features/messages/components/report-conversation-button";
 
 const INITIAL: SendMessageState = {};
 
@@ -66,6 +67,64 @@ function haceCuanto(iso: string): string {
 }
 
 /**
+ * Menú de "más opciones" del hilo (tres puntitos, patrón estándar de la
+ * industria — WhatsApp Web, Slack): hoy solo tiene "Reportar", pero deja
+ * lugar para agregar más sin volver a rediseñar el header. No usa portal
+ * (a diferencia de `AccountMenu`/`NotificationBell`, pensados para el
+ * header global): el hilo vive dentro de una tarjeta normal, sin
+ * `overflow-hidden` entre medio, así que un `absolute` simple alcanza.
+ */
+function ConversationMenu({ children }: { children: (close: () => void) => ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: PointerEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Más opciones"
+        className="flex size-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface hover:text-ink"
+      >
+        <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
+          <circle cx="12" cy="5" r="1.6" fill="currentColor" />
+          <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+          <circle cx="12" cy="19" r="1.6" fill="currentColor" />
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          aria-label="Más opciones de la conversación"
+          className="absolute right-0 top-full z-10 mt-1 w-44 rounded-lg border border-border bg-white p-1 shadow-lg"
+        >
+          {children(() => setOpen(false))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * Hilo de mensajes de un proyecto (M30, S-05), en vivo (M49): un solo hilo
  * compartido entre el patrocinador y el equipo, no conversaciones separadas
  * por persona. `messages` es la carga inicial (del servidor); a partir de ahí,
@@ -79,12 +138,16 @@ export function MessageThread({
   currentUserId,
   participantNames,
   variant = "compact",
+  readOnly = false,
+  title = "Mensajes",
 }: {
   projectId: string;
   redirectPath: string;
   messages: ProjectMessage[];
   currentUserId: string;
   participantNames: Record<string, string>;
+  /** Título del hilo, en la misma fila que el menú de tres puntitos. */
+  title?: string;
   /**
    * "compact" (por defecto): la lista de mensajes tiene una altura tope fija
    * (`max-h-72`), pensada para compartir tarjeta con otro contenido. "fill":
@@ -94,6 +157,14 @@ export function MessageThread({
    * scroll interno, y el campo de escribir queda siempre anclado abajo.
    */
   variant?: "compact" | "fill";
+  /**
+   * Modo solo-lectura (M99/M100): usado por un moderador que entra al hilo
+   * desde un reporte puntual, nunca por un participante real. Oculta el
+   * campo de escribir — la RLS ya bloquearía el INSERT igual
+   * (`project_messages_insert_participant` exige ser parte del proyecto),
+   * pero no tiene sentido mostrar un formulario que va a fallar siempre.
+   */
+  readOnly?: boolean;
 }) {
   const [state, formAction] = useActionState(sendMessage, INITIAL);
   const formRef = useRef<HTMLFormElement>(null);
@@ -203,6 +274,47 @@ export function MessageThread({
 
   return (
     <div className={cn("flex flex-col gap-4", fill && "h-full min-h-0")}>
+      <div className="flex shrink-0 items-center justify-between">
+        <h2 className="text-sm font-semibold text-ink">{title}</h2>
+        {!readOnly && (
+          // `ReportConversationButton` (y el modal que renderiza) va AFUERA
+          // del panel desplegable: si viviera adentro, cerrar el menú al
+          // hacer click desmontaría el modal antes de que llegara a abrirse.
+          <ReportConversationButton
+            projectId={projectId}
+            renderTrigger={(openModal) => (
+              <ConversationMenu>
+                {(close) => (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      close();
+                      openModal();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-coral transition-colors hover:bg-coral/10"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="size-4 shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                      <path d="M4 22V4" />
+                    </svg>
+                    Reportar
+                  </button>
+                )}
+              </ConversationMenu>
+            )}
+          />
+        )}
+      </div>
       {todos.length === 0 ? (
         <p
           className={cn(
@@ -257,34 +369,36 @@ export function MessageThread({
         </ul>
       )}
 
-      <form ref={formRef} action={formAction} className="flex shrink-0 flex-col gap-2">
-        <input type="hidden" name="projectId" value={projectId} />
-        <input type="hidden" name="redirectPath" value={redirectPath} />
-        {/* Una sola caja con borde: el texto arriba (sin borde propio) y una
-            franja angosta abajo para el botón — así nunca se tocan, ni
-            flotando encima del texto ni compitiendo por el mismo ancho.
-            Mismo criterio que el chat de tareas de Microsoft Planner. */}
-        {/* Solo el borde cambia de color al enfocar, sin el halo grueso que
-            usa el resto de los campos del sitio — acá se sentía pesado para
-            una caja de chat. */}
-        <div className="flex flex-col rounded-md border border-border bg-white transition-colors focus-within:border-electric">
-          <textarea
-            name="body"
-            required
-            maxLength={2000}
-            placeholder="Escribe un mensaje…"
-            className="h-20 w-full resize-none border-0 bg-transparent px-3 py-2 text-sm text-ink placeholder:text-muted/70 focus:outline-none"
-          />
-          <div className="flex items-center justify-end border-t border-border px-2 py-1.5">
-            <BotonEnviar />
+      {!readOnly && (
+        <form ref={formRef} action={formAction} className="flex shrink-0 flex-col gap-2">
+          <input type="hidden" name="projectId" value={projectId} />
+          <input type="hidden" name="redirectPath" value={redirectPath} />
+          {/* Una sola caja con borde: el texto arriba (sin borde propio) y una
+              franja angosta abajo para el botón — así nunca se tocan, ni
+              flotando encima del texto ni compitiendo por el mismo ancho.
+              Mismo criterio que el chat de tareas de Microsoft Planner. */}
+          {/* Solo el borde cambia de color al enfocar, sin el halo grueso que
+              usa el resto de los campos del sitio — acá se sentía pesado para
+              una caja de chat. */}
+          <div className="flex flex-col rounded-md border border-border bg-white transition-colors focus-within:border-electric">
+            <textarea
+              name="body"
+              required
+              maxLength={2000}
+              placeholder="Escribe un mensaje…"
+              className="h-20 w-full resize-none border-0 bg-transparent px-3 py-2 text-sm text-ink placeholder:text-muted/70 focus:outline-none"
+            />
+            <div className="flex items-center justify-end border-t border-border px-2 py-1.5">
+              <BotonEnviar />
+            </div>
           </div>
-        </div>
-        {state.error && (
-          <p role="alert" className="text-xs text-coral">
-            {state.error}
-          </p>
-        )}
-      </form>
+          {state.error && (
+            <p role="alert" className="text-xs text-coral">
+              {state.error}
+            </p>
+          )}
+        </form>
+      )}
     </div>
   );
 }
