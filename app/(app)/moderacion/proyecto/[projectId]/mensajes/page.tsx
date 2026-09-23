@@ -38,7 +38,7 @@ export default async function ConversacionModeracionPage({
   if (!user) redirect("/ingresar");
 
   const report = await getReportById(reportId);
-  if (!report || report.target_type !== "proyecto" || report.target_id !== projectId) {
+  if (!report || report.target_type !== "conversacion" || report.target_id !== projectId) {
     redirect("/moderacion/reportes");
   }
 
