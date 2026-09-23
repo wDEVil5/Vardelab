@@ -166,7 +166,9 @@ export async function getReportTarget(
   if (!targetId) return null;
   const supabase = await createClient();
 
-  if (targetType === "proyecto") {
+  // "conversacion" (M100): mismo destino que "proyecto" — el reporte apunta
+  // al proyecto cuya conversación se reportó, no a una entidad propia.
+  if (targetType === "proyecto" || targetType === "conversacion") {
     const { data } = await supabase
       .from("projects")
       .select("titulo")

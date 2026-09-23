@@ -552,8 +552,8 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
         </div>
 
         {/* Columna angosta y fija (`sticky`): enlaces (visitante o dueño), un
-            empujón a completar el perfil (si sos el dueño y todavía falta
-            algo) o una invitación a conocer la plataforma (si sos visitante y
+            empujón a completar el perfil (si es el dueño y todavía falta
+            algo) o una invitación a conocer la plataforma (si es visitante y
             todavía no hay enlaces que mostrar) — antes esta columna
             directamente desaparecía sin enlaces cargados, dejando ese lado de
             la página vacío justo cuando más útil sería (recién entrando, con
