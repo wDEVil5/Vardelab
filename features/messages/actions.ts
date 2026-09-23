@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/features/auth/queries";
 
 /**
  * Enviar un mensaje al hilo del proyecto (M30). La RLS
@@ -47,4 +48,30 @@ export async function sendMessage(
 
   if (redirectPath) revalidatePath(redirectPath);
   return {};
+}
+
+/**
+ * Registra en `audit_logs` que un moderador/admin abrió el hilo de mensajes
+ * de un proyecto desde un reporte puntual (M99/M100). El acceso de lectura ya
+ * lo da la RLS; esto es solo el rastro de quién lo usó y por qué — se llama
+ * directo desde la página de solo lectura al montarse (no hay ningún form
+ * ni botón: abrir la página YA es la acción a registrar).
+ */
+export async function logConversationOpened(
+  projectId: string,
+  reportId: string,
+): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user?.esModerador && !user?.esAdmin) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("audit_logs").insert({
+    actor_id: user.id,
+    accion: "conversacion_abierta",
+    entidad: "project_messages",
+    entidad_id: projectId,
+    metadata: { report_id: reportId },
+  });
+
+  if (error) console.error("[logConversationOpened]", error.message);
 }

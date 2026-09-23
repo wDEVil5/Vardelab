@@ -28,7 +28,17 @@ export async function submitReport(
   const motivo = String(formData.get("motivo") ?? "").trim();
   const descripcion = String(formData.get("descripcion") ?? "").trim();
 
-  if (!["proyecto", "perfil", "organizacion"].includes(targetType) || !targetId) {
+  // "conversacion" (M100, `ReportConversationButton`) es un `target_type`
+  // aparte de "proyecto" a propósito: `target_id` apunta al mismo proyecto,
+  // pero mantenerlo distinto es lo que le permite a
+  // `/moderacion/reportes/[id]` mostrar "Ver conversación" solo cuando el
+  // reporte de verdad es sobre la conversación — un reporte general del
+  // proyecto (por cualquier otro motivo, desde su ficha) no debe darle
+  // acceso al moderador al chat privado del equipo.
+  if (
+    !["proyecto", "perfil", "organizacion", "conversacion"].includes(targetType) ||
+    !targetId
+  ) {
     return { error: "No se pudo procesar el reporte. Recarga e inténtalo de nuevo." };
   }
   if (!motivo) return { error: "Elige un motivo." };

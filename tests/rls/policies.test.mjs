@@ -158,6 +158,13 @@ test('un patrocinador no puede insertar en la auditoría directamente', () => {
   }));
 });
 
+test('un moderador sí puede insertar en la auditoría (M100, para registrar que abrió una conversación)', () => {
+  assert.doesNotThrow(() => queryAs({
+    role: 'authenticated', userId: SEED.MARCOS,
+    sql: `insert into public.audit_logs (actor_id, accion, entidad) values ('${SEED.MARCOS}', 'conversacion_abierta', 'project_messages');`,
+  }));
+});
+
 test('un patrocinador no puede leer la configuración del piloto', () => {
   const rows = countAs({ role: 'authenticated', userId: SEED.DIEGO, sql: `select id from public.pilot_config;` });
   assert.equal(rows, 0);
