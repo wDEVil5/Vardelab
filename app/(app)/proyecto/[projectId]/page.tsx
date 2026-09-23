@@ -275,7 +275,6 @@ export default async function ProyectoWorkspacePage({ params }: PageProps) {
             scroll interno. Con una altura fija, el `overflow-y-auto` de la
             lista de mensajes tiene un tope real contra el cual activarse. */}
         <section className="flex h-140 flex-col rounded-2xl border border-border bg-white p-6">
-          <h2 className="mb-3 shrink-0 text-sm font-semibold text-ink">Mensajes</h2>
           <MessageThread
             projectId={projectId}
             redirectPath={`/proyecto/${projectId}`}
