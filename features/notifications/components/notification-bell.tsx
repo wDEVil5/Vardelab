@@ -138,7 +138,7 @@ export function NotificationBell() {
                 Todavía no hay notificaciones.
               </p>
             ) : (
-              <div className="flex max-h-96 flex-col gap-2 overflow-y-auto py-1 pr-2 [scrollbar-gutter:stable]">
+              <div className="flex max-h-96 flex-col gap-2 overflow-y-auto py-1 pr-2 scrollbar-gutter-stable">
                 {noLeidasLista.length > 0 && (
                   <div className="flex flex-col gap-0.5">
                     <p className="px-3 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted/70">

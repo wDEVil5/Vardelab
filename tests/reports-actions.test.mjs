@@ -51,6 +51,18 @@ test('reportar la conversación de un proyecto funciona con target_type propio (
   assert.equal(result.ok, true);
 });
 
+test('reportar contra el mismo objetivo bloqueado por rate limit no se envía', async () => {
+  const { exports } = load('features/reports/actions.ts', {
+    currentUser: USER,
+    extraModules: SIN_ORGS,
+    rateLimitOk: false,
+  });
+  const result = await exports.submitReport({}, form({
+    targetType: 'perfil', targetId: 'otro-usuario', motivo: 'spam',
+  }));
+  assert.match(result.error, /Demasiados intentos/);
+});
+
 test('reportar el perfil de otra persona funciona', async () => {
   const { exports } = load('features/reports/actions.ts', {
     currentUser: USER,
