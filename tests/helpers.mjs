@@ -114,6 +114,10 @@ export function load(relativePath, {
         authCalls.push({ method: 'updateUser', args: { attrs, opts } });
         return nextAuthResponse('updateUser');
       },
+      async exchangeCodeForSession(code) {
+        authCalls.push({ method: 'exchangeCodeForSession', args: { code } });
+        return nextAuthResponse('exchangeCodeForSession');
+      },
     },
     storage: {
       from(bucket) {
@@ -167,7 +171,20 @@ export function load(relativePath, {
           },
         };
       }
-      if (name === '@/features/auth/constants') return { POST_AUTH_REDIRECT: '/inicio' };
+      if (name === '@/features/auth/constants') {
+        // Misma regla que `features/auth/constants.ts`: reimplementada acá
+        // (no se importa el archivo real) por el mismo motivo que
+        // `isPasswordValid` más abajo — el helper solo puede requerir
+        // módulos que él mismo resuelve.
+        return {
+          POST_AUTH_REDIRECT: '/inicio',
+          safeNextPath: (next) => {
+            if (!next) return '/inicio';
+            if (!next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\')) return '/inicio';
+            return next;
+          },
+        };
+      }
       if (name === '@/features/organizations/config') return { INVITACIONES_HABILITADAS: true };
       if (name === '@/features/organizations/queries' && !('@/features/organizations/queries' in extraModules)) {
         return { getMyOrgIds: async () => [] };
