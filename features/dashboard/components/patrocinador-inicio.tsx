@@ -136,7 +136,13 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
               Tu resumen como organización: proyectos, equipos y su estado.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          {/* `flex-wrap` a tamaño natural (no `w-full`): forzar los botones
+              a ancho completo los hacía ver como 2 banners apilados en vez
+              de acciones secundarias. Con `flex-wrap` simple, si no entran
+              lado a lado pasan a su propia línea, pero cada uno conserva su
+              tamaño natural — nunca se parte el texto adentro porque cada
+              botón, aun solo en su línea, tiene de sobra. */}
+          <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/mis-organizaciones/nueva"
               className={buttonClasses({ variant: "outline", size: "sm" })}
@@ -232,7 +238,12 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
             </section>
           )}
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {/* `grid-cols-1` base: sin esto, por debajo de `lg:` el grid no
+              tenía ninguna columna definida — el contenido (badges
+              `shrink-0` + texto) empujaba la tarjeta más ancha que su
+              columna en vez de quedar contenido (mismo bug ya visto en
+              app/(site)/page.tsx, sección "Mis proyectos"). */}
+          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Últimas postulaciones */}
         <Card
           title="Últimas postulaciones"
@@ -250,7 +261,7 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
                   tone: "neutral" as BadgeTone,
                 };
                 return (
-                  <li key={a.id}>
+                  <li key={a.id} className="min-w-0">
                     <Link
                       href={`/mis-proyectos/${a.projectId}/postulaciones`}
                       className={ROW_CLASS}
@@ -282,7 +293,7 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
               {hitosProximos.map((h) => {
                 const venc = formatearVencimiento(h.fecha_limite);
                 return (
-                  <li key={h.id}>
+                  <li key={h.id} className="min-w-0">
                     <Link href={`/mis-proyectos/${h.projectId}/seguimiento`} className={ROW_CLASS}>
                       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface text-muted">
                         <IconCalendario className="size-4" />
@@ -305,7 +316,8 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
         </Card>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+      {/* `grid-cols-1` base: mismo motivo que arriba. */}
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Proyectos */}
         <Card
           title="Tus proyectos"
@@ -331,7 +343,7 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
                   .filter(Boolean)
                   .join(" · ");
                 return (
-                  <li key={p.id}>
+                  <li key={p.id} className="min-w-0">
                     <Link href={`/mis-proyectos/${p.id}`} className={ROW_CLASS}>
                       <span
                         className={cn(
@@ -387,7 +399,7 @@ export async function PatrocinadorInicio({ nombre }: { nombre: string }) {
                   tone: "neutral" as BadgeTone,
                 };
                 return (
-                  <li key={o.id}>
+                  <li key={o.id} className="min-w-0">
                     <Link href={`/mis-organizaciones/${o.id}/editar`} className={ROW_CLASS}>
                       <OrgLogo logoUrl={o.logo_url} nombre={o.nombre} size="sm" />
                       <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
@@ -471,20 +483,26 @@ function StatCard({
   tone: keyof typeof STAT_TONE_CLASSES;
 }) {
   return (
+    // Ícono arriba, no al lado: con `min-w-0` el texto ya no rompía el
+    // layout, pero medido con `scrollWidth` seguía sin caber de verdad
+    // ("Organizaciones" pintaba 54px fuera de su caja, invisibles a un
+    // chequeo de `getBoundingClientRect` porque el texto no tiene dónde
+    // partirse — es una sola palabra). Arriba, el texto tiene todo el
+    // ancho de la tarjeta para sí.
     <Link
       href={href}
-      className="flex items-center gap-4 rounded-2xl border border-border bg-white p-6 shadow-sm transition-all hover:border-electric/30 hover:shadow-md"
+      className="flex flex-col items-start gap-2.5 rounded-2xl border border-border bg-white p-4 shadow-sm transition-all hover:border-electric/30 hover:shadow-md sm:p-6"
     >
       <span
         className={cn(
-          "flex size-12 shrink-0 items-center justify-center rounded-full",
+          "flex size-9 shrink-0 items-center justify-center rounded-full sm:size-12",
           STAT_TONE_CLASSES[tone],
         )}
       >
-        <Icon className="size-5" />
+        <Icon className="size-4 sm:size-5" />
       </span>
-      <div className="flex flex-col">
-        <p className="text-3xl font-bold tracking-tight text-ink">{value}</p>
+      <div className="min-w-0">
+        <p className="text-xl font-bold tracking-tight text-ink sm:text-3xl">{value}</p>
         <p className="text-sm text-muted">{label}</p>
       </div>
     </Link>
