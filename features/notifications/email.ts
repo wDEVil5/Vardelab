@@ -25,7 +25,8 @@ import type { Notification } from "@/features/notifications/queries";
  * real, no un catálogo de correos genérico).
  */
 
-const REMITENTE = { name: "Vardelab", email: "wilnesdevil9@gmail.com" };
+const REMITENTE_NOTIFICACIONES = { name: "Vardelab", email: "notificaciones@vardelab.cl" };
+const REMITENTE_EQUIPO = { name: "Vardelab", email: "equipo@vardelab.cl" };
 
 type Tipo = Notification["tipo"];
 
@@ -236,7 +237,12 @@ function plantilla({ asunto, mensaje, instruccion, cta, link, confianza, to }: P
 }
 
 /** Llamada de bajo nivel a la API de Brevo, sin conocer `notification_tipo` ni el catálogo — la comparten `sendEmail` y `sendPlainEmail`. Nunca lanza: un correo que falla no debe romper la acción que lo originó. */
-async function enviarPorBrevo(to: string, asunto: string, html: string): Promise<void> {
+async function enviarPorBrevo(
+  to: string,
+  asunto: string,
+  html: string,
+  sender: { name: string; email: string },
+): Promise<void> {
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) {
     console.error("[enviarPorBrevo] Falta BREVO_API_KEY en el entorno; correo no enviado.");
@@ -252,7 +258,7 @@ async function enviarPorBrevo(to: string, asunto: string, html: string): Promise
         "api-key": apiKey,
       },
       body: JSON.stringify({
-        sender: REMITENTE,
+        sender,
         to: [{ email: to }],
         subject: asunto,
         htmlContent: html,
@@ -275,7 +281,12 @@ export async function sendEmail(
   link?: string | null,
 ): Promise<void> {
   const { asunto, instruccion, cta, confianza } = CATALOGO[tipo];
-  await enviarPorBrevo(to, asunto, plantilla({ asunto, mensaje, instruccion, cta, confianza, link, to }));
+  await enviarPorBrevo(
+    to,
+    asunto,
+    plantilla({ asunto, mensaje, instruccion, cta, confianza, link, to }),
+    REMITENTE_NOTIFICACIONES,
+  );
 }
 
 /**
@@ -293,6 +304,7 @@ export async function sendPlainEmail(
     to,
     asunto,
     plantilla({ asunto, mensaje, instruccion: opts?.instruccion ?? "", cta: opts?.cta, link: opts?.link, to }),
+    REMITENTE_EQUIPO,
   );
 }
 
