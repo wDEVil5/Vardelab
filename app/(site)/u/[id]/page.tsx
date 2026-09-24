@@ -21,6 +21,7 @@ export async function generateMetadata({
   return {
     title: titulo,
     description: data.profile.bio ?? undefined,
+    alternates: { canonical: `/u/${id}` },
     openGraph: { title: titulo, description: data.profile.bio ?? undefined },
   };
 }

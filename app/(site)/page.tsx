@@ -24,6 +24,7 @@ export const metadata: Metadata = {
   title: "Vardelab · Desafíos reales. Talento que se demuestra.",
   description:
     "Microdesafíos acotados junto a organizaciones: practica colaborar con alcance definido y acompañamiento por hitos.",
+  alternates: { canonical: "/" },
   openGraph: {
     title: "Vardelab · Desafíos reales. Talento que se demuestra.",
   },

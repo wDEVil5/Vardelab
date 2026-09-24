@@ -33,6 +33,7 @@ export async function generateMetadata({
   return {
     title: titulo,
     description: org.descripcion ?? undefined,
+    alternates: { canonical: `/organizaciones/${id}` },
     openGraph: { title: titulo, description: org.descripcion ?? undefined },
   };
 }
