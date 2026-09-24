@@ -1,0 +1,63 @@
+# Backup diario de la base de datos de producción.
+#
+# El plan Free de Supabase no incluye backups automáticos (eso es una
+# feature de plan Pro) — esto es el reemplazo casero: un `supabase db dump`
+# programado, guardado como artifact de GitHub Actions. Reusa los mismos 3
+# secrets que ya existen para deploy-migrations.yml.
+#
+# Restaurar un backup: descargar el artifact desde la pestaña Actions de la
+# corrida que corresponda, descomprimir (`gunzip backup.sql.gz`), y aplicarlo
+# con `psql "$DB_URL" -f backup.sql` contra el proyecto de destino.
+#
+# El dump incluye el schema `auth` (cuentas reales, con password hasheada) —
+# es sensible. Los artifacts de un repo privado solo los ve quien tiene
+# acceso al repo, igual que los secrets usados acá.
+#
+# Si esta corrida falla, GitHub la marca como fallida en la pestaña Actions
+# y, por defecto, notifica por correo a quien la configuró — no hace falta
+# nada más para enterarse (mismo motivo por el que Sentry importa: que un
+# fallo no quede en silencio).
+
+name: Backup de la base de datos
+
+on:
+  schedule:
+    # Todos los días a las 06:00 UTC (horario de bajo uso).
+    - cron: "0 6 * * *"
+
+  # Permite lanzarlo a mano desde la pestaña Actions.
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar la CLI de Supabase
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Enlazar con el proyecto remoto
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Volcar la base (schemas public + auth) y comprimir
+        run: |
+          supabase db dump --linked -s public,auth -f backup.sql
+          gzip backup.sql
+
+      - name: Subir el backup como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ github.run_id }}
+          path: backup.sql.gz
+          # 30 días de historial — suficiente margen sin acumular de más
+          # en el límite de almacenamiento del repo.
+          retention-days: 30
