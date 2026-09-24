@@ -46,19 +46,21 @@ export default async function ModeracionPage({ searchParams }: PageProps) {
         <p className="text-sm text-muted">Revisa proyectos antes de publicarlos.</p>
       </header>
 
-      {/* KPIs */}
-      <div className="mt-6 shrink-0 grid grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-border bg-white p-5">
-          <p className="text-3xl font-bold text-electric">{stats.pendientes}</p>
-          <p className="mt-1 text-sm text-muted">Pendientes</p>
+      {/* KPIs — siempre 3 columnas en una fila (apiladas en mobile usaba
+          demasiado alto): tarjetas y letra más chicas por debajo de `sm:`
+          para que "Organizaciones" entre sin cortarse. */}
+      <div className="mt-6 shrink-0 grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="rounded-2xl border border-border bg-white p-3 sm:p-5">
+          <p className="text-xl font-bold text-electric sm:text-3xl">{stats.pendientes}</p>
+          <p className="mt-1 text-xs text-muted sm:text-sm">Pendientes</p>
         </div>
-        <div className="rounded-2xl border border-border bg-white p-5">
-          <p className="text-3xl font-bold text-ink">{stats.organizaciones}</p>
-          <p className="mt-1 text-sm text-muted">Organizaciones</p>
+        <div className="rounded-2xl border border-border bg-white p-3 sm:p-5">
+          <p className="text-xl font-bold text-ink sm:text-3xl">{stats.organizaciones}</p>
+          <p className="mt-1 text-xs text-muted sm:text-sm">Organizaciones</p>
         </div>
-        <div className="rounded-2xl border border-border bg-white p-5">
-          <p className="text-3xl font-bold text-ink">{stats.cuposAbiertos}</p>
-          <p className="mt-1 text-sm text-muted">Cupos esperando</p>
+        <div className="rounded-2xl border border-border bg-white p-3 sm:p-5">
+          <p className="text-xl font-bold text-ink sm:text-3xl">{stats.cuposAbiertos}</p>
+          <p className="mt-1 text-xs text-muted sm:text-sm">Cupos esperando</p>
         </div>
       </div>
 

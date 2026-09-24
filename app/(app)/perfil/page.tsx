@@ -238,7 +238,11 @@ export default async function PerfilPage({ searchParams }: PageProps) {
             switch, sin ícono, sin botón de texto ni caja aparte. Minimalista
             a propósito: es una preferencia que se prende o apaga, no una
             acción que necesite tanto peso visual. */}
-        <div className="mt-5 flex items-center justify-between gap-4 border-t border-border pt-5">
+        {/* `flex-col sm:flex-row`: en columnas angostas, forzar el texto y
+            el grupo del switch a compartir una sola fila hacía que "Ver
+            perfil público" (un link de 3 palabras) se partiera en 2 líneas
+            contra el switch. Apilado en mobile, fila desde `sm:`. */}
+        <div className="mt-5 flex flex-col items-start gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <p className="text-sm text-muted">
             {esPublico
               ? "Tu perfil es visible para cualquiera con el enlace."
@@ -470,7 +474,8 @@ function PerfilPatrocinador({
           </div>
         </dl>
 
-        <div className="mt-5 flex items-center justify-between gap-4 border-t border-border pt-5">
+        {/* `flex-col sm:flex-row`: mismo motivo que el bloque de arriba. */}
+        <div className="mt-5 flex flex-col items-start gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <p className="text-sm text-muted">
             {esPublico
               ? "Tu perfil es visible para cualquiera con el enlace."

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getPilotMetrics } from "@/features/admin/queries";
 import { ExportMetricsButton } from "@/features/admin/components/export-metrics-button";
+import { EstadoProgressBars } from "@/features/admin/components/estado-progress-bars";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -46,24 +47,7 @@ export default async function AdminMetricasPage() {
           {m.porEstado.length === 0 ? (
             <p className="mt-3 text-sm text-muted">Todavía no hay proyectos.</p>
           ) : (
-            <ul className="mt-5 flex flex-col gap-4">
-              {m.porEstado.map((e) => (
-                <li key={e.estado} className="flex items-center gap-3">
-                  <span className="w-28 shrink-0 text-sm text-muted">{e.etiqueta}</span>
-                  <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface">
-                    <span
-                      className="block h-full rounded-full bg-electric"
-                      style={{
-                        width: `${porcentaje(e.total, m.totalProyectos)}%`,
-                      }}
-                    />
-                  </span>
-                  <span className="w-6 shrink-0 text-right text-sm font-medium text-ink">
-                    {e.total}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <EstadoProgressBars porEstado={m.porEstado} totalProyectos={m.totalProyectos} />
           )}
         </div>
 
@@ -91,7 +75,11 @@ export default async function AdminMetricasPage() {
 
       {/* Indicadores secundarios (PRD §3.5) + exportar */}
       <div className="mt-7 flex flex-col gap-6 rounded-2xl border border-border bg-white p-7 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 flex-wrap gap-x-10 gap-y-5">
+        {/* 1 columna en mobile: "Postulaciones aceptadas" es una etiqueta
+            larga que igual ocupa una fila entera aunque se achique el gap —
+            con flex-wrap quedaba 1 arriba y 2 abajo, asimétrico. Apilado
+            completo se ve parejo; desde `sm:` vuelve a la fila con wrap. */}
+        <div className="flex flex-1 flex-col gap-5 sm:flex-row sm:flex-wrap sm:gap-x-10 sm:gap-y-5">
           <Indicador
             label="Postulaciones aceptadas"
             valor={m.postulaciones.total > 0 ? `${pctAceptadas}%` : "—"}
