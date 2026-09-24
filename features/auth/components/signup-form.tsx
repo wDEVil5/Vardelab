@@ -78,8 +78,9 @@ export function SignupForm({
   if (state.ok) {
     return (
       <ActionSuccess
-        title="Revisa tu correo"
+        title="Confirma tu correo"
         description="Te enviamos un enlace de confirmación. Ábrelo para activar tu cuenta (revisa también spam)."
+        variant="quiet"
       />
     );
   }

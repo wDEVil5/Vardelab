@@ -57,7 +57,7 @@ export function ProjectProgressBar({
           <span className="w-[4.5ch] shrink-0 text-3xl font-bold tabular-nums tracking-tight text-electric">
             {Math.round(valor)}%
           </span>
-          <div className="min-w-0 break-words">
+          <div className="min-w-0 wrap-break-word">
             <p className="text-sm font-medium text-ink">Progreso general</p>
             {orgName && <p className="text-xs text-muted">{orgName}</p>}
           </div>

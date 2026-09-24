@@ -212,7 +212,7 @@ export function ProcessStack({ titulo, pasos }: { titulo: string; pasos: Proceso
             ref={(el) => {
               cardRefs.current[i] = el;
             }}
-            className="sticky mb-5 origin-top will-change-transform last:mb-0"
+            className="process-stack-card sticky mb-5 origin-top will-change-transform last:mb-0"
             style={{ top: TOP_BASE + i * TOP_PASO, zIndex: i + 1 }}
           >
             <div
