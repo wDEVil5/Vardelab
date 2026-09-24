@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 // Supabase Realtime (notificaciones en vivo, `NotificationsProvider`) abre un
@@ -21,7 +22,8 @@ const csp = [
   scriptSrc,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: https: ${supabaseUrl}`.trim(),
-  `connect-src 'self' ${supabaseUrl} ${supabaseWsUrl}`.trim(),
+  // *.sentry.io: adonde el SDK manda los errores (`instrumentation-client.ts`).
+  `connect-src 'self' ${supabaseUrl} ${supabaseWsUrl} https://*.sentry.io`.trim(),
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -51,4 +53,11 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  // Sin SENTRY_AUTH_TOKEN (ej. en local) este plugin no sube source maps y
+  // no rompe el build — solo los stack traces de producción quedan minificados.
+  silent: true,
+});
