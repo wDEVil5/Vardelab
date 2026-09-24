@@ -36,7 +36,7 @@ export function Faq({ items }: { items: { q: string; a: string }[] }) {
             </button>
             <div
               className={cn(
-                "grid px-6 transition-all duration-300 ease-out",
+                "grid px-6 transition-[grid-template-rows,opacity,padding] duration-300 ease-out",
                 open ? "grid-rows-[1fr] pb-5 opacity-100" : "grid-rows-[0fr] opacity-0",
               )}
             >

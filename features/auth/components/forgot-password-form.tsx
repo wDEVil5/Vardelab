@@ -24,6 +24,7 @@ export function ForgotPasswordForm() {
       <ActionSuccess
         title="Enlace enviado"
         description="Si ese correo tiene una cuenta, te enviamos un enlace para restablecer tu contraseña. Revisa tu bandeja de entrada (y spam)."
+        variant="quiet"
       />
     );
   }
