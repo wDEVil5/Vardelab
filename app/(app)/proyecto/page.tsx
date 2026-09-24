@@ -99,7 +99,11 @@ export default async function ProyectosIndexPage() {
         </p>
       </header>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+      {/* `grid-cols-1` explícito: sin esto, por debajo de `sm:` el grid no
+          tenía ninguna columna definida y el navegador ensanchaba la columna
+          implícita más allá del contenedor — las tarjetas se cortaban a la
+          derecha en mobile. */}
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {tarjetas.map((p) => (
           <Link
             key={p.projectId}
