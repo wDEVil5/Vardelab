@@ -39,8 +39,9 @@ export async function ModeradorInicio({ nombre }: { nombre: string }) {
         <p className="mt-1 text-muted">Tu resumen de moderación.</p>
       </header>
 
-      {/* KPIs: tres, así que tres columnas (nada de dejar huecos vacíos). */}
-      <div className="mt-8 grid grid-cols-3 gap-4">
+      {/* KPIs: siempre 3 columnas en una fila (apiladas usaba demasiado
+          alto) — StatCard se achica por debajo de `sm:` para que entren. */}
+      <div className="mt-8 grid grid-cols-3 gap-2 sm:gap-4">
         <StatCard
           href="/moderacion"
           label="Pendientes de revisión"
@@ -172,12 +173,12 @@ function StatCard({
   return (
     <Link
       href={href}
-      className="rounded-2xl border border-border bg-white p-5 transition-colors hover:border-electric/40"
+      className="rounded-2xl border border-border bg-white p-3 transition-colors hover:border-electric/40 sm:p-5"
     >
-      <p className={cn("text-3xl font-bold", tone === "electric" ? "text-electric" : "text-ink")}>
+      <p className={cn("text-xl font-bold sm:text-3xl", tone === "electric" ? "text-electric" : "text-ink")}>
         {value}
       </p>
-      <p className="mt-1 text-sm text-muted">{label}</p>
+      <p className="mt-1 text-xs text-muted sm:text-sm">{label}</p>
     </Link>
   );
 }

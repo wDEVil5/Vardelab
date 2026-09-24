@@ -53,7 +53,12 @@ export default async function AdminUsuariosPage() {
         <Kpi value={suspendidas} label="Cuentas suspendidas" tone="danger" />
       </div>
 
-      <div className="mt-6 flex min-h-0 flex-1 flex-col">
+      {/* `min-w-0`: sin esto, el `min-w-180` de la tabla interna (necesario
+          para que sus columnas no se aplasten) se filtra hacia arriba por la
+          cadena de `flex`, empujando TODA la página a lo ancho en mobile en
+          vez de quedar contenido — la tabla debe scrollear sola, no la
+          página entera. */}
+      <div className="mt-6 flex min-h-0 min-w-0 flex-1 flex-col">
         <UsersTable users={usuarios} currentUserId={user.id} />
       </div>
 

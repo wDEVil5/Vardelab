@@ -48,11 +48,16 @@ export function OrganizationsTable({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hayMasAbajo, setHayMasAbajo] = useState(false);
+  // Fade a la derecha: la tabla (`min-w-160`) puede desbordar su caja en
+  // mobile — sin este indicio, la última columna visible se corta en seco
+  // sin dar a entender que se puede scrollear para el lado.
+  const [hayMasDerecha, setHayMasDerecha] = useState(false);
 
   const chequearScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
     setHayMasAbajo(el.scrollHeight - el.scrollTop - el.clientHeight > 1);
+    setHayMasDerecha(el.scrollWidth - el.scrollLeft - el.clientWidth > 1);
   };
 
   useEffect(() => {
@@ -125,7 +130,9 @@ export function OrganizationsTable({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar por nombre"
           aria-label="Buscar por nombre"
-          className="h-11 flex-1 rounded-lg border border-border bg-white px-4 text-sm text-ink placeholder:text-muted focus:border-electric focus:outline-none"
+          // `sm:flex-1`: ver comentario en projects-table.tsx (mismo bug de
+          // flex-basis colapsando la altura en el wrapper `flex-col` de mobile).
+          className="h-11 rounded-lg border border-border bg-white px-4 text-sm text-ink placeholder:text-muted focus:border-electric focus:outline-none sm:flex-1"
         />
         <Select
           value={filters.verificacion ?? "todos"}
@@ -199,6 +206,12 @@ export function OrganizationsTable({
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-linear-to-t from-ink/10 to-transparent"
+              />
+            )}
+            {hayMasDerecha && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-linear-to-l from-ink/10 to-transparent"
               />
             )}
           </div>

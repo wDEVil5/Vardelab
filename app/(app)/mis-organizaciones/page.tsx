@@ -34,7 +34,12 @@ export default async function MisOrganizacionesPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-8 lg:py-10">
-      <header className="flex items-center justify-between gap-4">
+      {/* `flex-col sm:flex-row`: en fila, "Nueva organización" competía por
+          ancho con el título y se partía en 2 líneas. Apilado, el botón
+          queda en su propia fila con todo el ancho disponible — ya no hace
+          falta forzarlo a `w-full` (eso lo hacía ver como un banner en vez
+          de un botón secundario; `self-start` lo deja a su tamaño natural). */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-ink">Mis organizaciones</h1>
           <p className="text-sm text-muted">
@@ -43,7 +48,7 @@ export default async function MisOrganizacionesPage() {
         </div>
         <Link
           href="/mis-organizaciones/nueva"
-          className={buttonClasses({ variant: "primary", size: "sm" })}
+          className={cn(buttonClasses({ variant: "primary", size: "sm" }), "self-start")}
         >
           Nueva organización
         </Link>
@@ -133,7 +138,10 @@ function KpiCell({
   icon: (props: { className?: string }) => React.JSX.Element;
 }) {
   return (
-    <div className="flex flex-1 items-center gap-3 px-5 py-4">
+    // `min-w-0`: sin esto, "Sin verificar" (la etiqueta más larga de las 3)
+    // no tenía dónde contenerse dentro de su tercio del `flex-1` y se salía
+    // derecho de la franja en vez de partirse en 2 líneas.
+    <div className="flex min-w-0 flex-1 items-center gap-2 px-3 py-4 sm:gap-3 sm:px-5">
       <Icon className="size-4 shrink-0 text-muted" />
       <p className="text-sm text-muted">
         <span className="font-semibold text-ink">{valor}</span> {label}

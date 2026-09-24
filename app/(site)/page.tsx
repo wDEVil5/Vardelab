@@ -17,6 +17,7 @@ import { RevealFooter } from "@/components/reveal-footer";
 import { getPublishedProjects } from "@/features/projects/queries";
 import { ProjectCard } from "@/features/projects/components/project-card";
 import { HeroOpenProjects } from "@/features/projects/components/hero-open-projects";
+import { EstudianteHeroVacio } from "@/components/estudiante-hero-visual";
 import { cuposRestantesProyecto } from "@/features/projects/roles";
 
 export const metadata: Metadata = {
@@ -54,7 +55,7 @@ export default async function Home() {
           Percepción estudiante: eyebrow + CTA primario; organizaciones como
           link secundario. Ancla: rotación calmada de pocos proyectos con
           cupo abierto (tilt en desktop; sin tilt en mobile). */}
-      <section className="relative mx-auto w-full max-w-6xl overflow-x-clip px-5 py-8 sm:px-6 sm:py-16 lg:py-20 lg:pb-22">
+      <section className="relative mx-auto w-full max-w-6xl px-5 py-8 sm:px-6 sm:py-16 lg:py-20 lg:pb-22">
         {/* Móvil: solo mensaje + CTA (la ficha rotativa satura el primer pantallazo).
             md+: copy izquierda, card derecha. Los proyectos siguen abajo en el grid. */}
         <div className="grid items-center gap-8 md:grid-cols-2 md:gap-10 lg:gap-12">
@@ -91,11 +92,19 @@ export default async function Home() {
               </div>
             </div>
 
-            {heroAbiertos.length > 0 ? (
-              <div className="hidden md:block">
-                <HeroOpenProjects projects={heroAbiertos} />
-              </div>
-            ) : null}
+            <div className="hidden md:block">
+              {heroAbiertos.length > 0 ? (
+                // El tilt 3D de la tarjeta puede sacar sus esquinas fuera de
+                // su propia caja — este clip es solo para eso. El glow de
+                // `EstudianteHeroVacio` necesita lo contrario (aire para
+                // difuminarse), por eso no envuelve los dos casos por igual.
+                <div className="overflow-x-clip">
+                  <HeroOpenProjects projects={heroAbiertos} />
+                </div>
+              ) : (
+                <EstudianteHeroVacio />
+              )}
+            </div>
           </div>
       </section>
 

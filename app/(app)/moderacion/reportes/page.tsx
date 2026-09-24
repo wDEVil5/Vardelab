@@ -62,19 +62,20 @@ export default async function ReportesPage({ searchParams }: PageProps) {
         </p>
       </header>
 
-      {/* KPIs */}
-      <div className="mt-6 shrink-0 grid grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-border bg-white p-5">
-          <p className="text-3xl font-bold text-electric">{conteos.abiertos}</p>
-          <p className="mt-1 text-sm text-muted">Abiertos</p>
+      {/* KPIs — siempre 3 columnas en una fila, mismo criterio que
+          /moderacion (tarjetas y letra más chicas por debajo de `sm:`). */}
+      <div className="mt-6 shrink-0 grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="rounded-2xl border border-border bg-white p-3 sm:p-5">
+          <p className="text-xl font-bold text-electric sm:text-3xl">{conteos.abiertos}</p>
+          <p className="mt-1 text-xs text-muted sm:text-sm">Abiertos</p>
         </div>
-        <div className="rounded-2xl border border-border bg-white p-5">
-          <p className="text-3xl font-bold text-ink">{conteos.en_revision}</p>
-          <p className="mt-1 text-sm text-muted">En revisión</p>
+        <div className="rounded-2xl border border-border bg-white p-3 sm:p-5">
+          <p className="text-xl font-bold text-ink sm:text-3xl">{conteos.en_revision}</p>
+          <p className="mt-1 text-xs text-muted sm:text-sm">En revisión</p>
         </div>
-        <div className="rounded-2xl border border-border bg-white p-5">
-          <p className="text-3xl font-bold text-ink">{conteos.resueltos}</p>
-          <p className="mt-1 text-sm text-muted">Resueltos</p>
+        <div className="rounded-2xl border border-border bg-white p-3 sm:p-5">
+          <p className="text-xl font-bold text-ink sm:text-3xl">{conteos.resueltos}</p>
+          <p className="mt-1 text-xs text-muted sm:text-sm">Resueltos</p>
         </div>
       </div>
 
