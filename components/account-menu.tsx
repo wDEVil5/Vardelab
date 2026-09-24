@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { signOut } from "@/features/auth/actions";
+import { SignOutForm } from "@/components/sign-out-form";
 import { cn } from "@/lib/utils";
 import { useIsClient } from "@/lib/use-is-client";
 
@@ -244,7 +244,7 @@ export function AccountMenu({
 
                 <div className="my-1 h-px bg-border" />
 
-                <form action={signOut}>
+                <SignOutForm>
                   <button
                     type="submit"
                     role="menuitem"
@@ -264,7 +264,7 @@ export function AccountMenu({
                     </svg>
                     Cerrar sesión
                   </button>
-                </form>
+                </SignOutForm>
               </div>
             </>,
             document.body,
