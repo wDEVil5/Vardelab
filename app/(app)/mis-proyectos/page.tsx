@@ -43,7 +43,10 @@ export default async function MisProyectosPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-8 lg:py-10">
-      <header className="flex items-center justify-between gap-4">
+      {/* `flex-col sm:flex-row` + `self-start` en el botón: ver comentario
+          en mis-organizaciones/page.tsx — apilado y a su tamaño natural,
+          no forzado a `w-full` (se veía como un banner). */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-ink">Mis proyectos</h1>
           <p className="text-sm text-muted">
@@ -52,7 +55,7 @@ export default async function MisProyectosPage() {
         </div>
         <Link
           href="/mis-proyectos/nuevo"
-          className={buttonClasses({ variant: "primary", size: "sm" })}
+          className={cn(buttonClasses({ variant: "primary", size: "sm" }), "self-start")}
         >
           Nuevo proyecto
         </Link>
@@ -85,7 +88,7 @@ export default async function MisProyectosPage() {
           <div className="max-w-4xl flex-1">
             {/* Tarjetas KPI: panorama del ciclo completo de un vistazo, antes
                 de entrar al detalle de cada proyecto en la lista. */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <KpiStat valor={activos} label="Activos" icon={IconRayo} tone="electric" />
               <KpiStat valor={enRevision} label="En revisión" icon={IconReloj} tone="coral" />
               <KpiStat valor={completados} label="Completados" icon={IconCheck} tone="sprout" />
@@ -155,14 +158,18 @@ function KpiStat({
   icon: (props: { className?: string }) => React.JSX.Element;
   tone: keyof typeof TONE_CLASSES;
 }) {
+  // Ícono arriba, no al lado: al lado (icono + texto en fila) las 3 caben
+  // apenas en un tercio del ancho en mobile — ni con `min-w-0` alcanza
+  // espacio real para una palabra larga como "Completados" (medido: ~5px
+  // disponibles). Arriba, el texto tiene todo el ancho de la tarjeta.
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-border bg-white p-5">
-      <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl", TONE_CLASSES[tone])}>
-        <Icon className="size-5" />
+    <div className="flex flex-col items-start gap-2 rounded-2xl border border-border bg-white p-3.5 sm:p-5">
+      <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-xl sm:size-11", TONE_CLASSES[tone])}>
+        <Icon className="size-4 sm:size-5" />
       </span>
-      <div className="flex flex-col">
-        <p className="text-2xl font-semibold tracking-tight text-ink">{valor}</p>
-        <p className="text-sm text-muted">{label}</p>
+      <div className="min-w-0">
+        <p className="text-lg font-semibold tracking-tight text-ink sm:text-2xl">{valor}</p>
+        <p className="text-xs text-muted sm:text-sm">{label}</p>
       </div>
     </div>
   );

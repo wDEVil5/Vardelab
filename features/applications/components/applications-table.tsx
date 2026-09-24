@@ -212,7 +212,12 @@ export function ApplicationsTable({ apps }: { apps: MyApplication[] }) {
 
                   {/* Acción contextual: retirar queda en la columna final,
                       junto al acceso al espacio de trabajo cuando corresponde. */}
-                  <span className="flex w-20 shrink-0 justify-end">
+                  {/* `w-auto` en mobile, `md:w-20` recién en desktop (para
+                      alinear con el header "Acción"): a `w-20` fijo siempre,
+                      el ancho que le sacaba a la columna de "Proyecto" (que
+                      sí necesita el espacio) hacía que el título se truncara
+                      a 5-6 caracteres ("Dashb…") en mobile. */}
+                  <span className="flex w-auto shrink-0 justify-end md:w-20">
                     {a.status === "enviada" ? (
                       <button
                         type="button"
