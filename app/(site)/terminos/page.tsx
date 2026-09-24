@@ -6,6 +6,7 @@ import { RevealFooter } from "@/components/reveal-footer";
 export const metadata: Metadata = {
   title: "Términos y condiciones · Vardelab",
   description: "Borrador de términos y condiciones de uso de Vardelab.",
+  alternates: { canonical: "/terminos" },
 };
 
 export default function TerminosPage() {

@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   title: "Para organizaciones · Vardelab",
   description:
     "Convierte una necesidad concreta en un microproyecto con alcance definido, estudiantes interesados y seguimiento visible de principio a fin.",
+  alternates: { canonical: "/organizaciones" },
   openGraph: {
     title: "Para organizaciones · Vardelab",
     description:
