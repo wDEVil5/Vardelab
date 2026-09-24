@@ -7,7 +7,7 @@ import { requireUser } from "@/features/auth/queries";
 import { isPasswordValid } from "@/features/auth/password";
 import { SITE_URL } from "@/lib/site";
 import { checkRateLimit, getClientIp, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit";
-import { POST_AUTH_REDIRECT } from "@/features/auth/constants";
+import { POST_AUTH_REDIRECT, safeNextPath } from "@/features/auth/constants";
 
 /**
  * Acciones de autenticación (Server Actions).
@@ -138,6 +138,36 @@ export async function signOut(): Promise<void> {
   // vivo el Router Cache del cliente, que puede servir por un instante una
   // página de admin ya renderizada en la sesión anterior a la cuenta nueva
   // con la que se acaba de entrar. `SignOutForm` hace la navegación dura.
+}
+
+const ENLACE_INVALIDO = "El enlace no es válido o ya expiró.";
+
+/**
+ * Intercambia el `code` del enlace de confirmación (registro, recuperación de
+ * contraseña, cambio de correo) por una sesión. Antes esto vivía en un GET de
+ * `app/auth/confirm/route.ts`, disparado apenas alguien abría la página — pero
+ * Gmail (y varios antivirus/escáneres corporativos) visitan los enlaces de un
+ * correo automáticamente antes de que la persona haga clic, para revisar que
+ * no sean phishing. Eso consumía el `code` de un solo uso: el enlace real
+ * mostraba "inválido o expirado" aunque la cuenta terminara confirmada (por
+ * el escaneo, no por el clic real). Ahora esto lo llama `ConfirmEmailAuto`
+ * desde el cliente al montar — el escaneo automático de un link no ejecuta
+ * JavaScript, así que ya no alcanza a consumir el código antes de tiempo.
+ */
+export async function confirmEmailCode(
+  code: string,
+  next: string,
+): Promise<{ redirectTo: string; error?: string }> {
+  const safeNext = safeNextPath(next);
+
+  if (code) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) return { redirectTo: safeNext };
+  }
+
+  const destino = safeNext === "/actualizar-contrasena" ? "/recuperar" : "/ingresar";
+  return { error: ENLACE_INVALIDO, redirectTo: `${destino}?error=${ENLACE_INVALIDO}` };
 }
 
 export type ResetRequestState = { error?: string; ok?: boolean };

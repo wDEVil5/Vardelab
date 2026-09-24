@@ -217,3 +217,45 @@ test('pedir cambiar el correo con todo correcto dispara la confirmación doble',
   const update = authCalls.find((c) => c.method === 'updateUser');
   assert.equal(update.args.attrs.email, 'nuevo@x.cl');
 });
+
+test('confirmar el correo con un code válido redirige a next', async () => {
+  const { exports, authCalls } = load('features/auth/actions.ts', {
+    authResponses: { exchangeCodeForSession: [{ data: {}, error: null }] },
+  });
+  const result = await exports.confirmEmailCode('un-code-real', '/mis-proyectos');
+  assert.equal(result.redirectTo, '/mis-proyectos');
+  assert.equal(result.error, undefined);
+  assert.equal(authCalls[0].args.code, 'un-code-real');
+});
+
+test('confirmar el correo con un code inválido devuelve el mensaje de enlace vencido', async () => {
+  const { exports } = load('features/auth/actions.ts', {
+    authResponses: { exchangeCodeForSession: [{ data: {}, error: { message: 'invalid code' } }] },
+  });
+  const result = await exports.confirmEmailCode('code-vencido', '/inicio');
+  assert.match(result.error, /no es válido o ya expiró/);
+  assert.match(result.redirectTo, /^\/ingresar\?error=/);
+});
+
+test('confirmar el correo sin code no llega a Supabase', async () => {
+  const { exports, authCalls } = load('features/auth/actions.ts');
+  const result = await exports.confirmEmailCode('', '/inicio');
+  assert.match(result.error, /no es válido o ya expiró/);
+  assert.equal(authCalls.length, 0);
+});
+
+test('un next externo (open redirect) se sanea antes de usarlo', async () => {
+  const { exports } = load('features/auth/actions.ts', {
+    authResponses: { exchangeCodeForSession: [{ data: {}, error: null }] },
+  });
+  const result = await exports.confirmEmailCode('un-code-real', '//evil.com');
+  assert.equal(result.redirectTo, '/inicio');
+});
+
+test('el next de actualizar-contrasena con code inválido vuelve a /recuperar', async () => {
+  const { exports } = load('features/auth/actions.ts', {
+    authResponses: { exchangeCodeForSession: [{ data: {}, error: { message: 'invalid code' } }] },
+  });
+  const result = await exports.confirmEmailCode('code-vencido', '/actualizar-contrasena');
+  assert.match(result.redirectTo, /^\/recuperar\?error=/);
+});
