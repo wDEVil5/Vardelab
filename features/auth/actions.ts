@@ -130,11 +130,14 @@ export async function signIn(
   return { ok: true };
 }
 
-export async function signOut() {
+export async function signOut(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
-  redirect("/");
+  // No redirect() acá: mismo motivo que signIn — una navegación suave deja
+  // vivo el Router Cache del cliente, que puede servir por un instante una
+  // página de admin ya renderizada en la sesión anterior a la cuenta nueva
+  // con la que se acaba de entrar. `SignOutForm` hace la navegación dura.
 }
 
 export type ResetRequestState = { error?: string; ok?: boolean };
