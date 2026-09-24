@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Hablar con Vardelab · Para organizaciones",
   description:
     "Cuéntanos tu necesidad y vemos juntos si puede convertirse en un microproyecto acotado.",
+  alternates: { canonical: "/contacto" },
 };
 
 const RAZONES = [

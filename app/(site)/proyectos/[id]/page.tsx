@@ -33,6 +33,7 @@ export async function generateMetadata({
   return {
     title: titulo,
     description: project.resumen ?? undefined,
+    alternates: { canonical: `/proyectos/${id}` },
     openGraph: { title: titulo, description: project.resumen ?? undefined },
   };
 }

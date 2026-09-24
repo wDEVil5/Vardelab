@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Proponer un desafío · Vardelab",
   description:
     "¿Conoces una organización con una necesidad concreta? Ayúdanos a convertirla en un microproyecto.",
+  alternates: { canonical: "/proponer" },
 };
 
 const RAZONES = [

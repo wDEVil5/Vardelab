@@ -18,6 +18,7 @@ export const metadata: Metadata = {
   title: "Proyectos · Vardelab",
   description:
     "Catálogo de microproyectos reales publicados por organizaciones. Encuentra un rol y postula.",
+  alternates: { canonical: "/proyectos" },
   openGraph: {
     title: "Proyectos · Vardelab",
     description:
