@@ -6,6 +6,7 @@ import { RevealFooter } from "@/components/reveal-footer";
 export const metadata: Metadata = {
   title: "Política de privacidad · Vardelab",
   description: "Borrador de política de privacidad de Vardelab.",
+  alternates: { canonical: "/privacidad" },
 };
 
 export default function PrivacidadPage() {
