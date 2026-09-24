@@ -198,7 +198,9 @@ export function AuditLogTable({ eventos }: { eventos: AuditLogEntry[] }) {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar por actor o entidad"
           aria-label="Buscar por actor o entidad"
-          className="h-11 flex-1 rounded-lg border border-border bg-white px-4 text-sm text-ink placeholder:text-muted focus:border-electric focus:outline-none"
+          // `sm:flex-1`: ver comentario en projects-table.tsx (mismo bug de
+          // flex-basis colapsando la altura en el wrapper `flex-col` de mobile).
+          className="h-11 rounded-lg border border-border bg-white px-4 text-sm text-ink placeholder:text-muted focus:border-electric focus:outline-none sm:flex-1"
         />
         <Select
           value={filtroAccion}

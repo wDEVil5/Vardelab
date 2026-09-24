@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
@@ -58,6 +58,25 @@ export function UsersTable({
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>("todos");
   const [pagina, setPagina] = useState(1);
 
+  // Fade a la derecha cuando la tabla (`min-w-180`) desborda su caja y hay
+  // más columnas para el lado — mismo patrón que `hayMasAbajo` en
+  // `organizations-table.tsx`, pero horizontal: sin esto, la última columna
+  // visible se corta en seco sin ningún indicio de que se puede scrollear.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [hayMasDerecha, setHayMasDerecha] = useState(false);
+
+  const chequearScrollHorizontal = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setHayMasDerecha(el.scrollWidth - el.scrollLeft - el.clientWidth > 1);
+  };
+
+  useEffect(() => {
+    chequearScrollHorizontal();
+    window.addEventListener("resize", chequearScrollHorizontal);
+    return () => window.removeEventListener("resize", chequearScrollHorizontal);
+  }, []);
+
   const visibles = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtrados = users.filter((u) => {
@@ -102,7 +121,9 @@ export function UsersTable({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar por nombre o correo"
           aria-label="Buscar por nombre o correo"
-          className="h-11 flex-1 rounded-lg border border-border bg-white px-4 text-sm text-ink placeholder:text-muted focus:border-electric focus:outline-none"
+          // `sm:flex-1`: ver comentario en projects-table.tsx (mismo bug de
+          // flex-basis colapsando la altura en el wrapper `flex-col` de mobile).
+          className="h-11 rounded-lg border border-border bg-white px-4 text-sm text-ink placeholder:text-muted focus:border-electric focus:outline-none sm:flex-1"
         />
         <Select
           value={filtroRol}
@@ -135,7 +156,12 @@ export function UsersTable({
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-border bg-white">
+        <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-border bg-white">
+        <div
+          ref={scrollRef}
+          onScroll={chequearScrollHorizontal}
+          className="h-full overflow-auto"
+        >
           {/* `table-fixed` + un ancho por columna: con layout automático, un
               `min-width` en "Acciones" no alcanzaba — el navegador igual le
               robaba espacio a las columnas vecinas cuando "Suspender" pasaba
@@ -212,6 +238,13 @@ export function UsersTable({
               ))}
             </tbody>
           </table>
+        </div>
+        {hayMasDerecha && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-linear-to-l from-ink/10 to-transparent"
+          />
+        )}
         </div>
 
         {totalPaginas > 1 && (

@@ -60,11 +60,15 @@ export function ProjectsTable({
   // por scroll — se oculta solo cuando ya se llegó al final (o cuando la
   // página completa entra sin necesitar scroll).
   const [hayMasAbajo, setHayMasAbajo] = useState(false);
+  // Fade a la derecha: la tabla (`min-w-180`) puede desbordar su caja en
+  // mobile — mismo motivo que `hayMasAbajo`, para el eje horizontal.
+  const [hayMasDerecha, setHayMasDerecha] = useState(false);
 
   const chequearScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
     setHayMasAbajo(el.scrollHeight - el.scrollTop - el.clientHeight > 1);
+    setHayMasDerecha(el.scrollWidth - el.scrollLeft - el.clientWidth > 1);
   };
 
   useEffect(() => {
@@ -133,7 +137,13 @@ export function ProjectsTable({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar por título o organización"
           aria-label="Buscar por título o organización"
-          className="h-11 flex-1 rounded-lg border border-border bg-white px-4 text-sm text-ink placeholder:text-muted focus:border-electric focus:outline-none"
+          // `sm:flex-1` (no `flex-1` a secas): en mobile el wrapper es
+          // `flex-col`, así que `flex-1` fija flex-basis 0% en el eje
+          // principal — que ahí es el ALTO, no el ancho — y eso le gana a
+          // `h-11`, dejando el input en ~19px. Recién desde `sm:flex-row`
+          // el eje principal pasa a ser el ancho, donde `flex-1` sí es lo
+          // que se busca (compartir la fila con el Select).
+          className="h-11 rounded-lg border border-border bg-white px-4 text-sm text-ink placeholder:text-muted focus:border-electric focus:outline-none sm:flex-1"
         />
         <Select
           value={filters.status ?? "todos"}
@@ -213,6 +223,12 @@ export function ProjectsTable({
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-linear-to-t from-ink/10 to-transparent"
+              />
+            )}
+            {hayMasDerecha && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-linear-to-l from-ink/10 to-transparent"
               />
             )}
           </div>
