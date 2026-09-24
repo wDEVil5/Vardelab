@@ -4,7 +4,6 @@ import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/reveal";
 import { FadeContent } from "@/components/fade-content";
-import { GlowCard } from "@/components/glow-card";
 import { Faq } from "@/components/faq";
 import { SiteFooter } from "@/components/site-footer";
 import { RevealFooter } from "@/components/reveal-footer";
@@ -12,6 +11,7 @@ import { DesafiosExplorer } from "@/components/desafios-explorer";
 import { ProcessStack, type ProcesoPaso } from "@/components/process-stack";
 import { OrganizacionHeroVisual } from "@/components/organizacion-hero-visual";
 import { EJEMPLOS_ORGANIZACION } from "@/features/organizations/necesidades-ejemplo";
+import { ConfidenceCarousel } from "@/features/organizations/components/confidence-carousel";
 
 export const metadata: Metadata = {
   title: "Para organizaciones · Vardelab",
@@ -86,7 +86,7 @@ export default function OrganizacionesPage() {
           </div>
         </section>
 
-        {/* 2 · PROPUESTA DE VALOR — GlowCard + Fade Content (React Bits, sin cursor) */}
+        {/* 2 · PROPUESTA DE VALOR — recorrido continuo, sin cards repetidas */}
         <section className="bg-surface">
           <div className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-6 sm:py-16">
             <FadeContent>
@@ -103,35 +103,34 @@ export default function OrganizacionesPage() {
                 entrega concreta.
               </p>
             </FadeContent>
-            <div className="mt-10 grid gap-4 md:grid-cols-3 md:items-stretch">
-              {PROPUESTA.map((item, i) => {
-                // La del medio es el diferenciador real: el seguimiento durante
-                // el proceso, no solo "define bien" o "recibe algo útil".
-                const destacada = i === 1;
-                return (
-                  <FadeContent
-                    key={item.titulo}
-                    delay={0.06 * i}
-                    className="h-full"
-                  >
-                    <GlowCard featured={destacada}>
-                      {destacada ? (
-                        <span className="w-fit rounded-full bg-electric/10 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-electric uppercase">
-                          Diferenciador
-                        </span>
-                      ) : (
-                        <span className="text-xs font-semibold tabular-nums text-muted">
-                          0{i + 1}
-                        </span>
-                      )}
-                      <h3 className="text-lg font-semibold text-ink">{item.titulo}</h3>
-                      <p className="text-sm leading-relaxed text-muted">
-                        {item.texto}
-                      </p>
-                    </GlowCard>
-                  </FadeContent>
-                );
-              })}
+            <div className="relative mt-10 overflow-hidden rounded-3xl border border-border bg-white">
+              <div className="grid md:grid-cols-3">
+                {PROPUESTA.map((item, i) => {
+                  const etapa = ["Define", "Acompaña", "Cierra"][i];
+                  return (
+                    <FadeContent key={item.titulo} delay={0.06 * i} className="h-full">
+                      <div
+                        className={cn(
+                          "relative flex h-full flex-col px-6 py-7 sm:px-8 sm:py-8",
+                          i > 0 && "border-t border-border md:border-l md:border-t-0",
+                        )}
+                      >
+                        <div className="flex items-center">
+                          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+                            {etapa}
+                          </span>
+                        </div>
+                        <h3 className="mt-5 max-w-xs text-lg font-semibold tracking-tight text-ink">
+                          {item.titulo}
+                        </h3>
+                        <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
+                          {item.texto}
+                        </p>
+                      </div>
+                    </FadeContent>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>
@@ -160,20 +159,77 @@ export default function OrganizacionesPage() {
 
           {/* Bloque honesto y destacado (rompe el patrón claro con tono serio). */}
           <Reveal>
-            <div className="mt-8 rounded-2xl bg-ink px-6 py-8 text-white sm:px-10">
-              <p className="max-w-3xl text-lg leading-relaxed">
-                Un buen desafío parte de una necesidad real, tiene un beneficiario
-                concreto y termina en un entregable que alguien puede utilizar.
-              </p>
-              <div className="mt-5 grid gap-3 text-sm text-white/75 sm:grid-cols-3 sm:gap-5">
-                <span>Una necesidad que existe.</span>
-                <span>Alguien que usará o revisará el resultado.</span>
-                <span>Un alcance que se puede completar.</span>
+            <div className="mt-8 rounded-3xl bg-ink px-6 py-8 text-white sm:px-10 sm:py-10">
+              <div className="max-w-2xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/55">
+                  El criterio Vardelab
+                </p>
+                <h3 className="mt-3 text-xl font-semibold tracking-tight sm:text-2xl">
+                  Un desafío real tiene un comienzo, un destinatario y un cierre.
+                </h3>
               </div>
-              <p className="mt-5 max-w-3xl border-t border-white/15 pt-5 text-sm leading-relaxed text-white/65">
-                Vardelab no reemplaza un puesto de trabajo ni sirve para
-                proyectos indefinidos. El desafío debe poder completarse en un
-                marco formativo de 2 a 8 semanas.
+
+              <div className="mt-8 grid gap-6 sm:grid-cols-3 sm:gap-0">
+                {[
+                  {
+                    titulo: "Necesidad real",
+                    texto: "Resuelve algo que ya existe.",
+                    icono: (
+                      <path d="M12 3v18M3 12h18" />
+                    ),
+                  },
+                  {
+                    titulo: "Beneficiario claro",
+                    texto: "Alguien usará o revisará el resultado.",
+                    icono: (
+                      <><circle cx="12" cy="8" r="3" /><path d="M5 20c.8-3.5 3.1-5.5 7-5.5s6.2 2 7 5.5" /></>
+                    ),
+                  },
+                  {
+                    titulo: "Alcance acotado",
+                    texto: "Puede completarse en 2–8 semanas.",
+                    icono: (
+                      <><circle cx="12" cy="12" r="8.5" /><path d="M12 7v5l3 2" /></>
+                    ),
+                  },
+                ].map((criterio, i) => (
+                  <div
+                    key={criterio.titulo}
+                    className={cn(
+                      "flex gap-3 sm:px-6",
+                      i > 0 && "sm:border-l sm:border-white/15",
+                      i === 0 && "sm:pl-0",
+                      i === 2 && "sm:pr-0",
+                    )}
+                  >
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-sprout">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="size-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        {criterio.icono}
+                      </svg>
+                    </span>
+                    <div>
+                      <p className="font-medium text-white">{criterio.titulo}</p>
+                      <p className="mt-1 text-sm leading-relaxed text-white/60">
+                        {criterio.texto}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="mt-8 rounded-2xl bg-white/5 px-4 py-3 text-sm leading-relaxed text-white/60 sm:px-5">
+                Vardelab no reemplaza un puesto de trabajo ni sirve para proyectos
+                indefinidos. El desafío debe poder completarse dentro de un marco
+                formativo de 2 a 8 semanas.
               </p>
             </div>
           </Reveal>
@@ -191,29 +247,42 @@ export default function OrganizacionesPage() {
                 El otro lado del microproyecto
               </p>
               <h2 className="mt-2.5 max-w-2xl text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-                Cuando publicas un desafío, también abres una puerta.
+                Publicar un desafío también abre una primera oportunidad.
               </h2>
-              <p className="mt-3 max-w-2xl text-muted">
-                Muchos estudiantes de primeros años aún no han colaborado en algo
-                real con alcance, plazos y feedback. Un microproyecto tuyo puede
-                ser esa primera práctica segura antes de la práctica formal o el
-                primer trabajo.
+              <p className="mt-3 max-w-xl text-muted">
+                Para muchos estudiantes puede ser su primera experiencia colaborando
+                en un proyecto real, con objetivos, plazos y feedback.
               </p>
             </FadeContent>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
-              {IMPACTO_ESTUDIANTES.map((item, i) => (
-                <FadeContent key={item.titulo} delay={0.05 * i}>
-                  <div className="h-full rounded-2xl border border-border bg-white p-5">
-                    <h3 className="text-base font-semibold text-ink">
-                      {item.titulo}
-                    </h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-muted">
-                      {item.texto}
-                    </p>
-                  </div>
-                </FadeContent>
-              ))}
+            <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-16">
+              <FadeContent>
+                <div className="max-w-sm">
+                  <p className="text-lg font-medium leading-relaxed text-ink sm:text-xl">
+                    <span className="text-electric">Cerrar algo real</span> cambia
+                    la forma en que un estudiante cuenta lo que sabe hacer.
+                  </p>
+                  <p className="mt-4 text-sm leading-relaxed text-muted">
+                    No se trata solo de practicar: se trata de construir algo que
+                    pueda mostrar, explicar y reconocer como propio.
+                  </p>
+                </div>
+              </FadeContent>
+
+              <div className="divide-y divide-border border-y border-border">
+                {IMPACTO_ESTUDIANTES.map((item, i) => (
+                  <FadeContent key={item.titulo} delay={0.05 * i}>
+                    <div className="-mx-3 grid gap-2 rounded-xl px-3 py-5 transition-colors hover:bg-white/65 sm:grid-cols-[minmax(10rem,0.7fr)_minmax(0,1fr)] sm:gap-8 sm:py-6">
+                      <h3 className="text-base font-semibold text-ink">
+                        {item.titulo}
+                      </h3>
+                      <p className="text-sm leading-relaxed text-muted">
+                        {item.texto}
+                      </p>
+                    </div>
+                  </FadeContent>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -279,33 +348,8 @@ export default function OrganizacionesPage() {
               Lo que probablemente te preguntas antes de publicar.
             </h2>
           </Reveal>
-          <div className="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2">
-            {CONFIANZA.map((punto, i) => (
-              <Reveal key={punto.titulo} delayMs={i * 60}>
-                <div className="flex gap-4">
-                  <span className="mt-1 flex size-6 shrink-0 items-center justify-center rounded-full bg-sprout/15 text-sprout">
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="size-4"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2.5}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden
-                    >
-                      <path d="M5 13l4 4L19 7" />
-                    </svg>
-                  </span>
-                  <div>
-                    <h3 className="font-semibold text-ink">{punto.titulo}</h3>
-                    <p className="mt-1 text-sm leading-relaxed text-muted">
-                      {punto.texto}
-                    </p>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
+          <div className="mt-8">
+            <ConfidenceCarousel items={CONFIANZA} />
           </div>
           <Reveal delayMs={180}>
             <div className="mt-10 flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
@@ -345,24 +389,33 @@ export default function OrganizacionesPage() {
         {/* 7 · BLOQUE PILOTO (CTA final, cercano) */}
         <section className="mx-auto w-full max-w-5xl px-5 pb-16 sm:px-6 sm:pb-28">
           <Reveal>
-            <div className="flex flex-col gap-4 rounded-3xl border border-electric/20 bg-electric/5 p-8 sm:p-12">
-              <h2 className="max-w-2xl text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-                No necesitas tener el desafío resuelto.
-              </h2>
-              <p className="max-w-xl text-muted">
-                Cuéntanos la necesidad tal como la tienes hoy, aunque sea una idea
-                suelta. En esta etapa piloto te acompañamos a acotarla en un desafío
-                concreto antes de publicarlo, sin costo y sin compromiso.
-              </p>
-              <div className="mt-2">
+            <div className="flex flex-col items-center gap-8 rounded-3xl border border-electric/20 bg-electric/5 p-8 sm:p-12">
+              <div className="w-full max-w-2xl">
+                <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                  No necesitas tener el desafío resuelto.
+                </h2>
+                <p className="mt-4 max-w-xl text-muted">
+                  Cuéntanos la necesidad tal como la tienes hoy, aunque sea una idea
+                  suelta. En esta etapa piloto te acompañamos a acotarla en un desafío
+                  concreto antes de publicarlo, sin costo y sin compromiso.
+                </p>
+              </div>
+              <div>
                 <Link
                   href="/contacto"
+                  aria-label="Hablar con Vardelab"
                   className={cn(
                     buttonClasses({ variant: "primary" }),
-                    "h-11 px-6 text-base",
+                    "group h-11 min-w-52 justify-center gap-2 px-6 text-base shadow-none transition-[background-color,box-shadow] duration-300 ease-out hover:bg-ink hover:shadow-[0_10px_22px_-12px_rgba(13,37,59,0.5)]",
                   )}
                 >
                   Hablar con Vardelab
+                  <span
+                    aria-hidden
+                    className="transition-transform duration-300 ease-out group-hover:translate-x-1"
+                  >
+                    →
+                  </span>
                 </Link>
               </div>
             </div>
@@ -544,26 +597,31 @@ const CONFIANZA = [
     titulo: "Cuánto tiempo dedicas",
     texto:
       "Revisar postulaciones y validar hitos toma bloques puntuales, no una dedicación diaria. Tú decides cuánto acompañar.",
+    icono: "clock" as const,
   },
   {
     titulo: "Qué recibes al final",
     texto:
       "Un entregable concreto y usable (un prototipo, un análisis, una propuesta o un proceso documentado), coherente con lo que definiste al publicar.",
+    icono: "result" as const,
   },
   {
     titulo: "Cómo se protege tu información",
     texto:
       "No compartas información sensible por defecto: la confidencialidad se coordina entre las partes antes de comenzar, no es un campo que se publica.",
+    icono: "shield" as const,
   },
   {
     titulo: "Qué pasa si no calza",
     texto:
       "Puedes ajustar el alcance, repostear o cerrar el desafío. No hay compromiso más allá de publicarlo.",
+    icono: "refresh" as const,
   },
   {
     titulo: "Quién acompaña o modera",
     texto:
       "Antes de publicarse, un moderador revisa el alcance del desafío; durante el proyecto, cualquiera de las partes puede reportar un problema.",
+    icono: "people" as const,
   },
 ];
 

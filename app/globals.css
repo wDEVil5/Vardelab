@@ -83,6 +83,220 @@ body {
   animation: fade-in 400ms ease-out both;
 }
 
+/* Carrusel lento para las preguntas de confianza de la landing de
+   organizaciones. El contenido se duplica para que el desplazamiento sea
+   continuo y se pausa al interactuar con una tarjeta. */
+.confidence-carousel-shell {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 2rem;
+  background: color-mix(in srgb, var(--surface) 72%, white);
+  padding-block: 0.5rem;
+}
+
+.confidence-carousel {
+  border-radius: 1.75rem;
+}
+
+.confidence-carousel__track {
+  animation: confidence-marquee 68s linear infinite;
+}
+
+@media (hover: none) {
+  .confidence-carousel {
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 1.25rem;
+  }
+
+  .confidence-carousel__track {
+    animation: none;
+  }
+
+  .confidence-carousel__card {
+    scroll-snap-align: center;
+  }
+}
+
+.confidence-carousel__indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.confidence-carousel__indicator-arrow {
+  color: var(--electric);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.confidence-carousel__dots {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.confidence-carousel__dots span {
+  display: block;
+  width: 0.32rem;
+  height: 0.32rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+}
+
+.confidence-carousel__dots span:first-child {
+  width: 1rem;
+  background: var(--electric);
+}
+
+.confidence-carousel {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.confidence-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.confidence-carousel:hover .confidence-carousel__track,
+.confidence-carousel:focus-within .confidence-carousel__track {
+  animation-play-state: paused;
+}
+
+.confidence-carousel__copy {
+  max-height: 10rem;
+  opacity: 1;
+}
+
+.confidence-carousel__icon {
+  will-change: transform;
+  transition:
+    transform 800ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 450ms ease-out,
+    box-shadow 600ms ease-out;
+}
+
+.confidence-carousel__card-content {
+  transition:
+    top 950ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 950ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (hover: hover) and (min-width: 768px) {
+  .confidence-carousel__card:hover .confidence-carousel__card-content,
+  .confidence-carousel__card:focus-visible .confidence-carousel__card-content {
+      top: 7.75rem;
+    transform: none;
+  }
+}
+
+.confidence-carousel__card:hover .confidence-carousel__icon,
+.confidence-carousel__card:focus-visible .confidence-carousel__icon {
+  transform: translateY(-2rem) rotate(-2deg);
+  box-shadow: 0 18px 30px -12px rgba(56, 103, 255, 0.32);
+}
+
+.confidence-carousel__fade {
+  pointer-events: none;
+  position: absolute;
+  inset-block: 0;
+  z-index: 2;
+  width: 1.25rem;
+}
+
+.confidence-carousel__fade--left {
+  display: none;
+}
+
+.confidence-carousel__fade--right {
+  right: 0;
+  background: linear-gradient(to left, var(--surface), transparent);
+}
+
+@keyframes confidence-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 0.5rem));
+  }
+}
+
+@media (hover: hover) and (min-width: 768px) {
+  .confidence-carousel__copy {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(0.6rem);
+      transition:
+        max-height 820ms cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 560ms ease-out 120ms,
+        transform 820ms cubic-bezier(0.16, 1, 0.3, 1) 120ms;
+  }
+
+  .confidence-carousel__card:hover .confidence-carousel__copy,
+  .confidence-carousel__card:focus-visible .confidence-carousel__copy {
+    max-height: 10rem;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (hover: none) {
+  .confidence-carousel__card {
+    height: 18rem;
+  }
+
+  .confidence-carousel__icon {
+    top: 0.5rem;
+  }
+
+  .confidence-carousel__card-content {
+    top: 8.5rem;
+    bottom: 1.5rem;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confidence-carousel__track {
+    animation: none;
+  }
+
+  .confidence-carousel__card-content {
+    transform: none !important;
+    transition: none;
+  }
+
+  .confidence-carousel__icon {
+    transform: none !important;
+    transition: none;
+  }
+
+  .confidence-carousel__copy {
+    max-height: none;
+    opacity: 1;
+    overflow: visible;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* En pantallas táctiles el stack conserva el sticky y el orden de las tarjetas,
+   pero evita combinar sticky + scale + blur actualizados en cada frame. Esa
+   combinación puede producir pequeños saltos de composición al desplazarse o
+   cuando un acordeón cambia la altura del documento. En escritorio se conserva
+   el efecto de profundidad completo. */
+@media (max-width: 767px) {
+  .process-stack-card {
+    filter: none !important;
+    transform: none !important;
+    will-change: auto;
+  }
+}
+
 /* Parpadeo del aro de "acción pendiente" (p. ej. confirmar/cancelar en
    /admin/usuarios): a diferencia de `animate-pulse` de Tailwind (fundido
    suave, lento, poco notorio), esto alterna abrupto entre visible y casi
