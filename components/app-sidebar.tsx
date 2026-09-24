@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { signOut } from "@/features/auth/actions";
+import { SignOutForm } from "@/components/sign-out-form";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
 
 export type AppNavItem = { href: string; label: string; icon: IconName };
@@ -130,7 +130,8 @@ const CLAVE_COLAPSADO = "vardelab:sidebar-colapsado";
  * colapsable: un riel de íconos que se despliega a etiquetas con el botón
  * superior; la preferencia se recuerda en localStorage. En móvil se reemplaza por
  * una barra superior con un panel lateral (drawer). Los enlaces resaltan la
- * sección activa. El cierre de sesión usa la Server Action `signOut`.
+ * sección activa. El cierre de sesión usa `SignOutForm` (Server Action
+ * `signOut` + navegación dura).
  */
 export function AppSidebar({
   user,
@@ -388,7 +389,7 @@ export function AppSidebar({
           </svg>
           {!compact && "Soporte"}
         </span>
-        <form action={signOut}>
+        <SignOutForm>
           <button
             type="submit"
             aria-label={compact ? "Cerrar sesión" : undefined}
@@ -403,7 +404,7 @@ export function AppSidebar({
             </svg>
             {!compact && "Cerrar sesión"}
           </button>
-        </form>
+        </SignOutForm>
       </div>
     </div>
   );
