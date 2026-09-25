@@ -1,7 +1,8 @@
-// Destino tras autenticarse. Provisional hasta que exista el panel del rol.
+// Punto de entrada tras autenticarse: decide el destino según el rol sin
+// convertir /inicio en una redirección permanente para administradores.
 // En su propio archivo (no en actions.ts) porque un módulo "use server" solo
 // puede exportar funciones async — una constante ahí rompe el build entero.
-export const POST_AUTH_REDIRECT = "/inicio";
+export const POST_AUTH_REDIRECT = "/entrada";
 
 /**
  * Sanea el `?next=` que las páginas protegidas agregan al mandar a
