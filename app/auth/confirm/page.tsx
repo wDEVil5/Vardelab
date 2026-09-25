@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AuthEntryShell } from "@/features/auth/components/auth-entry-shell";
 import { ConfirmEmailAuto } from "@/features/auth/components/confirm-email-auto";
+import { POST_AUTH_REDIRECT } from "@/features/auth/constants";
 
 export const metadata: Metadata = {
   title: "Confirmando cuenta · Vardelab",
@@ -29,7 +30,7 @@ export default async function ConfirmarCorreoPage({ searchParams }: PageProps) {
       <h2 className="text-2xl font-bold text-ink">Confirmando tu cuenta</h2>
       <p className="mt-1 text-sm text-muted">Esto solo toma un segundo.</p>
       <div className="mt-6">
-        <ConfirmEmailAuto code={code} next={next ?? "/inicio"} />
+        <ConfirmEmailAuto code={code} next={next ?? POST_AUTH_REDIRECT} />
       </div>
     </AuthEntryShell>
   );
