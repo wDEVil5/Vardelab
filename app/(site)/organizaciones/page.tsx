@@ -250,29 +250,29 @@ export default function OrganizacionesPage() {
                 Publicar un desafío también abre una primera oportunidad.
               </h2>
               <p className="mt-3 max-w-xl text-muted">
-                Para muchos estudiantes puede ser su primera experiencia colaborando
-                en un proyecto real, con objetivos, plazos y feedback.
+                Para muchos estudiantes es la primera vez que colaboran con una
+                organización, plazos y feedback reales.
               </p>
             </FadeContent>
 
-            <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-16">
+            <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-20">
               <FadeContent>
-                <div className="max-w-sm">
+                <div className="max-w-md">
                   <p className="text-lg font-medium leading-relaxed text-ink sm:text-xl">
                     <span className="text-electric">Cerrar algo real</span> cambia
                     la forma en que un estudiante cuenta lo que sabe hacer.
                   </p>
                   <p className="mt-4 text-sm leading-relaxed text-muted">
-                    No se trata solo de practicar: se trata de construir algo que
-                    pueda mostrar, explicar y reconocer como propio.
+                    No es solo práctica: es algo que puede mostrar y explicar
+                    como propio.
                   </p>
                 </div>
               </FadeContent>
 
-              <div className="divide-y divide-border border-y border-border">
-                {IMPACTO_ESTUDIANTES.map((item, i) => (
-                  <FadeContent key={item.titulo} delay={0.05 * i}>
-                    <div className="-mx-3 grid gap-2 rounded-xl px-3 py-5 transition-colors hover:bg-white/65 sm:grid-cols-[minmax(10rem,0.7fr)_minmax(0,1fr)] sm:gap-8 sm:py-6">
+              <FadeContent>
+                <div className="divide-y divide-border border-y border-border">
+                  {IMPACTO_ESTUDIANTES.map((item) => (
+                    <div key={item.titulo} className="grid gap-2 py-5 sm:grid-cols-[minmax(10rem,0.7fr)_minmax(0,1fr)] sm:gap-8 sm:py-6">
                       <h3 className="text-base font-semibold text-ink">
                         {item.titulo}
                       </h3>
@@ -280,9 +280,9 @@ export default function OrganizacionesPage() {
                         {item.texto}
                       </p>
                     </div>
-                  </FadeContent>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </FadeContent>
             </div>
           </div>
         </section>
@@ -544,17 +544,17 @@ const IMPACTO_ESTUDIANTES = [
   {
     titulo: "Primera colaboración real",
     texto:
-      "Practican trabajar con un objetivo, un plazo y alguien del otro lado que valida el avance.",
+      "Trabajan con un objetivo, un plazo y alguien que valida su avance.",
   },
   {
     titulo: "Ritmo de un proyecto vivo",
     texto:
-      "Hitos, minutas y feedback puntual: la misma dinámica que después encontrarán en una práctica o un equipo.",
+      "Se organizan con hitos, entregas y feedback, como en cualquier equipo.",
   },
   {
     titulo: "Confianza para el siguiente paso",
     texto:
-      "Llegan a su práctica o primer trabajo habiendo cerrado algo concreto, no solo ejercicios de clase.",
+      "Pueden contar qué hicieron, qué decisiones tomaron y cuál fue el resultado.",
   },
 ];
 
