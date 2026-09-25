@@ -17,189 +17,45 @@ const COLORES = [
 // tarjeta de abajo, como fichas de un mazo.
 const TOP_BASE = 72;
 const TOP_PASO = 14;
-// Escala final de la tarjeta más al fondo (i=0); cada tarjeta siguiente
-// termina un poco menos achicada — mismo criterio que `baseScale`/`itemScale`
-// del componente de referencia.
-const ESCALA_BASE = 0.88;
-const ESCALA_POR_NIVEL = 0.03;
-const BLUR_MAX = 2.5;
-// Margen (%) fuera del viewport en el que ya se conecta/desconecta el
-// listener de scroll — evita quedar "corto" y notarse un salto al entrar.
-const MARGEN_RANGO = 100;
 
-/**
- * Tarjetas apiladas con scroll: cada paso queda `sticky` a una altura
- * ligeramente mayor que el anterior (mismo truco de `top` escalonado que usan
- * los decks de tarjetas nativos en CSS — sin Lenis ni pin manual por JS), así
- * que al scrollear una tapa a la otra dejando un margen de color asomado,
- * como un mazo de cartas. La única pieza en JS es cosmética: a medida que se
- * acumulan tarjetas encima, las de más abajo se achican y desenfocan un poco
- * (profundidad), calculado contra `getBoundingClientRect` de la siguiente
- * tarjeta — el mismo patrón de "objetivo + resorte" que ya usa `SiteHeaderBar`.
- * Adaptación nativa del efecto "ScrollStack" de reactbits.dev que trajo el
- * dueño del producto: ese usa Lenis para remplazar el scroll de toda la
- * página (desproporcionado para una sola sección de 4 pasos cortos) y calcula
- * el achicado de cada tarjeta contra su propia posición estática en el
- * documento (`offsetTop`) comparada con el scroll actual — no contra si "ya
- * hay N tarjetas encima", que se sentía escalonado/con saltos en vez de
- * suave. Esta versión sigue el mismo criterio que el original: cada tarjeta
- * achica en cascada a mitad del viaje de la tarjeta que la tapa, calculado
- * en cada frame desde `scrollY` — continuo, sin pasos discretos. El `scroll`
- * de `window` solo se conecta mientras la
- * sección está cerca del viewport (via `IntersectionObserver`), y cada frame
- * se salta la escritura al DOM si el valor no cambió respecto al anterior —
- * si no, cualquier scroll en OTRA parte de una página larga recalcularía
- * estas 4 tarjetas para nada.
- */
+/** Tarjetas escalonadas con `sticky` nativo. Sin filtros ni escala por scroll
+ * para evitar re-composición y vibración del texto en Safari. */
 export function ProcessStack({ titulo, pasos }: { titulo: string; pasos: ProcesoPaso[] }) {
-  const contenedorRef = useRef<HTMLDivElement>(null);
-  const tituloRef = useRef<HTMLHeadingElement>(null);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const disparadoresRef = useRef<number[]>([]);
-  const ultimoPintadoRef = useRef<number[]>([]);
-  const rafRef = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
-    const el = contenedorRef.current;
-    if (!el) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let hideAt = 0;
+    let hidden: boolean | null = null;
 
-    let escuchandoScroll = false;
-
-    // Posición de layout en el documento (no la visual sticky).
-    // `getBoundingClientRect` falla si la página carga a mitad de la sección:
-    // la tarjeta ya está "pegada" y el top visual no es el top real del flujo,
-    // y los disparadores quedan corruptos → el efecto deja de responder al
-    // subir/bajar. `offsetTop` respecto al contenedor sí es la posición estática.
-    const medir = () => {
-      cardRefs.current.forEach((c) => {
-        if (!c) return;
-        c.style.transform = "";
-        c.style.filter = "";
-      });
-      if (tituloRef.current) tituloRef.current.style.opacity = "";
-
-      const rootTop = el.getBoundingClientRect().top + window.scrollY;
-      disparadoresRef.current = cardRefs.current.map((c, i) => {
-        if (!c) return 0;
-        return rootTop + c.offsetTop - (TOP_BASE + i * TOP_PASO);
-      });
-      ultimoPintadoRef.current = [];
+    const update = () => {
+      const nextHidden = window.scrollY >= hideAt;
+      if (hidden === nextHidden || !titleRef.current) return;
+      hidden = nextHidden;
+      titleRef.current.style.opacity = nextHidden ? "0" : "1";
     };
 
-    const pintar = () => {
-      const scrollY = window.scrollY;
-      cardRefs.current.forEach((c, i) => {
-        if (!c) return;
-
-        // Cascada: profundidad de i sigue el viaje de la siguiente. Progreso
-        // 0 al pegarse la actual; 1 a mitad de camino de la que la tapa.
-        const esUltima = i === cardRefs.current.length - 1;
-        const disparadorActual = disparadoresRef.current[i] ?? 0;
-        const disparadorSiguiente = esUltima
-          ? null
-          : (disparadoresRef.current[i + 1] ?? 0);
-        const viaje = esUltima
-          ? 0
-          : Math.max((disparadorSiguiente as number) - disparadorActual, 1);
-        const finCascada = disparadorActual + viaje * 0.5;
-        const progresoCrudo = esUltima
-          ? 0
-          : Math.min(
-              1,
-              Math.max(
-                0,
-                (scrollY - disparadorActual) /
-                  Math.max(finCascada - disparadorActual, 1),
-              ),
-            );
-        // Cuantizar para el cache: evita falsos "sin cambio" por floats.
-        const progreso = Math.round(progresoCrudo * 1000) / 1000;
-
-        if (ultimoPintadoRef.current[i] === progreso) return;
-        ultimoPintadoRef.current[i] = progreso;
-
-        const progresoAdelantado = 1 - (1 - progreso) ** 2;
-        const escalaObjetivo = ESCALA_BASE + i * ESCALA_POR_NIVEL;
-        const escala = 1 - progresoAdelantado * (1 - escalaObjetivo);
-        const blur =
-          progresoAdelantado * BLUR_MAX * (1 - i / (pasos.length - 1 || 1));
-
-        if (progreso <= 0) {
-          c.style.transform = "";
-          c.style.filter = "";
-        } else {
-          c.style.transform = `scale(${escala.toFixed(3)})`;
-          c.style.filter = blur > 0.1 ? `blur(${blur.toFixed(1)}px)` : "";
-        }
-
-        if (i === 0 && tituloRef.current) {
-          tituloRef.current.style.opacity = (1 - progreso).toFixed(2);
-        }
-      });
+    const measure = () => {
+      const container = containerRef.current;
+      const firstCard = container?.querySelector<HTMLElement>(".process-stack-card");
+      if (!container || !firstCard) return;
+      hideAt = container.getBoundingClientRect().top + window.scrollY + firstCard.offsetTop - TOP_BASE;
+      update();
     };
 
-    const onScroll = () => {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(pintar);
-    };
-
-    const activarScroll = () => {
-      // Remedir siempre al entrar: corrige carga a mitad de sección y
-      // vuelve a calibrar si el layout cambió mientras estaba fuera.
-      medir();
-      pintar();
-      if (!escuchandoScroll) {
-        window.addEventListener("scroll", onScroll, { passive: true });
-        escuchandoScroll = true;
-      }
-    };
-
-    const desactivarScroll = () => {
-      if (escuchandoScroll) {
-        window.removeEventListener("scroll", onScroll);
-        escuchandoScroll = false;
-      }
-      cancelAnimationFrame(rafRef.current);
-    };
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) activarScroll();
-        else desactivarScroll();
-      },
-      { rootMargin: `${MARGEN_RANGO}% 0px` },
-    );
-    observer.observe(el);
-
-    const onResize = () => {
-      medir();
-      pintar();
-    };
-
-    // Restauración de scroll del navegador / back-forward cache.
-    const onPageShow = () => {
-      medir();
-      pintar();
-    };
-
-    medir();
-    pintar();
-    window.addEventListener("resize", onResize);
-    window.addEventListener("pageshow", onPageShow);
+    measure();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", measure);
     return () => {
-      observer.disconnect();
-      desactivarScroll();
-      window.removeEventListener("resize", onResize);
-      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", measure);
     };
-  }, [pasos.length]);
-
+  }, []);
 
   return (
-    <div ref={contenedorRef} className="relative">
+    <div ref={containerRef} className="relative">
       <h2
-        ref={tituloRef}
+        ref={titleRef}
         className="sticky top-18 z-0 mb-8 text-center text-2xl font-bold tracking-tight text-ink sm:mb-10 sm:text-3xl"
       >
         {titulo}
@@ -209,10 +65,7 @@ export function ProcessStack({ titulo, pasos }: { titulo: string; pasos: Proceso
         return (
           <div
             key={paso.titulo}
-            ref={(el) => {
-              cardRefs.current[i] = el;
-            }}
-            className="process-stack-card sticky mb-5 origin-top will-change-transform last:mb-0"
+            className="process-stack-card sticky mb-5 last:mb-0"
             style={{ top: TOP_BASE + i * TOP_PASO, zIndex: i + 1 }}
           >
             <div

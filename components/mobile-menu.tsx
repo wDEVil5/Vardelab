@@ -8,6 +8,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useIsClient } from "@/lib/use-is-client";
+import { resolveSectionHref, scrollToSection } from "@/lib/section-navigation";
 
 export type MobileNavItem = { href: string; label: string };
 
@@ -218,10 +219,11 @@ function MobileNavLink({
   reduceMotion: boolean;
   onNavigate: () => void;
 }) {
-  const hashIndex = item.href.indexOf("#");
+  const resolvedHref = resolveSectionHref(item.href, pathname);
+  const hashIndex = resolvedHref.indexOf("#");
   const pathPart =
-    hashIndex >= 0 ? item.href.slice(0, hashIndex) || "/" : item.href;
-  const hashPart = hashIndex >= 0 ? item.href.slice(hashIndex + 1) : null;
+    hashIndex >= 0 ? resolvedHref.slice(0, hashIndex) || "/" : resolvedHref;
+  const hashPart = hashIndex >= 0 ? resolvedHref.slice(hashIndex + 1) : null;
 
   const [hashActivo, setHashActivo] = useState(false);
 
@@ -248,20 +250,11 @@ function MobileNavLink({
   const activo = hashPart ? hashActivo : isRouteActive(pathname, item.href);
 
   function onNavClick(event: MouseEvent<HTMLAnchorElement>) {
-    if (hashPart && pathname === pathPart) {
+    if (hashPart && pathname === pathPart && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
       event.preventDefault();
       onNavigate();
-      const el = document.getElementById(hashPart);
-      if (!el) return;
-      const preferReduce = window.matchMedia(
-        "(prefers-reduced-motion: reduce)",
-      ).matches;
       requestAnimationFrame(() => {
-        el.scrollIntoView({
-          behavior: preferReduce ? "auto" : "smooth",
-          block: "start",
-        });
-        window.history.pushState(null, "", `#${hashPart}`);
+        scrollToSection(hashPart);
       });
       return;
     }
@@ -279,7 +272,7 @@ function MobileNavLink({
       }}
     >
       <Link
-        href={item.href}
+        href={resolvedHref}
         onClick={onNavClick}
         aria-current={activo ? "page" : undefined}
         className={cn(
