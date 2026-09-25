@@ -59,6 +59,20 @@ body {
   font-family: var(--font-sans);
 }
 
+.section-jump-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  background: var(--background);
+  opacity: 0;
+  transition: opacity 190ms ease-in-out;
+}
+
+.section-jump-overlay--visible {
+  opacity: 1;
+}
+
 /* Saltos a anclas (#como-funciona, etc.): suaves salvo reduced-motion. */
 @media (prefers-reduced-motion: no-preference) {
   html {
@@ -281,19 +295,6 @@ body {
     overflow: visible;
     transform: none;
     transition: none;
-  }
-}
-
-/* En pantallas táctiles el stack conserva el sticky y el orden de las tarjetas,
-   pero evita combinar sticky + scale + blur actualizados en cada frame. Esa
-   combinación puede producir pequeños saltos de composición al desplazarse o
-   cuando un acordeón cambia la altura del documento. En escritorio se conserva
-   el efecto de profundidad completo. */
-@media (max-width: 767px) {
-  .process-stack-card {
-    filter: none !important;
-    transform: none !important;
-    will-change: auto;
   }
 }
 

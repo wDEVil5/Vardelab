@@ -4,9 +4,9 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Acordeón de preguntas frecuentes (una abierta a la vez). La expansión usa
- * `grid-template-rows: 0fr → 1fr`, que anima la altura de forma fluida sin medir
- * con JS; el signo "+" gira a "×" al abrir. Accesible con `aria-expanded`.
+ * Acordeón de preguntas frecuentes (una abierta a la vez). El contenido
+ * se expande con una fila de grid y un fundido; el espacio inferior vive
+ * dentro de la fila para evitar animar el padding del contenedor.
  */
 export function Faq({ items }: { items: { q: string; a: string }[] }) {
   const [abierta, setAbierta] = useState<number | null>(null);
@@ -36,13 +36,13 @@ export function Faq({ items }: { items: { q: string; a: string }[] }) {
             </button>
             <div
               className={cn(
-                "grid px-6 transition-[grid-template-rows,opacity,padding] duration-300 ease-out",
-                open ? "grid-rows-[1fr] pb-5 opacity-100" : "grid-rows-[0fr] opacity-0",
+                "grid px-6 transition-[grid-template-rows,opacity] duration-400 ease-out motion-reduce:transition-none",
+                open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
               )}
             >
-              <p className="overflow-hidden text-sm leading-relaxed text-muted">
-                {item.a}
-              </p>
+              <div className="min-h-0 overflow-hidden">
+                <p className="pb-5 text-sm leading-relaxed text-muted">{item.a}</p>
+              </div>
             </div>
           </div>
         );

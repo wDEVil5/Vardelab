@@ -71,7 +71,7 @@ export function PrinciplesShowcase({
 }) {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -79,6 +79,7 @@ export function PrinciplesShowcase({
     if (!section || !stage) return;
 
     let frame = 0;
+    let lastExpansion = -1;
     const update = () => {
       const travel = Math.max(section.offsetHeight - window.innerHeight, 1);
       const passed = Math.min(
@@ -87,11 +88,14 @@ export function PrinciplesShowcase({
       );
       const nextProgress = passed / travel;
       const expansion = Math.min(nextProgress / 0.28, 1);
-      stage.style.width = `${58 + expansion * 42}%`;
-      stage.style.height = `${58 + expansion * 22}%`;
-      stage.style.borderRadius = `${40 - expansion * 12}px`;
+      if (expansion !== lastExpansion) {
+        stage.style.width = `${58 + expansion * 42}%`;
+        stage.style.height = `${58 + expansion * 22}%`;
+        stage.style.borderRadius = `${40 - expansion * 12}px`;
+        lastExpansion = expansion;
+      }
 
-      setProgress(nextProgress);
+      setActiveIndex(Math.min(items.length - 1, Math.round(nextProgress * (items.length - 1))));
     };
 
     const onScroll = () => {
@@ -106,12 +110,7 @@ export function PrinciplesShowcase({
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", update);
     };
-  }, []);
-
-  const activeIndex = Math.min(
-    items.length - 1,
-    Math.round(progress * (items.length - 1)),
-  );
+  }, [items.length]);
   const activeItem = items[activeIndex];
   const activePalette = PALETTES[activeIndex % PALETTES.length];
 
@@ -146,7 +145,7 @@ export function PrinciplesShowcase({
             <div className="relative flex h-[min(62vh,38rem)] items-center justify-center">
               <div
                 ref={stageRef}
-                className="relative flex shrink-0 overflow-hidden border p-6 transition-[width,height,border-radius,background-color,border-color] duration-500 ease-out lg:p-9"
+                className="relative flex shrink-0 overflow-hidden border p-6 transition-[background-color,border-color] duration-500 ease-out lg:p-9"
                 style={{
                   width: "58%",
                   height: "58%",
