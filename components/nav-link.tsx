@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode, type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { resolveSectionHref, scrollToSection } from "@/lib/section-navigation";
 
 /**
  * Enlace de navegación con estado activo (resalta en electric la sección
@@ -24,9 +25,10 @@ export function NavLink({
   className?: string;
 }) {
   const pathname = usePathname();
-  const hashIndex = href.indexOf("#");
-  const pathPart = hashIndex >= 0 ? href.slice(0, hashIndex) || "/" : href;
-  const hashPart = hashIndex >= 0 ? href.slice(hashIndex + 1) : null;
+  const resolvedHref = resolveSectionHref(href, pathname);
+  const hashIndex = resolvedHref.indexOf("#");
+  const pathPart = hashIndex >= 0 ? resolvedHref.slice(0, hashIndex) || "/" : resolvedHref;
+  const hashPart = hashIndex >= 0 ? resolvedHref.slice(hashIndex + 1) : null;
 
   const [hashActivo, setHashActivo] = useState(false);
 
@@ -55,12 +57,18 @@ export function NavLink({
     );
     obs.observe(el);
 
-    // Si llegamos con hash en la URL, alinear estado inicial tras el layout.
+    // En una navegación entre rutas Next puede dejar el hash en la URL sin
+    // desplazar la página. Esperar a que termine de montar el destino.
+    let initialScrollTimer: number | undefined;
     if (window.location.hash === `#${hashPart}`) {
       queueMicrotask(() => setHashActivo(true));
+      initialScrollTimer = window.setTimeout(() => scrollToSection(hashPart), 120);
     }
 
-    return () => obs.disconnect();
+    return () => {
+      obs.disconnect();
+      if (initialScrollTimer) window.clearTimeout(initialScrollTimer);
+    };
   }, [hashPart, pathPart, pathname]);
 
   const activo = hashPart
@@ -68,26 +76,15 @@ export function NavLink({
     : pathname === href || (href !== "/" && pathname.startsWith(href));
 
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {
-    if (!hashPart) return;
-    if (pathname !== pathPart) return;
+    if (!hashPart || pathname !== pathPart || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
     event.preventDefault();
-    const el = document.getElementById(hashPart);
-    if (!el) return;
-
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    el.scrollIntoView({
-      behavior: reduceMotion ? "auto" : "smooth",
-      block: "start",
-    });
-    window.history.pushState(null, "", `#${hashPart}`);
+    scrollToSection(hashPart);
   }
 
   return (
     <Link
-      href={href}
+      href={resolvedHref}
       onClick={handleClick}
       aria-current={activo ? "page" : undefined}
       className={cn(
