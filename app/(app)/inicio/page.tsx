@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/queries";
 import { getStudentDashboard } from "@/features/dashboard/queries";
 import { getPublishedProjects } from "@/features/projects/queries";
@@ -37,14 +36,9 @@ export default async function InicioPage() {
   // corresponde a un patrocinador. Ahora cada rol tiene su propio `return`,
   // y lo que no calza con ningún rol conocido no llega a ver el dashboard
   // de estudiante por descarte.
-  // Admin: métricas del piloto, no el resumen de moderación — aunque
-  // también sea moderador, esto va primero (misma prioridad clara del
-  // comentario de arriba).
-  if (user?.esAdmin) {
-    redirect("/admin");
-  }
-
-  if (user?.esModerador) {
+  // Inicio es una página propia también para admin. El destino inicial
+  // después del login se decide en /entrada, no al visitar este enlace.
+  if (user?.esModerador || user?.esAdmin) {
     return <ModeradorInicio nombre={nombre} />;
   }
 
@@ -297,4 +291,3 @@ function KpiCard({
     </Link>
   );
 }
-
