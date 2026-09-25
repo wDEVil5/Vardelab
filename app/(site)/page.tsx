@@ -274,51 +274,44 @@ export default async function Home() {
                 Hay cosas que no se aprenden hasta que toca hacerlas de verdad.
               </h2>
 
-              <div className="mt-10 grid max-w-4xl gap-8 sm:gap-10">
-                <div className="grid gap-3 sm:grid-cols-[7rem_1fr] sm:gap-8">
+              <div className="mt-9 grid gap-8 sm:mt-10 sm:gap-9">
+                <div className="grid gap-3 sm:grid-cols-[9rem_1fr] sm:gap-8">
                   <p className="text-xs font-semibold tracking-wide text-electric uppercase sm:pt-1">
-                    La brecha
+                    La pregunta
                   </p>
-                  <p className="text-base leading-relaxed text-muted sm:text-lg">
-                    En la universidad puedes aprender herramientas, aprobar
-                    proyectos y acumular conocimientos, pero aun así llegar a
-                    tu primera práctica sin haber trabajado con un usuario real,
-                    un plazo incierto o un equipo que necesita coordinarse. Y
-                    cuando llega el momento de postular, aparece una pregunta
-                    difícil: “¿Qué experiencia puedo mostrar?”
+                  <p className="max-w-[65ch] text-base leading-relaxed text-muted sm:text-lg">
+                    Al buscar la primera práctica, muchos estudiantes se
+                    enfrentan a la misma pregunta: “¿Qué experiencia puedo
+                    mostrar?” Han aprendido en clases, pero todavía no han
+                    trabajado con un usuario real, un plazo y un equipo.
                   </p>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-[7rem_1fr] sm:gap-8">
+                <div className="grid gap-3 sm:grid-cols-[9rem_1fr] sm:gap-8">
                   <p className="text-xs font-semibold tracking-wide text-electric uppercase sm:pt-1">
-                    Lo que también pasaba
+                    La otra realidad
                   </p>
-                  <p className="text-base leading-relaxed text-muted sm:text-lg">
-                    Muchas organizaciones, fundaciones, emprendimientos y
-                    unidades universitarias tienen necesidades concretas que no
-                    justifican contratar un equipo completo, pero sí podrían
-                    convertirse en una experiencia valiosa: mejorar un sitio,
-                    ordenar datos, probar una idea o crear una herramienta
-                    pequeña.
+                  <p className="max-w-[65ch] text-base leading-relaxed text-muted sm:text-lg">
+                    Al mismo tiempo, hay organizaciones con necesidades
+                    concretas —mejorar un sitio, ordenar datos, probar una
+                    idea— que no requieren contratar a un equipo completo.
                   </p>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-[7rem_1fr] sm:gap-8">
+                <div className="grid gap-3 sm:grid-cols-[9rem_1fr] sm:gap-8">
                   <p className="text-xs font-semibold tracking-wide text-electric uppercase sm:pt-1">
-                    Por eso
+                    El encuentro
                   </p>
-                  <p className="text-base leading-relaxed text-muted sm:text-lg">
-                    Vardelab conecta esas dos realidades. Convierte una necesidad
-                    real en un microproyecto con alcance, roles, hitos,
-                    acompañamiento y un resultado verificable. No promete
-                    reemplazar una práctica ni entregar experiencia de papel:
-                    crea un espacio seguro para hacer, aprender, recibir
-                    retroalimentación y demostrar qué aportaste.
+                  <p className="max-w-[65ch] text-base leading-relaxed text-muted sm:text-lg">
+                    Vardelab surgió para conectar ambos lados: convertir esas
+                    necesidades en microproyectos acotados, con acompañamiento
+                    y un resultado que se puede mostrar. No reemplaza una
+                    práctica; ofrece un lugar para empezar a hacer.
                   </p>
                 </div>
 
-                <blockquote className="border-l-2 border-electric/40 pl-5 sm:ml-36">
-                  <p className="text-lg font-semibold tracking-tight text-ink sm:text-xl">
+                <blockquote className="max-w-2xl sm:ml-44">
+                  <p className="text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
                     La confianza profesional no aparece antes de empezar. Se
                     construye haciendo.
                   </p>
@@ -332,49 +325,47 @@ export default async function Home() {
       {/* 4.5 · PROPONER UN DESAFÍO (growth loop: el estudiante detecta necesidades) */}
       <section className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-6 sm:py-14">
         <Reveal>
-          <div className="relative overflow-hidden rounded-2xl border border-electric/25 bg-electric/5 p-5 shadow-[0_4px_20px_-10px_rgba(56,103,255,0.25)] sm:p-8">
-            {/* Mismo halo difuminado que el hero de Organizaciones y /contacto:
-                le da presencia sin agregar un recurso visual nuevo. */}
-            <div
-              className="animate-breathe pointer-events-none absolute -top-12 -right-12 -z-10 size-48 rounded-full bg-electric/25 blur-3xl"
-              aria-hidden
-            />
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-4">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-electric/15 text-electric">
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="size-5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.4.3.6.8.6 1.3V16h5.8v-.8c0-.5.2-1 .6-1.3A6 6 0 0 0 12 3z" />
-                  </svg>
-                </span>
-                <div>
-                  <p className="text-lg font-semibold text-ink">
-                    ¿Conoces una organización, pyme o fundación con un desafío?
-                  </p>
-                  <p className="mt-1 text-sm text-muted">
-                    Si ves una necesidad concreta en tu entorno, proponla y ayuda
-                    a sumar microproyectos reales.
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/proponer"
-                className={cn(
-                  buttonClasses({ variant: "primary" }),
-                  "h-11 shrink-0 px-6 text-base",
-                )}
+          <div className="flex flex-col gap-6 py-2 sm:flex-row sm:items-center sm:gap-7">
+            <span className="flex size-14 shrink-0 items-center justify-center rounded-full border border-electric/20 bg-electric/5 text-electric">
+              <svg
+                viewBox="0 0 24 24"
+                className="size-7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.7}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
               >
-                Proponer un desafío
-              </Link>
+                <rect x="3" y="13" width="7" height="7" rx="1.8" />
+                <rect x="14" y="4" width="7" height="7" rx="1.8" />
+                <path d="M10 16.5h1.5a5 5 0 0 0 5-5V11" />
+              </svg>
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="max-w-2xl text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
+                ¿Conoces una necesidad que podría convertirse en un microproyecto?
+              </h2>
+              <p className="mt-2 max-w-xl text-base leading-relaxed text-muted">
+                Puede ser en tu organización o en una cercana. Cuéntanos qué hace
+                falta y te ayudamos a darle un alcance claro.
+              </p>
             </div>
+            <Link
+              href="/proponer"
+              className={cn(
+                buttonClasses({ variant: "primary" }),
+                "group h-11 w-full shrink-0 justify-center gap-2.5 px-6 text-base shadow-none transition-[background-color,box-shadow] duration-300 ease-out hover:bg-ink hover:shadow-[0_10px_22px_-12px_rgba(13,37,59,0.5)] motion-reduce:transition-none sm:w-auto",
+              )}
+            >
+              Proponer un desafío
+              <span
+                aria-hidden
+                className="transition-transform duration-300 ease-out group-hover:translate-x-1 group-focus-visible:translate-x-1 motion-reduce:transition-none"
+              >
+                →
+              </span>
+            </Link>
           </div>
         </Reveal>
       </section>
