@@ -86,10 +86,30 @@ test('rechazar un proyecto en revisión lo devuelve a borrador con sus observaci
 
 test('cerrar un proyecto sin hito final entregado no se permite', async () => {
   const { exports } = load('features/projects/actions.ts', {
-    responses: [{ data: { estado: 'en_progreso' } }],
+    rpcResponses: [{ data: 'sin_hito_final', error: null }],
   });
   const result = await exports.closeProject({}, form({ projectId: 'p1', milestoneId: 'm1' }));
   assert.match(result.error, /todavía no entregó/);
+});
+
+// M102/D2: permiso único de divulgación por proyecto.
+test('autorizar divulgación de un proyecto propio funciona', async () => {
+  const { exports, paths } = load('features/projects/actions.ts', {
+    currentUser: { id: 'u1' },
+    responses: [{ data: [{ id: 'p1' }], error: null }],
+  });
+  const result = await exports.setProjectDisclosure('p1', true);
+  assert.equal(result.error, undefined);
+  assert.ok(paths.includes('/mis-proyectos/p1/validar'));
+});
+
+test('autorizar divulgación de un proyecto ajeno no se permite', async () => {
+  const { exports } = load('features/projects/actions.ts', {
+    currentUser: { id: 'u1' },
+    responses: [{ data: [], error: null }],
+  });
+  const result = await exports.setProjectDisclosure('ajeno', true);
+  assert.match(result.error, /permiso/);
 });
 
 test('eliminar un proyecto publicado (no borrador) no se permite', async () => {

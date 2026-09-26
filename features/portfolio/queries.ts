@@ -24,7 +24,7 @@ export async function getMyPortfolioItems() {
   const { data, error } = await supabase
     .from("portfolio_items")
     .select(
-      "id, titulo, descripcion, url, visibility, project:projects ( id, titulo )",
+      "id, titulo, descripcion, url, visibility, project:projects ( id, titulo, autoriza_divulgacion )",
     )
     .eq("profile_id", user.id)
     .order("created_at", { ascending: false });
@@ -91,7 +91,9 @@ export async function getPublicProfile(profileId: string) {
   const [{ data: items }, { data: skills }, { data: completados }] = await Promise.all([
     supabase
       .from("portfolio_items")
-      .select("id, titulo, descripcion, url, visibility, project:projects ( id, titulo )")
+      .select(
+        "id, titulo, descripcion, url, visibility, project:projects ( id, titulo, status )",
+      )
       .eq("profile_id", profileId)
       .eq("visibility", "publico")
       .order("created_at", { ascending: false }),
