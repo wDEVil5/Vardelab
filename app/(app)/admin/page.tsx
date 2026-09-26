@@ -37,7 +37,7 @@ export default async function AdminMetricasPage() {
         <Kpi value={m.publicados} label="Publicados" />
         <Kpi value={m.completados} label="Completados" tone="success" />
         <Kpi value={m.equiposFormados} label="Equipos formados" />
-        <Kpi value={m.evidenciasPortafolio} label="Evidencias de portafolio" />
+        <Kpi value={m.evidenciasPortafolio} label="Evidencias públicas autorizadas" />
       </div>
 
       <div className="mt-7 grid gap-5 lg:grid-cols-2">
@@ -56,7 +56,8 @@ export default async function AdminMetricasPage() {
           <h2 className="font-semibold text-ink">North Star Metric</h2>
           <p className="mt-3 text-4xl font-bold text-sprout">{m.northStar.completados}</p>
           <p className="mt-1.5 text-sm text-muted">
-            microproyectos completados con entregable validado y evidencia.
+            microproyectos cerrados con entrega final y evaluación de todo el
+            equipo.
           </p>
           <span
             className={cn(
