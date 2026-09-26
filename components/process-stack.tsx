@@ -17,40 +17,191 @@ const COLORES = [
 // tarjeta de abajo, como fichas de un mazo.
 const TOP_BASE = 72;
 const TOP_PASO = 14;
+const ESCALA_BASE = 0.88;
+const ESCALA_POR_NIVEL = 0.03;
+const BLUR_MAX = 2.5;
+const MARGEN_RANGO = 100;
 
-/** Tarjetas escalonadas con `sticky` nativo. Sin filtros ni escala por scroll
- * para evitar re-composición y vibración del texto en Safari. */
+/** Tarjetas escalonadas: profundidad por scroll solo en desktop. */
 export function ProcessStack({ titulo, pasos }: { titulo: string; pasos: ProcesoPaso[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const disparadoresRef = useRef<number[]>([]);
+  const ultimoPintadoRef = useRef<number[]>([]);
+  const rafRef = useRef(0);
 
   useEffect(() => {
-    let hideAt = 0;
-    let hidden: boolean | null = null;
+    const desktop = window.matchMedia("(min-width: 768px)");
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let stop = () => {};
 
-    const update = () => {
-      const nextHidden = window.scrollY >= hideAt;
-      if (hidden === nextHidden || !titleRef.current) return;
-      hidden = nextHidden;
-      titleRef.current.style.opacity = nextHidden ? "0" : "1";
+    const startMobile = () => {
+      cardRefs.current.forEach((card) => {
+        if (!card) return;
+        card.style.transform = "";
+        card.style.filter = "";
+      });
+      if (titleRef.current) titleRef.current.style.opacity = "";
+
+      let hideAt = 0;
+      let hidden: boolean | null = null;
+      const update = () => {
+        const nextHidden = window.scrollY >= hideAt;
+        if (hidden === nextHidden || !titleRef.current) return;
+        hidden = nextHidden;
+        titleRef.current.style.opacity = nextHidden ? "0" : "1";
+      };
+      const measure = () => {
+        const container = containerRef.current;
+        const firstCard = cardRefs.current[0];
+        if (!container || !firstCard) return;
+        hideAt = container.getBoundingClientRect().top + window.scrollY + firstCard.offsetTop - TOP_BASE;
+        update();
+      };
+      measure();
+      window.addEventListener("scroll", update, { passive: true });
+      window.addEventListener("resize", measure);
+      return () => {
+        window.removeEventListener("scroll", update);
+        window.removeEventListener("resize", measure);
+      };
     };
 
-    const measure = () => {
-      const container = containerRef.current;
-      const firstCard = container?.querySelector<HTMLElement>(".process-stack-card");
-      if (!container || !firstCard) return;
-      hideAt = container.getBoundingClientRect().top + window.scrollY + firstCard.offsetTop - TOP_BASE;
-      update();
+    const startDesktop = () => {
+      const el = containerRef.current;
+      if (!el) return () => {};
+      if (reducedMotion.matches) {
+        cardRefs.current.forEach((card) => {
+          if (!card) return;
+          card.style.transform = "";
+          card.style.filter = "";
+        });
+        if (titleRef.current) titleRef.current.style.opacity = "";
+        return () => {};
+      }
+
+      let escuchandoScroll = false;
+
+      // La posición de layout (offsetTop) no cambia cuando la tarjeta queda sticky.
+      const medir = () => {
+        cardRefs.current.forEach((card) => {
+          if (!card) return;
+          card.style.transform = "";
+          card.style.filter = "";
+        });
+        if (titleRef.current) titleRef.current.style.opacity = "";
+
+        const rootTop = el.getBoundingClientRect().top + window.scrollY;
+        disparadoresRef.current = cardRefs.current.map((card, i) =>
+          card ? rootTop + card.offsetTop - (TOP_BASE + i * TOP_PASO) : 0,
+        );
+        ultimoPintadoRef.current = [];
+      };
+
+      const pintar = () => {
+        const scrollY = window.scrollY;
+        cardRefs.current.forEach((card, i) => {
+          if (!card) return;
+
+          const esUltima = i === cardRefs.current.length - 1;
+          const disparadorActual = disparadoresRef.current[i] ?? 0;
+          const disparadorSiguiente = esUltima ? null : (disparadoresRef.current[i + 1] ?? 0);
+          const viaje = esUltima ? 0 : Math.max((disparadorSiguiente as number) - disparadorActual, 1);
+          const finCascada = disparadorActual + viaje * 0.5;
+          const progresoCrudo = esUltima
+            ? 0
+            : Math.min(1, Math.max(0, (scrollY - disparadorActual) / Math.max(finCascada - disparadorActual, 1)));
+          const progreso = Math.round(progresoCrudo * 1000) / 1000;
+
+          if (ultimoPintadoRef.current[i] === progreso) return;
+          ultimoPintadoRef.current[i] = progreso;
+
+          const progresoAdelantado = 1 - (1 - progreso) ** 2;
+          const escalaObjetivo = ESCALA_BASE + i * ESCALA_POR_NIVEL;
+          const escala = 1 - progresoAdelantado * (1 - escalaObjetivo);
+          const blur = progresoAdelantado * BLUR_MAX * (1 - i / (pasos.length - 1 || 1));
+
+          if (progreso <= 0) {
+            card.style.transform = "";
+            card.style.filter = "";
+          } else {
+            card.style.transform = `scale(${escala.toFixed(3)})`;
+            card.style.filter = blur > 0.1 ? `blur(${blur.toFixed(1)}px)` : "";
+          }
+
+          if (i === 0 && titleRef.current) {
+            titleRef.current.style.opacity = (1 - progreso).toFixed(2);
+          }
+        });
+      };
+
+      const onScroll = () => {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = requestAnimationFrame(pintar);
+      };
+
+      const activarScroll = () => {
+        medir();
+        pintar();
+        if (!escuchandoScroll) {
+          window.addEventListener("scroll", onScroll, { passive: true });
+          escuchandoScroll = true;
+        }
+      };
+
+      const desactivarScroll = () => {
+        if (escuchandoScroll) {
+          window.removeEventListener("scroll", onScroll);
+          escuchandoScroll = false;
+        }
+        cancelAnimationFrame(rafRef.current);
+      };
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) activarScroll();
+          else desactivarScroll();
+        },
+        { rootMargin: `${MARGEN_RANGO}% 0px` },
+      );
+      observer.observe(el);
+
+      const onResize = () => {
+        medir();
+        pintar();
+      };
+      const onPageShow = () => {
+        medir();
+        pintar();
+      };
+
+      medir();
+      pintar();
+      window.addEventListener("resize", onResize);
+      window.addEventListener("pageshow", onPageShow);
+      return () => {
+        observer.disconnect();
+        desactivarScroll();
+        window.removeEventListener("resize", onResize);
+        window.removeEventListener("pageshow", onPageShow);
+      };
     };
 
-    measure();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", measure);
+    const start = () => {
+      stop();
+      stop = desktop.matches ? startDesktop() : startMobile();
+    };
+
+    start();
+    desktop.addEventListener("change", start);
+    reducedMotion.addEventListener("change", start);
     return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", measure);
+      desktop.removeEventListener("change", start);
+      reducedMotion.removeEventListener("change", start);
+      stop();
     };
-  }, []);
+  }, [pasos.length]);
 
   return (
     <div ref={containerRef} className="relative">
@@ -65,7 +216,10 @@ export function ProcessStack({ titulo, pasos }: { titulo: string; pasos: Proceso
         return (
           <div
             key={paso.titulo}
-            className="process-stack-card sticky mb-5 last:mb-0"
+            ref={(el) => {
+              cardRefs.current[i] = el;
+            }}
+            className="process-stack-card sticky mb-5 last:mb-0 md:origin-top md:will-change-transform"
             style={{ top: TOP_BASE + i * TOP_PASO, zIndex: i + 1 }}
           >
             <div
