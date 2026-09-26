@@ -766,13 +766,18 @@ export async function toggleObservationResuelta(formData: FormData): Promise<voi
 
 export type CloseProjectState = { error?: string; ok?: boolean };
 
+const CLOSE_PROJECT_ERROR: Record<string, string> = {
+  sin_hito_final: "El equipo todavía no entregó el hito final.",
+  faltan_evaluaciones: "Evalúa a todos los integrantes del equipo antes de cerrar el proyecto.",
+  no_activo: "No se pudo cerrar (¿el proyecto ya no está activo?).",
+};
+
 /**
- * Cierra un proyecto (`activo → completado`, M31): valida y aprueba el hito
- * final si todavía estaba `entregado`, y recién ahí cierra el proyecto. No deja
- * cerrar sin una entrega final real (`entregado` o ya `aprobado`) — es la
- * precondición de negocio que el trigger `projects_guard_status` no valida (solo
- * decide quién puede hacer la transición). El trigger es la barrera real de la
- * transición.
+ * Cierra un proyecto (`activo → completado`). Delegado a `close_project`
+ * (M103, `security definer`): aprueba el hito final si hacía falta, exige
+ * evaluación de todo el equipo activo (RF-09) y cierra el proyecto, todo en
+ * una sola transacción — antes eran 2 `update` sueltos desde acá, sin
+ * evaluación y sin protección contra un fallo a mitad de camino.
  */
 export async function closeProject(
   _prevState: CloseProjectState,
@@ -787,42 +792,17 @@ export async function closeProject(
 
   const supabase = await createClient();
 
-  const { data: milestone } = await supabase
-    .from("milestones")
-    .select("estado")
-    .eq("id", milestoneId)
-    .eq("project_id", projectId)
-    .maybeSingle();
-
-  if (!milestone || (milestone.estado !== "entregado" && milestone.estado !== "aprobado")) {
-    return { error: "El equipo todavía no entregó el hito final." };
-  }
-
-  if (milestone.estado === "entregado") {
-    const { error: approveError } = await supabase
-      .from("milestones")
-      .update({ estado: "aprobado" })
-      .eq("id", milestoneId)
-      .eq("estado", "entregado");
-    if (approveError) {
-      console.error("[closeProject:approve]", approveError.message);
-      return { error: "No se pudo aprobar la entrega final." };
-    }
-  }
-
-  const { data, error } = await supabase
-    .from("projects")
-    .update({ status: "completado" })
-    .eq("id", projectId)
-    .eq("status", "activo")
-    .select("id");
+  const { data: resultado, error } = await supabase.rpc("close_project", {
+    _project_id: projectId,
+    _milestone_id: milestoneId,
+  });
 
   if (error) {
     console.error("[closeProject]", error.message);
     return { error: "No se pudo cerrar el proyecto." };
   }
-  if (!data || data.length === 0) {
-    return { error: "No se pudo cerrar (¿el proyecto ya no está activo?)." };
+  if (resultado !== "ok") {
+    return { error: CLOSE_PROJECT_ERROR[resultado as string] ?? "No se pudo cerrar el proyecto." };
   }
 
   revalidatePath(`/mis-proyectos/${projectId}/validar`);
@@ -834,6 +814,42 @@ export async function closeProject(
   revalidatePath("/proyectos");
   revalidatePath(`/proyectos/${projectId}`);
   return { ok: true };
+}
+
+export type SetDisclosureState = { error?: string };
+
+/**
+ * Permiso único por proyecto (no por material, decisión del piloto) para que
+ * sus integrantes muestren el nombre/resultado en su portafolio público
+ * (M102). El gestor lo decide cuándo quiera, no solo al cerrar: un proyecto
+ * activo también puede autorizarse para permitir evidencia "en curso".
+ * La RLS `projects_update_manager` es la barrera real; el `.select("id")`
+ * detecta un intento sin permiso (0 filas) en vez de fallar en silencio.
+ */
+export async function setProjectDisclosure(
+  projectId: string,
+  autoriza: boolean,
+): Promise<SetDisclosureState> {
+  const supabase = await createClient();
+  await requireUser(supabase);
+
+  const { data, error } = await supabase
+    .from("projects")
+    .update({ autoriza_divulgacion: autoriza })
+    .eq("id", projectId)
+    .select("id");
+
+  if (error) {
+    console.error("[setProjectDisclosure]", error.message);
+    return { error: "No se pudo guardar. Inténtalo de nuevo." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "No tienes permiso para cambiar esto." };
+  }
+
+  revalidatePath(`/mis-proyectos/${projectId}/validar`);
+  revalidatePath("/perfil");
+  return {};
 }
 
 export type DeleteProjectState = { error?: string };

@@ -201,3 +201,72 @@ test('get_pilot_metrics agrega bien los conteos reales del seed', () => {
     4,
   );
 });
+
+// --- close_project (M103) ----------------------------------------------------
+//
+// Proyecto 1 del seed (`PROJECT_ORG_CAMILA`): estado 'publicado', equipo con
+// Valentina como única integrante, hito final `e...002` en 'pendiente' (M8:
+// default de `milestone_status`). Cada prueba deja el proyecto en el estado
+// que necesita dentro de su propia transacción (se revierte al final).
+
+const HITO_FINAL = 'e0000000-0000-0000-0000-000000000002';
+
+test('close_project rechaza a quien no gestiona el proyecto ni es admin', () => {
+  expectError(
+    () => queryAs({
+      role: 'authenticated', userId: SEED.DIEGO,
+      sql: `select public.close_project('${SEED.PROJECT_ORG_CAMILA}', '${HITO_FINAL}');`,
+    }),
+    /No autorizado/,
+  );
+});
+
+test('close_project devuelve "no_activo" si el proyecto todavía no está activo', () => {
+  const rows = queryAs({
+    role: 'authenticated', userId: SEED.CAMILA,
+    sql: `select public.close_project('${SEED.PROJECT_ORG_CAMILA}', '${HITO_FINAL}');`,
+  });
+  assert.deepEqual(rows, ['no_activo']);
+});
+
+test('close_project devuelve "sin_hito_final" si el hito final no fue entregado', () => {
+  const rows = queryAs({
+    role: 'authenticated', userId: SEED.CAMILA,
+    sql: `
+      update public.projects set status = 'activo' where id = '${SEED.PROJECT_ORG_CAMILA}';
+      select public.close_project('${SEED.PROJECT_ORG_CAMILA}', '${HITO_FINAL}');
+    `,
+  });
+  assert.deepEqual(rows, ['sin_hito_final']);
+});
+
+// D3 de la auditoría de reglas de negocio (confirmada por el dueño): cerrar
+// exige evaluar a TODOS los integrantes activos del equipo, no solo la
+// entrega final — antes de M103 esto no se comprobaba en ningún punto.
+test('close_project devuelve "faltan_evaluaciones" si no se evaluó a todo el equipo', () => {
+  const rows = queryAs({
+    role: 'authenticated', userId: SEED.CAMILA,
+    sql: `
+      update public.projects set status = 'activo' where id = '${SEED.PROJECT_ORG_CAMILA}';
+      update public.milestones set estado = 'entregado' where id = '${HITO_FINAL}';
+      select public.close_project('${SEED.PROJECT_ORG_CAMILA}', '${HITO_FINAL}');
+    `,
+  });
+  assert.deepEqual(rows, ['faltan_evaluaciones']);
+});
+
+test('close_project cierra el proyecto de forma atómica cuando hay entrega y evaluación de todo el equipo', () => {
+  const rows = queryAs({
+    role: 'authenticated', userId: SEED.CAMILA,
+    sql: `
+      update public.projects set status = 'activo' where id = '${SEED.PROJECT_ORG_CAMILA}';
+      update public.milestones set estado = 'entregado' where id = '${HITO_FINAL}';
+      insert into public.evaluations (project_id, evaluatee_id, evaluator_id, puntaje)
+        values ('${SEED.PROJECT_ORG_CAMILA}', '${SEED.VALENTINA}', '${SEED.CAMILA}', 5);
+      select public.close_project('${SEED.PROJECT_ORG_CAMILA}', '${HITO_FINAL}');
+      select status from public.projects where id = '${SEED.PROJECT_ORG_CAMILA}';
+      select estado from public.milestones where id = '${HITO_FINAL}';
+    `,
+  });
+  assert.deepEqual(rows, ['ok', 'completado', 'aprobado']);
+});
