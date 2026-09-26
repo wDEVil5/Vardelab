@@ -27,25 +27,37 @@ test('un rol creado informa el fallo parcial de sus habilidades sin invitar a du
 });
 
 test('cerrar proyecto confirma y actualiza las vistas del estudiante y organización', async () => {
-  const { exports, paths, queries } = load('features/projects/actions.ts', {
-    responses: [{ data: { estado: 'entregado' } }, { error: null }, { data: [{ id: 'p1' }], error: null }],
+  const { exports, paths, rpcCalls } = load('features/projects/actions.ts', {
+    rpcResponses: [{ data: 'ok', error: null }],
   });
   const result = await exports.closeProject({}, form({ projectId: 'p1', milestoneId: 'm1' }));
   assert.equal(result.ok, true);
   for (const path of ['/mis-proyectos/p1/validar', '/mis-proyectos/p1', '/mis-proyectos', '/proyecto', '/proyecto/p1', '/inicio']) {
     assert.ok(paths.includes(path), `Falta actualizar ${path}`);
   }
-  assert.ok(queries[0].steps.some(([method, key, value]) => method === 'eq' && key === 'project_id' && value === 'p1'));
+  assert.equal(rpcCalls[0].name, 'close_project');
+  assert.equal(rpcCalls[0].args._project_id, 'p1');
+  assert.equal(rpcCalls[0].args._milestone_id, 'm1');
 });
 
 test('un hito ajeno o inexistente no permite cerrar ni mostrar éxito', async () => {
-  const { exports, queries, paths } = load('features/projects/actions.ts', {
-    responses: [{ data: null }],
+  const { exports, rpcCalls, paths } = load('features/projects/actions.ts', {
+    rpcResponses: [{ data: 'sin_hito_final', error: null }],
   });
   const result = await exports.closeProject({}, form({ projectId: 'p1', milestoneId: 'ajeno' }));
   assert.ok(result.error);
   assert.equal(result.ok, undefined);
-  assert.equal(queries.length, 1);
+  assert.equal(rpcCalls.length, 1);
+  assert.equal(paths.length, 0);
+});
+
+test('cerrar un proyecto sin evaluar a todo el equipo no se permite', async () => {
+  const { exports, rpcCalls, paths } = load('features/projects/actions.ts', {
+    rpcResponses: [{ data: 'faltan_evaluaciones', error: null }],
+  });
+  const result = await exports.closeProject({}, form({ projectId: 'p1', milestoneId: 'm1' }));
+  assert.match(result.error, /Evalúa a todos los integrantes/);
+  assert.equal(rpcCalls.length, 1);
   assert.equal(paths.length, 0);
 });
 

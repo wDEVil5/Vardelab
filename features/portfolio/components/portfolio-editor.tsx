@@ -152,6 +152,11 @@ export function PortfolioEditor({
         <ul className="flex flex-col gap-2">
           {items.map((it) => {
             const publico = it.visibility === "publico";
+            // Publicar una evidencia ligada a un proyecto exige que ESE
+            // proyecto tenga el permiso de divulgación del gestor (M102) —
+            // ya autorizada, u ofrecida sin proyecto, no bloquea.
+            const puedeHacerPublica =
+              publico || !it.project || it.project.autoriza_divulgacion;
             return (
               <li
                 key={it.id}
@@ -199,9 +204,16 @@ export function PortfolioEditor({
                     />
                     <button
                       type="submit"
+                      disabled={!puedeHacerPublica}
                       aria-label={publico ? "Hacer privada" : "Hacer pública"}
-                      title={publico ? "Hacer privada" : "Hacer pública"}
-                      className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface hover:text-ink"
+                      title={
+                        puedeHacerPublica
+                          ? publico
+                            ? "Hacer privada"
+                            : "Hacer pública"
+                          : "El proyecto encargado todavía no autorizó publicar su resultado."
+                      }
+                      className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface hover:text-ink disabled:pointer-events-none disabled:opacity-40"
                     >
                       <PortafolioIconSvg name={publico ? "ojo" : "ojo_tachado"} />
                     </button>

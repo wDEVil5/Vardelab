@@ -10,6 +10,7 @@ import { getMilestonesWithSubmissions } from "@/features/milestones/queries";
 import { ReturnMilestoneButton } from "@/features/milestones/components/milestone-actions";
 import { MemberEvaluationForm } from "@/features/evaluations/components/member-evaluation-form";
 import { CloseProjectButton } from "@/features/projects/components/close-project-button";
+import { DisclosureToggle } from "@/features/projects/components/disclosure-toggle";
 
 export const metadata: Metadata = {
   title: "Validar entrega y evaluar · Vardelab",
@@ -71,6 +72,13 @@ export default async function ValidarProyectoPage({ params }: PageProps) {
             : "Este proyecto todavía no está activo: primero hay que confirmar el equipo."}
         </div>
       )}
+
+      <div className="mt-6">
+        <DisclosureToggle
+          projectId={project.id}
+          autorizado={project.autoriza_divulgacion}
+        />
+      </div>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] lg:items-start">
         <div className="min-w-0 rounded-2xl border border-border bg-white p-6 sm:p-8">

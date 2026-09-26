@@ -21,11 +21,18 @@ const MODALIDAD_LABEL: Record<string, string> = {
 // Guía de lectura antes de decidir: no son casilleros que alguien marcó, es un
 // recordatorio de qué mirar en el brief de al lado. Por eso llevan el mismo
 // ícono neutro en todos — no hay un estado "verificado" que calcular.
+// Cubre los criterios de admisión del PRD §15.2 ("qué cuenta como proyecto
+// real"): ninguno es un campo del formulario del patrocinador, todos dependen
+// de este criterio editorial humano (decisión del piloto, prioridad 4 de la
+// auditoría de reglas de negocio).
 const GUIA = [
+  "Existe una necesidad real y actual — no un problema armado solo para que el equipo practique una tecnología.",
+  "Hay un beneficiario o responsable identificable que va a usar, probar o revisar el resultado.",
   "El problema se entiende sin conocer el contexto interno de la organización.",
   "El alcance es acotado: se puede completar en la duración declarada.",
   "El entregable es concreto y se puede verificar al final.",
-  "Los roles piden habilidades razonables para estudiantes.",
+  "Los roles piden habilidades razonables para estudiantes, sin reemplazar un puesto permanente.",
+  "El patrocinador acepta responder preguntas, revisar hitos y evaluar el resultado al cierre.",
 ];
 
 // Tiempo relativo desde que se creó el proyecto (no hay un timestamp propio de

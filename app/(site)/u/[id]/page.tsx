@@ -308,14 +308,24 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
   // una etiqueta más. Lo sin proyecto asociado queda al final, bajo "Trabajo
   // independiente".
   const SIN_PROYECTO = "__independiente__";
-  const gruposPortafolio: { key: string; titulo: string | null; items: typeof items }[] = [];
+  const gruposPortafolio: {
+    key: string;
+    titulo: string | null;
+    enCurso: boolean;
+    items: typeof items;
+  }[] = [];
   {
     const indice = new Map<string, (typeof gruposPortafolio)[number]>();
     for (const it of items) {
       const key = it.project?.id ?? SIN_PROYECTO;
       let grupo = indice.get(key);
       if (!grupo) {
-        grupo = { key, titulo: it.project?.titulo ?? null, items: [] };
+        grupo = {
+          key,
+          titulo: it.project?.titulo ?? null,
+          enCurso: it.project != null && it.project.status !== "completado",
+          items: [],
+        };
         indice.set(key, grupo);
         gruposPortafolio.push(grupo);
       }
@@ -499,8 +509,15 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
           <div className="mt-4 flex flex-col gap-6">
             {gruposPortafolio.map((grupo) => (
               <div key={grupo.key}>
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
+                <p className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted">
                   {grupo.titulo ?? "Trabajo independiente"}
+                  {/* El proyecto sigue activo: es avance, no un resultado ya
+                      validado — evita que se lea como entrega cerrada. */}
+                  {grupo.enCurso && (
+                    <Badge tone="brand" className="normal-case">
+                      En curso
+                    </Badge>
+                  )}
                 </p>
                 <ul className="flex flex-col gap-3">
                   {grupo.items.map((it) => {
