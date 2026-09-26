@@ -6,12 +6,46 @@ import { requireUser } from "@/features/auth/queries";
 
 /**
  * Acciones del portafolio (lado del estudiante). La RLS `portfolio_items_write_own`
- * (M6) exige que cada quien gestione solo sus evidencias (`profile_id = auth.uid()`).
- * El modelo es "enlace + contexto": la evidencia apunta a dónde vive el trabajo.
+ * (M6, endurecida en M102) exige que cada quien gestione solo sus evidencias
+ * (`profile_id = auth.uid()`), que el `project_id` ligado sea uno que de
+ * verdad integró, y que publicarla ligada a un proyecto tenga el permiso de
+ * divulgación del gestor (`projects.autoriza_divulgacion`). El modelo es
+ * "enlace + contexto": la evidencia apunta a dónde vive el trabajo.
  */
 
 export type PortfolioState = { error?: string; success?: boolean };
 export type DeletePortfolioState = { error?: string; success?: boolean };
+
+/**
+ * Comprueba en servidor lo que la RLS de M102 exige, para devolver un mensaje
+ * claro en vez de que la inserción falle con un error genérico de Postgres.
+ * `null` = pasa la validación.
+ */
+async function validarProyectoLigado(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projectId: string,
+  publico: boolean,
+): Promise<string | null> {
+  const { data: participa } = await supabase.rpc("is_project_member", {
+    _project_id: projectId,
+  });
+  if (!participa) {
+    return "Solo puedes ligar la evidencia a un proyecto en el que participaste.";
+  }
+
+  if (publico) {
+    const { data: proyecto } = await supabase
+      .from("projects")
+      .select("autoriza_divulgacion")
+      .eq("id", projectId)
+      .maybeSingle();
+    if (!proyecto?.autoriza_divulgacion) {
+      return "El proyecto encargado todavía no autorizó publicar su resultado. Puedes guardarla como privada mientras tanto.";
+    }
+  }
+
+  return null;
+}
 
 export async function addPortfolioItem(
   _prevState: PortfolioState,
@@ -28,6 +62,11 @@ export async function addPortfolioItem(
 
   const supabase = await createClient();
   const user = await requireUser(supabase);
+
+  if (projectId) {
+    const error = await validarProyectoLigado(supabase, projectId, publico);
+    if (error) return { error };
+  }
 
   const { error } = await supabase.from("portfolio_items").insert({
     profile_id: user.id,
@@ -93,6 +132,26 @@ export async function togglePortfolioItemVisibility(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return;
+
+  // Pasar a público una evidencia ligada a un proyecto exige que ESE proyecto
+  // ya tenga el permiso de divulgación (M102) — se revalida acá porque el
+  // permiso puede haber cambiado desde que se creó la evidencia.
+  if (nueva === "publico") {
+    const { data: item } = await supabase
+      .from("portfolio_items")
+      .select("project_id")
+      .eq("id", itemId)
+      .eq("profile_id", user.id)
+      .maybeSingle();
+    if (item?.project_id) {
+      const { data: proyecto } = await supabase
+        .from("projects")
+        .select("autoriza_divulgacion")
+        .eq("id", item.project_id)
+        .maybeSingle();
+      if (!proyecto?.autoriza_divulgacion) return;
+    }
+  }
 
   const { error } = await supabase
     .from("portfolio_items")

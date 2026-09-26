@@ -112,6 +112,55 @@ test('no se puede agregar una evidencia de portafolio a nombre de otra persona',
   }));
 });
 
+// M102: el hallazgo real de la auditoría de reglas de negocio — antes de esta
+// migración, `profile_id = auth.uid()` (arriba) era la ÚNICA comprobación;
+// nada validaba `project_id`, así que Diego (que no integra el equipo de
+// `PROJECT`, es dueño de una organización distinta) podía reclamarlo igual.
+test('M102: un usuario que no integra el equipo del proyecto no puede ligarle una evidencia', () => {
+  expectRlsError(() => queryAs({
+    role: 'authenticated', userId: SEED.DIEGO,
+    sql: `insert into public.portfolio_items (id, profile_id, titulo, project_id, visibility)
+          values ('${PORTFOLIO_ITEM}', '${SEED.DIEGO}', 'Robo de evidencia', '${PROJECT}', 'privado');`,
+  }));
+});
+
+test('M102: quien sí integra el equipo del proyecto puede ligarle una evidencia privada', () => {
+  const rows = queryAs({
+    role: 'authenticated', userId: SEED.VALENTINA,
+    sql: `insert into public.portfolio_items (id, profile_id, titulo, project_id, visibility)
+          values ('${PORTFOLIO_ITEM}', '${SEED.VALENTINA}', 'App de tareas', '${PROJECT}', 'privado')
+          returning id;`,
+  });
+  assert.deepEqual(rows, [PORTFOLIO_ITEM]);
+});
+
+test('M102: publicar una evidencia ligada a un proyecto sin permiso de divulgación no se permite', () => {
+  // `projects.autoriza_divulgacion` nace en `false` (default de M102) — el
+  // seed no lo autorizó para `PROJECT`.
+  expectRlsError(() => queryAs({
+    role: 'authenticated', userId: SEED.VALENTINA,
+    sql: `insert into public.portfolio_items (id, profile_id, titulo, project_id, visibility)
+          values ('${PORTFOLIO_ITEM}', '${SEED.VALENTINA}', 'App de tareas', '${PROJECT}', 'publico');`,
+  }));
+});
+
+test('M102: publicar una evidencia ligada a un proyecto con permiso de divulgación funciona', () => {
+  // Camila (gestora de `PROJECT`) autoriza; recién ahí Valentina (integrante)
+  // puede publicar la ficha ligada a ese proyecto — mismo patrón de cambio de
+  // identidad a mitad de transacción que ya usan las pruebas de arriba.
+  const rows = queryAs({
+    role: 'authenticated', userId: SEED.CAMILA,
+    sql: `
+      update public.projects set autoriza_divulgacion = true where id = '${PROJECT}';
+      set request.jwt.claim.sub = '${SEED.VALENTINA}';
+      insert into public.portfolio_items (id, profile_id, titulo, project_id, visibility)
+      values ('${PORTFOLIO_ITEM}', '${SEED.VALENTINA}', 'App de tareas', '${PROJECT}', 'publico')
+      returning id;
+    `,
+  });
+  assert.deepEqual(rows, [PORTFOLIO_ITEM]);
+});
+
 // --- leads -----------------------------------------------------------------
 
 const LEAD = 'f9000000-0000-0000-0000-000000000004';
