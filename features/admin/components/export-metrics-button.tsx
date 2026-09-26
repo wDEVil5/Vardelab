@@ -9,7 +9,7 @@ function aCsv(m: PilotMetrics): string {
     ["Publicados", String(m.publicados)],
     ["Completados", String(m.completados)],
     ["Equipos formados", String(m.equiposFormados)],
-    ["Evidencias de portafolio", String(m.evidenciasPortafolio)],
+    ["Evidencias públicas autorizadas", String(m.evidenciasPortafolio)],
     ...m.porEstado.map((e): [string, string] => [`Proyectos · ${e.etiqueta}`, String(e.total)]),
     ["Postulaciones totales", String(m.postulaciones.total)],
     ["Postulaciones aceptadas", String(m.postulaciones.aceptadas)],
