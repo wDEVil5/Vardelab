@@ -6,11 +6,14 @@ import { useEffect, useRef, type ReactNode } from "react";
 const RANGO = 160;
 // Ancho máximo sin scrollear: bien holgado, casi de punta a punta en
 // pantallas normales (el gutter real lo da el padding del contenido interno).
-// Al scrollear se contrae hasta ANCHO_CONTENIDO: el mismo max-w-5xl (1024px)
-// que usa el resto del sitio para el body/main, así la píldora scrolleada
-// queda alineada con el contenido de la página, no con un ancho inventado.
+// Al scrollear se contrae hasta ANCHO_CONTENIDO: el mismo max-w-6xl (1152px)
+// que usan la portada y la sección que la sigue, así la píldora scrolleada
+// queda alineada con lo que se ve justo al empezar a scrollear (más abajo el
+// sitio mezcla max-w-5xl/6xl/3xl según la sección, así que no hay un ancho
+// que calce con todas — se prioriza el que se ve en el momento de la
+// transición, no uno arbitrario).
 const ANCHO_COMPLETO = 1280;
-const ANCHO_CONTENIDO = 1024;
+const ANCHO_CONTENIDO = 1152;
 // Qué tan rápido el valor "actual" alcanza al "objetivo" cada frame (0-1).
 // Bajo = más inercia/retraso (se siente con peso propio); alto = casi 1:1
 // con el scroll.
