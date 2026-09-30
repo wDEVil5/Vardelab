@@ -35,6 +35,19 @@ const FORMATO_FECHA = new Intl.DateTimeFormat("es-CL", {
   year: "numeric",
 });
 
+// Guía de lectura antes de aprobar/rechazar: no son casilleros que bloquean el
+// botón, es un recordatorio de qué mirar (mismo patrón que la guía de
+// admisión de proyectos en /moderacion/[id]). Verificar una organización
+// significa "identidad y vínculo revisados", no un aval institucional ni una
+// garantía de calidad — decisión del piloto, propuesta de REGLAS_NEGOCIO.md
+// ("Personas, cuentas y organizaciones").
+const GUIA_VERIFICACION = [
+  "La organización existe de verdad: el sitio web o el correo de contacto corresponden a algo real, no a un perfil inventado para el piloto.",
+  "Quien la registró tiene un vínculo real con ella — no es alguien ajeno reclamándola sin autorización.",
+  "Verificar no es avalar la calidad ni la idoneidad institucional de la organización, solo que existe y que quien la representa es quien dice ser.",
+  "Antes de que publique un desafío, queda claro quién va a ser el contacto y quién va a validar el resultado.",
+];
+
 type PageProps = { params: Promise<{ id: string }> };
 
 /**
@@ -97,6 +110,33 @@ export default async function AdminOrganizacionDetallePage({ params }: PageProps
           <Campo label="Contacto">{org.contacto || "—"}</Campo>
           <Campo label="Correo de contacto">{org.contacto_email || "—"}</Campo>
         </dl>
+
+        {org.verificacion === "en_revision" && (
+          <div className="mt-6 border-t border-border pt-6">
+            <h3 className="text-sm font-semibold text-ink">Antes de decidir</h3>
+            <ul className="mt-3 flex flex-col gap-3">
+              {GUIA_VERIFICACION.map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-electric/10 text-electric">
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="size-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={3}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                  </span>
+                  <span className="text-sm leading-relaxed text-ink">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {org.verificacion === "en_revision" && (

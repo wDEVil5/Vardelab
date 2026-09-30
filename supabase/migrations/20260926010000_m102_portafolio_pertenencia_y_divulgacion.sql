@@ -12,8 +12,8 @@
 -- comprobación (auth.uid() integra el equipo del proyecto) — se reutiliza acá
 -- en vez de duplicar la lógica.
 --
--- Segundo cambio, decisión de producto (D2 de la auditoría, confirmada por el
--- dueño): antes de esta migración, una evidencia ligada a un proyecto nacía
+-- Segundo cambio, decisión de producto (D2 de la auditoría)
+-- antes de esta migración, una evidencia ligada a un proyecto nacía
 -- pública con un solo clic del estudiante, sin ningún permiso del
 -- patrocinador — ya documentado a propósito como brecha abierta en el
 -- comentario de M24. `projects.autoriza_divulgacion` es el permiso mínimo
