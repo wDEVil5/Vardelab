@@ -270,3 +270,122 @@ test('close_project cierra el proyecto de forma atómica cuando hay entrega y ev
   });
   assert.deepEqual(rows, ['ok', 'completado', 'aprobado']);
 });
+
+// --- set_portfolio_item_moderacion (M105) ------------------------------------
+//
+// Propuesta confirmada de REGLAS_NEGOCIO.md: admin/moderador pueden ocultar
+// una ficha de portafolio que divulgue datos no autorizados. Cada prueba crea
+// su propia ficha dentro de la transacción (se revierte al final).
+
+const PORTFOLIO_ITEM_MOD = 'f9000000-0000-0000-0000-000000000009';
+
+test('set_portfolio_item_moderacion rechaza a quien no es moderador ni admin', () => {
+  expectError(
+    () => queryAs({
+      // El insert lo hace la dueña (Valentina) — si lo hiciera Diego, ni
+      // siquiera llegaría a probar la función: reventaría antes, por la
+      // policy de escritura (M102), que es un fallo distinto al que prueba
+      // este test.
+      role: 'authenticated', userId: SEED.VALENTINA,
+      sql: `
+        insert into public.portfolio_items (id, profile_id, titulo, visibility)
+          values ('${PORTFOLIO_ITEM_MOD}', '${SEED.VALENTINA}', 'App de tareas', 'publico');
+        set request.jwt.claim.sub = '${SEED.DIEGO}';
+        select public.set_portfolio_item_moderacion('${PORTFOLIO_ITEM_MOD}', true, 'expone datos internos');
+      `,
+    }),
+    /No autorizado/,
+  );
+});
+
+test('el propio dueño tampoco puede ocultar su ficha por esta vía', () => {
+  expectError(
+    () => queryAs({
+      role: 'authenticated', userId: SEED.VALENTINA,
+      sql: `
+        insert into public.portfolio_items (id, profile_id, titulo, visibility)
+          values ('${PORTFOLIO_ITEM_MOD}', '${SEED.VALENTINA}', 'App de tareas', 'publico');
+        select public.set_portfolio_item_moderacion('${PORTFOLIO_ITEM_MOD}', true, 'expone datos internos');
+      `,
+    }),
+    /No autorizado/,
+  );
+});
+
+test('ocultar sin motivo no se permite', () => {
+  expectError(
+    () => queryAs({
+      role: 'authenticated', userId: SEED.VALENTINA,
+      sql: `
+        insert into public.portfolio_items (id, profile_id, titulo, visibility)
+          values ('${PORTFOLIO_ITEM_MOD}', '${SEED.VALENTINA}', 'App de tareas', 'publico');
+        set request.jwt.claim.sub = '${SEED.MARCOS}';
+        select public.set_portfolio_item_moderacion('${PORTFOLIO_ITEM_MOD}', true, '');
+      `,
+    }),
+    /Falta el motivo/,
+  );
+});
+
+test('un moderador oculta una ficha pública y deja de ser visible para un desconocido, aunque el dueño la vuelva a marcar pública', () => {
+  const rows = queryAs({
+    role: 'authenticated', userId: SEED.VALENTINA,
+    sql: `
+      insert into public.portfolio_items (id, profile_id, titulo, visibility)
+        values ('${PORTFOLIO_ITEM_MOD}', '${SEED.VALENTINA}', 'App de tareas', 'publico');
+      set request.jwt.claim.sub = '${SEED.MARCOS}';
+      select public.set_portfolio_item_moderacion('${PORTFOLIO_ITEM_MOD}', true, 'expone datos internos del proyecto');
+      -- El dueño intenta revertirlo marcándola pública de nuevo (ya lo estaba,
+      -- pero simula el intento real: su propio UPDATE no toca oculto_por_moderacion).
+      set request.jwt.claim.sub = '${SEED.VALENTINA}';
+      update public.portfolio_items set visibility = 'publico' where id = '${PORTFOLIO_ITEM_MOD}';
+      -- "Desconocido": auth.uid() = null (JWT claim vacío) — no cualquier
+      -- otro id del seed, que casi siempre resulta ser gestor de Valentina en
+      -- algún otro proyecto (M71) y vería la ficha por esa vía, ajena a esta
+      -- prueba. Cambiar de rol a mitad de sesión tampoco sirve: no borra el
+      -- request.jwt.claim.sub ya seteado (auth.uid() seguiría resolviendo a
+      -- Valentina). Ver auth.uid(): nullif(current_setting(...), '').
+      set request.jwt.claim.sub = '';
+      select id from public.portfolio_items where id = '${PORTFOLIO_ITEM_MOD}';
+    `,
+  });
+  // Solo la fila del RPC ('t'): el SELECT final del desconocido no devuelve
+  // nada — RLS la bloquea por completo, ni siquiera una fila vacía marcable.
+  assert.deepEqual(rows, ['t']);
+});
+
+test('un moderador reactiva una ficha oculta y vuelve a ser visible para un desconocido', () => {
+  const rows = queryAs({
+    role: 'authenticated', userId: SEED.VALENTINA,
+    sql: `
+      insert into public.portfolio_items (id, profile_id, titulo, visibility, oculto_por_moderacion, oculto_motivo)
+        values ('${PORTFOLIO_ITEM_MOD}', '${SEED.VALENTINA}', 'App de tareas', 'publico', true, 'motivo previo');
+      set request.jwt.claim.sub = '${SEED.MARCOS}';
+      select public.set_portfolio_item_moderacion('${PORTFOLIO_ITEM_MOD}', false, '');
+      set request.jwt.claim.sub = '';
+      select id from public.portfolio_items where id = '${PORTFOLIO_ITEM_MOD}';
+    `,
+  });
+  assert.deepEqual(rows, ['t', PORTFOLIO_ITEM_MOD]);
+});
+
+test('ocultar una ficha inexistente devuelve false, sin reventar', () => {
+  const rows = queryAs({
+    role: 'authenticated', userId: SEED.MARCOS,
+    sql: `select public.set_portfolio_item_moderacion('00000000-0000-0000-0000-000000000000', true, 'motivo');`,
+  });
+  assert.deepEqual(rows, ['f']);
+});
+
+test('un moderador NO gana visibilidad sobre fichas privadas ajenas (solo puede moderar lo que ya es público)', () => {
+  const rows = queryAs({
+    role: 'authenticated', userId: SEED.VALENTINA,
+    sql: `
+      insert into public.portfolio_items (id, profile_id, titulo, visibility)
+        values ('${PORTFOLIO_ITEM_MOD}', '${SEED.VALENTINA}', 'Nota privada', 'privado');
+      set request.jwt.claim.sub = '${SEED.MARCOS}';
+      select id from public.portfolio_items where id = '${PORTFOLIO_ITEM_MOD}';
+    `,
+  });
+  assert.deepEqual(rows, []);
+});

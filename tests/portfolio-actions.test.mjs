@@ -135,3 +135,77 @@ test('activar visibilidad pública de una evidencia con proyecto sin autorizaci�
   assert.equal(queries.length, 2);
   assert.ok(!queries.some((q) => q.steps.some(([m]) => m === 'update')));
 });
+
+// M105: admin/moderador pueden ocultar una ficha pública que divulgue datos
+// no autorizados. La autorización real vive en `set_portfolio_item_moderacion`
+// (RLS/security definer, probado con Postgres real en tests/rls/); acá solo
+// se prueba la validación de formulario y el registro en audit_logs.
+
+test('ocultar por moderación sin sesión no se permite', async () => {
+  const { exports, rpcCalls } = load('features/portfolio/actions.ts');
+  const result = await exports.setPortfolioItemModeracion({}, form({
+    itemId: 'i1', profileId: 'p1', oculto: 'true', motivo: 'expone datos',
+  }));
+  assert.match(result.error, /sesión expiró/);
+  assert.equal(rpcCalls.length, 0);
+});
+
+test('ocultar por moderación sin motivo no se permite', async () => {
+  const { exports, rpcCalls } = load('features/portfolio/actions.ts', { currentUser: USER });
+  const result = await exports.setPortfolioItemModeracion({}, form({
+    itemId: 'i1', profileId: 'p1', oculto: 'true', motivo: '',
+  }));
+  assert.match(result.error, /Deja un motivo/);
+  assert.equal(rpcCalls.length, 0);
+});
+
+test('ocultar por moderación con motivo funciona y deja rastro en audit_logs', async () => {
+  const { exports, rpcCalls, queries } = load('features/portfolio/actions.ts', {
+    currentUser: USER,
+    rpcResponses: [{ data: true, error: null }],
+    responses: [{ error: null }],
+  });
+  const result = await exports.setPortfolioItemModeracion({}, form({
+    itemId: 'i1', profileId: 'p1', oculto: 'true', motivo: 'expone datos internos',
+  }));
+  assert.equal(result.ok, true);
+  assert.equal(rpcCalls[0].name, 'set_portfolio_item_moderacion');
+  assert.equal(rpcCalls[0].args._item_id, 'i1');
+  assert.equal(rpcCalls[0].args._oculto, true);
+  const insert = queries[0].steps.find(([m]) => m === 'insert');
+  assert.equal(queries[0].table, 'audit_logs');
+  assert.equal(insert[1].accion, 'portfolio_item_ocultado');
+  assert.equal(insert[1].entidad_id, 'i1');
+  // `insert[1].metadata` se crea dentro del contexto `vm` (código
+  // transpilado) — comparar el objeto entero con `deepEqual` falla porque su
+  // `Object.prototype` no es el mismo que el de este realm; se compara el
+  // campo puntual en su lugar.
+  assert.equal(insert[1].metadata.motivo, 'expone datos internos');
+});
+
+test('reactivar (oculto=false) no exige motivo y registra el evento correcto', async () => {
+  const { exports, queries } = load('features/portfolio/actions.ts', {
+    currentUser: USER,
+    rpcResponses: [{ data: true, error: null }],
+    responses: [{ error: null }],
+  });
+  const result = await exports.setPortfolioItemModeracion({}, form({
+    itemId: 'i1', profileId: 'p1', oculto: 'false', motivo: '',
+  }));
+  assert.equal(result.ok, true);
+  const insert = queries[0].steps.find(([m]) => m === 'insert');
+  assert.equal(insert[1].accion, 'portfolio_item_reactivado');
+  assert.equal(insert[1].metadata, null);
+});
+
+test('si la función no encuentra la ficha, informa el error sin registrar auditoría', async () => {
+  const { exports, queries } = load('features/portfolio/actions.ts', {
+    currentUser: USER,
+    rpcResponses: [{ data: false, error: null }],
+  });
+  const result = await exports.setPortfolioItemModeracion({}, form({
+    itemId: 'ajeno', profileId: 'p1', oculto: 'true', motivo: 'motivo',
+  }));
+  assert.match(result.error, /No se encontró/);
+  assert.equal(queries.length, 0);
+});
