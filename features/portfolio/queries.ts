@@ -92,7 +92,7 @@ export async function getPublicProfile(profileId: string) {
     supabase
       .from("portfolio_items")
       .select(
-        "id, titulo, descripcion, url, visibility, project:projects ( id, titulo, status )",
+        "id, titulo, descripcion, url, visibility, oculto_por_moderacion, oculto_motivo, project:projects ( id, titulo, status )",
       )
       .eq("profile_id", profileId)
       .eq("visibility", "publico")
