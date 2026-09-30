@@ -6,7 +6,7 @@
 
 Convierte necesidades reales en microproyectos acotados y acompañados, para que estudiantes universitarios puedan colaborar, entregar resultados y construir un portafolio con evidencia desde una etapa temprana de su carrera, antes de realizar su primera práctica profesional o acceder a su primer empleo.
 
-![Estado](https://img.shields.io/badge/estado-MVP%20en%20construcci%C3%B3n-yellow)
+![Estado](https://img.shields.io/badge/estado-en%20producción%20(piloto%20interno)-brightgreen)
 ![Licencia](https://img.shields.io/badge/licencia-por%20definir-lightgrey)
 ![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
@@ -17,6 +17,8 @@ Convierte necesidades reales en microproyectos acotados y acompañados, para que
 ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
 ![Brevo](https://img.shields.io/badge/Brevo-0B996E?logo=brevo&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?logo=vercel&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?logo=githubactions&logoColor=white)
+![Sentry](https://img.shields.io/badge/Sentry-362D59?logo=sentry&logoColor=white)
 ![Figma](https://img.shields.io/badge/Figma-F24E1E?logo=figma&logoColor=white)
 
 </div>
@@ -74,9 +76,9 @@ Un patrocinador describe una necesidad mediante una **plantilla obligatoria**; u
 
 ## 🚦 Estado del proyecto
 
-> **Fase actual: MVP funcional de punta a punta — corre en local, falta pulir diseño y desplegar a producción.**
+> **Fase actual: MVP funcional de punta a punta, ya desplegado en producción para un piloto interno controlado — falta pulir diseño en pantallas secundarias y abrir la convocatoria del piloto real.**
 
-La **especificación de producto (PRD) está completa** y el **prototipo en Figma** (todas las pantallas del MVP, mobile + desktop) también. El proyecto avanzó en código sobre esa base: **scaffold** (Next.js + Supabase), **modelo de datos completo** (99 migraciones · 25 tablas de dominio con Row Level Security en el 100%), **tipos TypeScript** generados desde el esquema y **despliegue de migraciones por CI**. Ya está construido el **circuito completo del producto**, de punta a punta:
+La **especificación de producto (PRD) está completa** y el **prototipo en Figma** (todas las pantallas del MVP, mobile + desktop) también. El proyecto avanzó en código sobre esa base: **scaffold** (Next.js + Supabase), **modelo de datos completo** (99 migraciones · 25 tablas de dominio con Row Level Security en el 100%), **tipos TypeScript** generados desde el esquema y **despliegue de migraciones por CI**. Ya está construido el **circuito completo del producto**, de punta a punta, y corriendo en **producción real** en [vardelab.cl](https://vardelab.cl) (Vercel + Supabase Cloud, correo transaccional con dominio propio, monitoreo de errores con Sentry y backup diario de la base) — todavía sin abrir a usuarios externos, en fase de piloto interno controlado:
 
 - **Público** — landing, catálogo con búsqueda/filtros, ficha de proyecto y perfil público de portafolio (SSR).
 - **Autenticación** — registro con rol, ingreso, sesión, **confirmación de correo** y **recuperación de contraseña**.
@@ -86,13 +88,13 @@ La **especificación de producto (PRD) está completa** y el **prototipo en Figm
 - **Administrador** — métricas del piloto, vista completa de proyectos y organizaciones (incluye aprobar verificaciones), gestión de catálogos, usuarios y permisos, registro de auditoría y configuración del piloto.
 - **Transversal** — notificaciones in-app y por correo (postulaciones, mensajes, hitos, verificación) y mensajería en tiempo real por proyecto.
 
-Corre en local contra Supabase, con **300+ pruebas automatizadas** (lógica de negocio + políticas RLS reales contra Postgres) corriendo en cada PR vía CI. Falta el **despliegue a producción** y terminar de alinear con Figma algunas pantallas secundarias.
+En desarrollo local, **300+ pruebas automatizadas** (lógica de negocio + políticas RLS reales contra Postgres) corren en cada PR vía CI antes de que un cambio llegue a producción. Queda terminar de alinear con Figma algunas pantallas secundarias y abrir la convocatoria del piloto a usuarios externos.
 
 | Fase | Descripción | Estado |
 |------|-------------|--------|
 | 0 · Descubrimiento | Entrevistas y validación del problema | ✅ Completado |
 | 1 · Prototipo | Flujo completo en Figma, probado con usuarios | ✅ Completado |
-| 2 · MVP | Flujo publicación → portafolio en producción | 🟡 En progreso (todo el flujo funciona en local; falta pulir diseño y desplegar) |
+| 2 · MVP | Flujo publicación → portafolio en producción | 🟢 Desplegado (piloto interno) — falta pulir diseño en pantallas secundarias |
 | 3 · Piloto | 10 proyectos, 30–50 estudiantes, 8 semanas | ⬜ Pendiente |
 | 4 · Institucionalización | Presentar resultados y buscar continuidad | ⬜ Pendiente |
 
@@ -107,6 +109,7 @@ Corre en local contra Supabase, con **300+ pruebas automatizadas** (lógica de n
 | Correo transaccional | **Supabase Auth** (confirmación/recuperación) + **Brevo** | Confirmación de cuentas, recuperación de contraseña y notificaciones (postulaciones, mensajes, hitos, verificación). El envío está encapsulado en un único módulo (`features/notifications/email.ts`), pensado para migrar a **Amazon SES** sin tocar el resto del código |
 | Despliegue | **Vercel** | Entrega continua + dominio propio (HTTPS) |
 | CI/CD | **GitHub Actions** | Despliegue automático de migraciones al mergear a `main` |
+| Monitoreo | **Sentry** | Reporte de errores de producción en tiempo real (cliente y servidor) |
 | Diseño | **Figma** | Prototipos y pruebas antes de programar |
 
 > Los tipos de TypeScript se **autogeneran desde el esquema de Supabase** (`supabase gen types`) para mantener sincronizados la base de datos y el código.
@@ -138,7 +141,7 @@ Corre en local contra Supabase, con **300+ pruebas automatizadas** (lógica de n
 </td></tr>
 </table>
 
-**Definición de Terminado:** el MVP está listo cuando un patrocinador puede publicar un proyecto aprobado, estudiantes postulan, se forma un equipo, se registran hitos, se entrega un resultado, el patrocinador evalúa y la plataforma genera una evidencia de portafolio. **Ese circuito ya funciona de punta a punta en local**; queda pulir diseño en pantallas secundarias y desplegar a producción.
+**Definición de Terminado:** el MVP está listo cuando un patrocinador puede publicar un proyecto aprobado, estudiantes postulan, se forma un equipo, se registran hitos, se entrega un resultado, el patrocinador evalúa y la plataforma genera una evidencia de portafolio. **Ese circuito ya funciona de punta a punta y está desplegado en producción** (piloto interno); queda pulir diseño en pantallas secundarias y abrir la convocatoria del piloto real.
 
 ## 🏗️ Arquitectura
 
