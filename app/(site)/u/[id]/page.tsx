@@ -8,6 +8,7 @@ import type { ProfileLinks } from "@/features/profile/queries";
 import { ReportButton } from "@/features/reports/components/report-button";
 import { PerfilIconSvg } from "@/features/profile/components/profile-icons";
 import { getCurrentUser } from "@/features/auth/queries";
+import { PortfolioModerationControl } from "@/features/portfolio/components/portfolio-moderation-control";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -271,6 +272,9 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
 
   const { profile, items, skills, proyectosCompletados, esPatrocinador } = data;
   const esPropio = viewer?.id === profile.id;
+  // Admin/moderador ven el control de "ocultar por moderación" (M105);
+  // el dueño solo ve la nota de que está oculta, sin poder reactivarla.
+  const esStaff = Boolean(viewer?.esAdmin || viewer?.esModerador);
   const enlaces = (profile.enlaces ?? {}) as ProfileLinks;
   const enlacesList = (Object.keys(ENLACE_LABEL) as (keyof ProfileLinks)[])
     .map((k) => ({ k, url: enlaces[k] }))
@@ -545,6 +549,33 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
                               <IconEnlace className="size-3.5 shrink-0" />
                               <span className="truncate">{dominioDe(it.url)}</span>
                             </a>
+                          )}
+
+                          {esStaff ? (
+                            <PortfolioModerationControl
+                              // Fuerza a React a remontar el componente al
+                              // cambiar de "ocultar" a "reactivar" (o
+                              // viceversa): si no, el estado local del modal
+                              // (`open`, y el `state` de `useActionState`)
+                              // sobrevive al cambio de rama y puede reabrir
+                              // el modal viejo con el mensaje de éxito de la
+                              // acción anterior.
+                              key={String(it.oculto_por_moderacion)}
+                              itemId={it.id}
+                              profileId={profile.id}
+                              oculto={it.oculto_por_moderacion}
+                              motivo={it.oculto_motivo}
+                            />
+                          ) : (
+                            esPropio &&
+                            it.oculto_por_moderacion && (
+                              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-coral/10 px-3 py-2">
+                                <Badge tone="danger">Oculta por moderación</Badge>
+                                {it.oculto_motivo && (
+                                  <span className="text-xs text-ink">{it.oculto_motivo}</span>
+                                )}
+                              </div>
+                            )
                           )}
                         </div>
                       </li>
