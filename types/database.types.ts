@@ -1,4 +1,3 @@
-
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
@@ -185,13 +184,13 @@ isOneToOne: false
                   ]
                 },"portfolio_items": {
                   Row: {
-                    "created_at": string,"descripcion": string | null,"id": string,"profile_id": string,"project_id": string | null,"titulo": string,"updated_at": string,"url": string | null,"visibility": Database["public"]['Enums']["visibility"]
+                    "created_at": string,"descripcion": string | null,"id": string,"oculto_motivo": string | null,"oculto_por_moderacion": boolean,"profile_id": string,"project_id": string | null,"titulo": string,"updated_at": string,"url": string | null,"visibility": Database["public"]['Enums']["visibility"]
                   }
                   Insert: {
-                    "created_at"?: string,"descripcion"?: string | null,"id"?: string,"profile_id": string,"project_id"?: string | null,"titulo": string,"updated_at"?: string,"url"?: string | null,"visibility"?: Database["public"]['Enums']["visibility"]
+                    "created_at"?: string,"descripcion"?: string | null,"id"?: string,"oculto_motivo"?: string | null,"oculto_por_moderacion"?: boolean,"profile_id": string,"project_id"?: string | null,"titulo": string,"updated_at"?: string,"url"?: string | null,"visibility"?: Database["public"]['Enums']["visibility"]
                   }
                   Update: {
-                    "created_at"?: string,"descripcion"?: string | null,"id"?: string,"profile_id"?: string,"project_id"?: string | null,"titulo"?: string,"updated_at"?: string,"url"?: string | null,"visibility"?: Database["public"]['Enums']["visibility"]
+                    "created_at"?: string,"descripcion"?: string | null,"id"?: string,"oculto_motivo"?: string | null,"oculto_por_moderacion"?: boolean,"profile_id"?: string,"project_id"?: string | null,"titulo"?: string,"updated_at"?: string,"url"?: string | null,"visibility"?: Database["public"]['Enums']["visibility"]
                   }
                   Relationships: [
                     {
@@ -576,6 +575,9 @@ isOneToOne: true
 { Args: { "_limit"?: number,"_modalidad"?: string,"_offset"?: number,"_q"?: string,"_skill"?: string }; Returns: {
               "id": string,"total_count": number
             }[]
+                           },
+"set_portfolio_item_moderacion":
+{ Args: { "_item_id": string,"_motivo": string,"_oculto": boolean }; Returns: boolean
                            },
 "set_user_role":
 { Args: { "_role": Database["public"]['Enums']["app_role"],"_user_id": string }; Returns: undefined

@@ -54,6 +54,7 @@ logos-marca/
 .claude/
 tmp/
 BACKEND.md
+REGLAS_NEGOCIO.md
 .vscode/
 .responsive-audit/
 .tmp-shots/

@@ -163,3 +163,58 @@ export async function togglePortfolioItemVisibility(
 
   revalidatePath("/perfil");
 }
+
+export type ModeracionPortfolioState = { error?: string; ok?: boolean };
+
+/**
+ * Oculta o reactiva una ficha de portafolio por moderación (admin/moderador,
+ * no el dueño) — REGLAS_NEGOCIO.md, "Confianza, privacidad y administración":
+ * "posibilidad de ocultarla si divulga datos no autorizados". La autorización
+ * real vive en `set_portfolio_item_moderacion` (M105, security definer, mismo
+ * umbral moderador/admin que ya usa la RLS de `reports`); acá solo se valida
+ * el motivo antes de gastar un viaje a la base, y se deja el rastro en
+ * `audit_logs` (moderador ya puede insertar ahí desde M100).
+ */
+export async function setPortfolioItemModeracion(
+  _prevState: ModeracionPortfolioState,
+  formData: FormData,
+): Promise<ModeracionPortfolioState> {
+  const itemId = String(formData.get("itemId") ?? "");
+  const profileId = String(formData.get("profileId") ?? "");
+  const oculto = formData.get("oculto") === "true";
+  const motivo = String(formData.get("motivo") ?? "").trim();
+
+  if (!itemId) return { error: "No se encontró la evidencia." };
+  if (oculto && !motivo) return { error: "Deja un motivo para ocultarla." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Tu sesión expiró. Vuelve a iniciar sesión." };
+
+  const { data: ok, error } = await supabase.rpc("set_portfolio_item_moderacion", {
+    _item_id: itemId,
+    _oculto: oculto,
+    // Con oculto=false el motivo no se usa (la función lo descarta), pero el
+    // parámetro SQL es `text` no nulable en el tipo generado — se manda "".
+    _motivo: motivo,
+  });
+
+  if (error) {
+    console.error("[setPortfolioItemModeracion]", error.message);
+    return { error: "No se pudo aplicar la decisión. Inténtalo de nuevo." };
+  }
+  if (!ok) return { error: "No se encontró la evidencia." };
+
+  await supabase.from("audit_logs").insert({
+    actor_id: user.id,
+    accion: oculto ? "portfolio_item_ocultado" : "portfolio_item_reactivado",
+    entidad: "portfolio_items",
+    entidad_id: itemId,
+    metadata: oculto ? { motivo } : null,
+  });
+
+  if (profileId) revalidatePath(`/u/${profileId}`);
+  return { ok: true };
+}
