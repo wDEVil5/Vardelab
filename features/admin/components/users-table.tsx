@@ -228,6 +228,7 @@ export function UsersTable({
                   </td>
                   <td className="px-8 py-6">
                     <UserRowActions
+                      key={String(u.suspendido)}
                       userId={u.id}
                       rolActual={u.rolPrincipal}
                       suspendido={u.suspendido}
