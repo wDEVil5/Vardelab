@@ -30,21 +30,65 @@ type ButtonProps = {
  * silencio (solo `console.error`), sin que quien gestiona el proyecto se
  * enterara.
  */
+/**
+ * Aprobar un hito no se puede deshacer (`approveMilestone` solo transiciona
+ * desde `entregado`, no hay acción para reabrirlo) — mismo patrón de
+ * confirmación en dos pasos que `DeleteMilestoneButton`, en vez de aprobar al
+ * primer click.
+ */
 export function ApproveMilestoneButton({ milestoneId, projectId, children, variant = "primary", size = "sm", className }: ButtonProps) {
   const [state, formAction] = useActionState(approveMilestone, INITIAL);
+  const [confirming, setConfirming] = useState(false);
+  const reduceMotion = useReducedMotion();
+
   return (
-    <form action={formAction} className="flex flex-col items-start gap-1">
-      <input type="hidden" name="milestoneId" value={milestoneId} />
-      <input type="hidden" name="projectId" value={projectId} />
-      <button type="submit" className={cn(buttonClasses({ variant, size }), className)}>
-        {children}
-      </button>
-      {state.error && (
-        <p role="alert" className="text-xs text-coral">
-          {state.error}
-        </p>
+    <AnimatePresence mode="wait" initial={false}>
+      {confirming ? (
+        <motion.form
+          key="confirm"
+          action={formAction}
+          initial={reduceMotion ? false : { opacity: 0, scaleX: 0.5, x: 12 }}
+          animate={{ opacity: 1, scaleX: 1, x: 0 }}
+          exit={reduceMotion ? undefined : { opacity: 0, scaleX: 0.5, x: 12 }}
+          transition={{ duration: 0.2, ease: EASE }}
+          style={{ transformOrigin: "left center" }}
+          className="flex flex-col items-start gap-1"
+        >
+          <input type="hidden" name="milestoneId" value={milestoneId} />
+          <input type="hidden" name="projectId" value={projectId} />
+          <div className="flex items-center gap-1.5">
+            <button type="submit" className={cn(buttonClasses({ variant, size }), className)}>
+              Sí, aprobar
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className={cn(buttonClasses({ variant: "ghost", size }), className)}
+            >
+              Cancelar
+            </button>
+          </div>
+          {state.error && (
+            <p role="alert" className="text-xs text-coral">
+              {state.error}
+            </p>
+          )}
+        </motion.form>
+      ) : (
+        <motion.button
+          key="trigger"
+          type="button"
+          onClick={() => setConfirming(true)}
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={reduceMotion ? undefined : { opacity: 0 }}
+          transition={{ duration: 0.12 }}
+          className={cn(buttonClasses({ variant, size }), className)}
+        >
+          {children}
+        </motion.button>
       )}
-    </form>
+    </AnimatePresence>
   );
 }
 
