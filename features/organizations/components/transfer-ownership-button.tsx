@@ -79,7 +79,7 @@ export function TransferOwnershipButton({
           animate={{ opacity: 1 }}
           exit={reduceMotion ? undefined : { opacity: 0 }}
           transition={{ duration: 0.12 }}
-          className={buttonClasses({ variant: "outline-primary", size: "sm" })}
+          className={`${buttonClasses({ variant: "outline-primary", size: "sm" })} whitespace-nowrap`}
         >
           Ofrecer propiedad
         </motion.button>

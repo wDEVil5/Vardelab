@@ -6,6 +6,7 @@ import {
   type OwnershipState,
 } from "@/features/organizations/actions";
 import { buttonClasses } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 
 const INITIAL: OwnershipState = {};
 
@@ -32,15 +33,16 @@ export function AdminOwnershipOfferForm({
   }
 
   return (
-    <form action={formAction} className="flex w-full flex-col gap-3 sm:flex-row sm:items-end">
+    <form action={formAction} className="grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
       <input type="hidden" name="orgId" value={orgId} />
-      <label className="flex w-full min-w-0 flex-1 flex-col gap-1.5 text-sm">
-        <span className="font-medium text-ink">Miembro activo</span>
-        <select
+      <label className="flex min-w-0 flex-col gap-1.5 text-sm">
+        <span className="whitespace-nowrap font-medium text-ink">Miembro activo</span>
+        <Select
           name="newOwnerId"
+          uiSize="sm"
           required
           defaultValue=""
-          className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm text-ink"
+          className="min-w-0"
         >
           <option value="" disabled>
             Elige a quién ofrecer la propiedad
@@ -50,7 +52,7 @@ export function AdminOwnershipOfferForm({
               {m.etiqueta}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       <button
         type="submit"
@@ -59,12 +61,12 @@ export function AdminOwnershipOfferForm({
         Ofrecer propiedad
       </button>
       {state.error && (
-        <p role="alert" className="text-xs text-coral sm:basis-full">
+        <p role="alert" className="text-xs text-coral sm:col-span-2">
           {state.error}
         </p>
       )}
       {state.ok && (
-        <p className="text-xs text-sprout sm:basis-full">
+        <p className="text-xs text-sprout sm:col-span-2">
           Oferta enviada. La propiedad cambia cuando la persona la acepte.
         </p>
       )}

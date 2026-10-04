@@ -117,18 +117,18 @@ export default async function MiembrosOrganizacionPage({ params }: PageProps) {
       </p>
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-white">
-        <div className="flex items-start gap-4 bg-electric/5 p-7">
-          <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-white text-electric shadow-sm">
-            <IconSobre className="size-4" />
-          </span>
-          <div className="min-w-0 flex-1">
+        <div className="bg-electric/5 p-6 sm:p-7">
+          <div className="flex items-center gap-3">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white text-electric shadow-sm">
+              <IconSobre className="size-3.5" />
+            </span>
             <h2 className="font-semibold text-ink">Invitar por correo</h2>
-            <p className="mt-1 text-sm text-muted">
-              Le llega un correo y queda con acceso cuando acepte la invitación. Si todavía no tiene cuenta, la verá al registrarse con ese correo.
-            </p>
-            <div className="mt-4">
-              <InviteMemberForm orgId={org.id} />
-            </div>
+          </div>
+          <p className="mt-2 text-sm text-muted">
+            Le llega un correo y queda con acceso cuando acepte la invitación. Si todavía no tiene cuenta, la verá al registrarse con ese correo.
+          </p>
+          <div className="mt-4">
+            <InviteMemberForm orgId={org.id} />
           </div>
         </div>
       </div>
@@ -179,7 +179,7 @@ export default async function MiembrosOrganizacionPage({ params }: PageProps) {
             return (
               <li
                 key={m.id}
-                className="flex items-center gap-3 rounded-xl border border-border bg-white p-4 transition-all hover:border-electric/30 hover:shadow-sm"
+                className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-white p-4 transition-all hover:border-electric/30 hover:shadow-sm"
               >
                 <span
                   className={cn(
@@ -189,7 +189,7 @@ export default async function MiembrosOrganizacionPage({ params }: PageProps) {
                 >
                   {activo ? iniciales(m.nombre) : <IconReloj className="size-4" />}
                 </span>
-                <div className="min-w-0 flex-1">
+                <div className="min-w-[12rem] flex-1">
                   <p className="truncate text-sm font-medium text-ink">
                     {m.nombre ?? m.invited_email}
                   </p>
