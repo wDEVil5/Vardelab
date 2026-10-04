@@ -393,6 +393,24 @@ export async function removeOrganizationMember(
   return {};
 }
 
+/**
+ * Traduce los motivos de rechazo de `transfer_organization_ownership` a un
+ * mensaje que tenga sentido para quien lo ve. Cualquier otro error se trata
+ * como fallo genérico, sin exponer detalles internos.
+ */
+function mensajeTransferencia(motivo: string): string {
+  if (motivo.includes("suspendida")) {
+    return "La cuenta de esa persona está suspendida y no puede recibir la propiedad.";
+  }
+  if (motivo.includes("miembro activo")) {
+    return "Esa persona ya no es miembro activo de la organización.";
+  }
+  if (motivo.includes("No autorizado")) {
+    return "No tienes permiso para transferir esta organización.";
+  }
+  return "No se pudo transferir la propiedad. Inténtalo de nuevo.";
+}
+
 export type TransferOwnershipState = { error?: string; ok?: boolean };
 
 /**
@@ -416,9 +434,7 @@ export async function transferOrganizationOwnership(
 
   if (error) {
     console.error("[transferOrganizationOwnership]", error.message);
-    return {
-      error: "No se pudo transferir la propiedad. Revisa que la persona siga siendo miembro activo.",
-    };
+    return { error: mensajeTransferencia(error.message) };
   }
 
   const { data: org } = await supabase
