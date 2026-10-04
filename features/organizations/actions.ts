@@ -458,6 +458,7 @@ export async function offerOrganizationOwnership(
   );
 
   revalidatePath(`/mis-organizaciones/${orgId}/miembros`);
+  revalidatePath(`/admin/organizaciones/${orgId}`);
   return { ok: true };
 }
 
@@ -479,6 +480,7 @@ export async function cancelOrganizationOwnershipOffer(
   }
 
   revalidatePath(`/mis-organizaciones/${orgId}/miembros`);
+  revalidatePath(`/admin/organizaciones/${orgId}`);
   return { ok: true };
 }
 
