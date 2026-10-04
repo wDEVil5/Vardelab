@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, requireUser } from "@/features/auth/queries";
-import { getMyOrgIds } from "@/features/organizations/queries";
+import { getMyOrganization } from "@/features/organizations/queries";
 import { INVITACIONES_HABILITADAS } from "@/features/organizations/config";
 import { sendEmail, sendEmailToUser } from "@/features/notifications/email";
 
@@ -190,15 +190,13 @@ export async function deleteOrganization(
   const id = String(formData.get("orgId") ?? "");
   if (!id) return { error: "Falta la organización." };
 
-  // Verifica propiedad ANTES de tocar cualquier dato scoped por el `orgId`
-  // recibido del formulario: sin esto, el conteo de proyectos de abajo corría
-  // para cualquier `orgId` (la RLS de `projects` deja ver los publicados de
-  // cualquier organización), permitiendo sondear cuántos proyectos publicados
-  // tiene una organización ajena antes de que la policy de `delete` bloqueara
-  // el borrado real.
-  const myOrgIds = await getMyOrgIds();
-  if (!myOrgIds.includes(id)) {
-    return { error: "No puedes eliminar esta organización." };
+  // Solo el dueño, y se verifica ANTES de tocar datos scoped por el `orgId` del
+  // formulario: la RLS de `projects` deja ver los publicados de cualquier
+  // organización, así que el conteo de abajo no puede correr para un id ajeno.
+  const user = await getCurrentUser();
+  const org = user ? await getMyOrganization(id) : null;
+  if (!user || org?.owner_id !== user.id) {
+    return { error: "Solo el dueño puede eliminar esta organización." };
   }
 
   const supabase = await createClient();
