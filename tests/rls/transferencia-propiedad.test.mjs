@@ -241,3 +241,19 @@ test('el dueño anterior queda como miembro activo aunque su correo ya tuviera u
   });
   assert.ok(salida.includes(`anterior|${SEED.DIEGO}|activo`), `el dueño anterior quedó sin acceso: ${salida}`);
 });
+
+test('un admin puede cancelar la oferta de propiedad de cualquier dueño', () => {
+  const salida = queryAs({
+    role: 'authenticated', userId: SEED.DIEGO,
+    sql: `
+      ${CREAR_ORG}
+      ${MEMBRESIA_VALENTINA}
+      ${OFRECER_A_VALENTINA}
+      set request.jwt.claim.sub = '${SEED.ADMIN}';
+      select public.cancel_organization_ownership_offer(${OFERTA_ACTUAL});
+      set role postgres;
+      select 'estado', status from public.organization_ownership_offers where org_id = '${ORG_PRUEBA}';
+    `,
+  });
+  assert.ok(salida.includes('estado|cancelada'), `el admin no pudo cancelar: ${salida}`);
+});

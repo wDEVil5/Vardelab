@@ -746,7 +746,7 @@ export async function getOrganizationDetailForAdmin(id: string) {
   const { data: org, error } = await supabase
     .from("organizations")
     .select(
-      "id, nombre, tipo, descripcion, sitio_web, contacto, contacto_email, logo_url, verificacion, created_at",
+      "id, nombre, tipo, descripcion, sitio_web, contacto, contacto_email, logo_url, verificacion, created_at, owner_id",
     )
     .eq("id", id)
     .maybeSingle();
@@ -757,6 +757,12 @@ export async function getOrganizationDetailForAdmin(id: string) {
   }
   if (!org) return null;
 
+  const { data: dueno } = await supabase
+    .from("profiles")
+    .select("nombre")
+    .eq("id", org.owner_id)
+    .maybeSingle();
+
   const { data: proyectos } = await supabase
     .from("projects")
     .select("id, titulo, status, modalidad, created_at, roles:project_roles(cupos)")
@@ -765,6 +771,7 @@ export async function getOrganizationDetailForAdmin(id: string) {
 
   return {
     ...org,
+    duenoNombre: dueno?.nombre ?? null,
     etiquetaTipo: ORG_TIPO_LABEL[org.tipo] ?? org.tipo,
     etiquetaVerificacion: VERIFICACION_LABEL[org.verificacion] ?? org.verificacion,
     proyectos: (proyectos ?? []).map((p) => ({

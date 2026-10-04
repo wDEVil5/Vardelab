@@ -176,6 +176,7 @@ test('ofrecer la propiedad llama a la función SQL, avisa por correo a quien rec
   assert.match(emailCalls[0][2], /Fundación Semilla/);
   assert.equal(emailCalls[0][3], '/mis-invitaciones');
   assert.ok(paths.includes('/mis-organizaciones/o1/miembros'));
+  assert.ok(paths.includes('/admin/organizaciones/o1'));
 });
 
 test('transferir a una cuenta suspendida explica el motivo real', async () => {
