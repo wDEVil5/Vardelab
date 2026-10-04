@@ -471,6 +471,9 @@ isOneToOne: true
             "accept_application":
 { Args: { "_application_id": string }; Returns: string
                            },
+"accept_organization_invitation":
+{ Args: { "_member_id": string }; Returns: boolean
+                           },
 "accepted_count_for_role":
 { Args: { "_role_id": string }; Returns: number
                            },
