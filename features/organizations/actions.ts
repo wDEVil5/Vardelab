@@ -394,11 +394,11 @@ export async function removeOrganizationMember(
 }
 
 /**
- * Traduce los motivos de rechazo de `transfer_organization_ownership` a un
- * mensaje que tenga sentido para quien lo ve. Cualquier otro error se trata
- * como fallo genérico, sin exponer detalles internos.
+ * Traduce los motivos de rechazo de las funciones de propiedad a un mensaje
+ * que tenga sentido para quien lo ve. Cualquier otro error se trata como fallo
+ * genérico, sin exponer detalles internos.
  */
-function mensajeTransferencia(motivo: string): string {
+function mensajeOferta(motivo: string): string {
   if (motivo.includes("suspendida")) {
     return "La cuenta de esa persona está suspendida y no puede recibir la propiedad.";
   }
@@ -406,35 +406,41 @@ function mensajeTransferencia(motivo: string): string {
     return "Esa persona ya no es miembro activo de la organización.";
   }
   if (motivo.includes("No autorizado")) {
-    return "No tienes permiso para transferir esta organización.";
+    return "No tienes permiso para hacer esto con esta organización.";
   }
-  return "No se pudo transferir la propiedad. Inténtalo de nuevo.";
+  if (motivo.includes("no existe o no es para ti") || motivo.includes("ya no está pendiente")) {
+    return "Esta oferta ya no está disponible.";
+  }
+  if (motivo.includes("ya no es válida")) {
+    return "La organización cambió de dueño desde que se hizo la oferta.";
+  }
+  return "No se pudo completar la acción. Inténtalo de nuevo.";
 }
 
-export type TransferOwnershipState = { error?: string; ok?: boolean };
+export type OwnershipState = { error?: string; ok?: boolean };
 
 /**
- * Transfiere la propiedad a un miembro activo (M106). La función SQL reautoriza
- * al dueño y hace el cambio junto con la notificación in-app y la auditoría; el
- * correo sale después de responder, como el resto de avisos por correo.
+ * Ofrece la propiedad a un miembro activo (M111). No cambia el dueño: la
+ * persona lo decide desde /mis-invitaciones. El correo sale después de
+ * responder, como el resto de avisos.
  */
-export async function transferOrganizationOwnership(
-  _prevState: TransferOwnershipState,
+export async function offerOrganizationOwnership(
+  _prevState: OwnershipState,
   formData: FormData,
-): Promise<TransferOwnershipState> {
+): Promise<OwnershipState> {
   const orgId = String(formData.get("orgId") ?? "");
   const newOwnerId = String(formData.get("newOwnerId") ?? "");
   if (!orgId || !newOwnerId) return { error: "Falta la organización o la persona." };
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("transfer_organization_ownership", {
+  const { error } = await supabase.rpc("offer_organization_ownership", {
     _org_id: orgId,
     _new_owner_id: newOwnerId,
   });
 
   if (error) {
-    console.error("[transferOrganizationOwnership]", error.message);
-    return { error: mensajeTransferencia(error.message) };
+    console.error("[offerOrganizationOwnership]", error.message);
+    return { error: mensajeOferta(error.message) };
   }
 
   const { data: org } = await supabase
@@ -445,15 +451,75 @@ export async function transferOrganizationOwnership(
   after(() =>
     sendEmailToUser(
       newOwnerId,
-      "organizacion_propiedad_transferida",
-      `Ahora eres el dueño de "${org?.nombre ?? "una organización"}" en Vardelab.`,
-      `/mis-organizaciones/${orgId}/editar`,
+      "organizacion_propiedad_ofrecida",
+      `Te ofrecieron ser dueño de "${org?.nombre ?? "una organización"}" en Vardelab.`,
+      "/mis-invitaciones",
     ),
   );
 
   revalidatePath(`/mis-organizaciones/${orgId}/miembros`);
-  revalidatePath(`/mis-organizaciones/${orgId}/editar`);
+  return { ok: true };
+}
+
+export async function cancelOrganizationOwnershipOffer(
+  _prevState: OwnershipState,
+  formData: FormData,
+): Promise<OwnershipState> {
+  const offerId = String(formData.get("offerId") ?? "");
+  const orgId = String(formData.get("orgId") ?? "");
+  if (!offerId) return { error: "Falta la oferta." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("cancel_organization_ownership_offer", {
+    _offer_id: offerId,
+  });
+  if (error || !data) {
+    if (error) console.error("[cancelOrganizationOwnershipOffer]", error.message);
+    return { error: "No se pudo cancelar la oferta. Puede que ya no esté pendiente." };
+  }
+
+  revalidatePath(`/mis-organizaciones/${orgId}/miembros`);
+  return { ok: true };
+}
+
+export async function acceptOrganizationOwnership(
+  _prevState: OwnershipState,
+  formData: FormData,
+): Promise<OwnershipState> {
+  const offerId = String(formData.get("offerId") ?? "");
+  if (!offerId) return { error: "Falta la oferta." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("accept_organization_ownership", {
+    _offer_id: offerId,
+  });
+  if (error) {
+    console.error("[acceptOrganizationOwnership]", error.message);
+    return { error: mensajeOferta(error.message) };
+  }
+
+  revalidatePath("/mis-invitaciones");
   revalidatePath("/mis-organizaciones");
+  return { ok: true };
+}
+
+export async function declineOrganizationOwnership(
+  _prevState: OwnershipState,
+  formData: FormData,
+): Promise<OwnershipState> {
+  const offerId = String(formData.get("offerId") ?? "");
+  if (!offerId) return { error: "Falta la oferta." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("decline_organization_ownership_offer", {
+    _offer_id: offerId,
+  });
+  if (error || !data) {
+    if (error) console.error("[declineOrganizationOwnership]", error.message);
+    return { error: "No se pudo rechazar la oferta. Puede que ya no esté disponible." };
+  }
+
+  revalidatePath("/mis-invitaciones");
   return { ok: true };
 }
 

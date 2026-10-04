@@ -242,3 +242,68 @@ export async function getMyPendingInvitations() {
     createdAt: i.created_at,
   }));
 }
+
+/** Oferta de propiedad pendiente de una organización (la ve quien la ofreció). */
+export async function getPendingOwnershipOffer(orgId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("organization_ownership_offers")
+    .select("id, to_user")
+    .eq("org_id", orgId)
+    .eq("status", "pendiente")
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getPendingOwnershipOffer]", error.message);
+    throw error;
+  }
+  if (!data) return null;
+
+  const { data: perfil } = await supabase
+    .from("profiles")
+    .select("nombre")
+    .eq("id", data.to_user)
+    .maybeSingle();
+
+  return { id: data.id, nombre: perfil?.nombre ?? "Un miembro" };
+}
+
+/** Ofertas de propiedad pendientes que recibe la persona actual (M111). */
+export async function getMyOwnershipOffers() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("organization_ownership_offers")
+    .select("id, org_id, from_user, created_at, organizations(nombre)")
+    .eq("to_user", user.id)
+    .eq("status", "pendiente")
+    .order("created_at");
+
+  if (error) {
+    console.error("[getMyOwnershipOffers]", error.message);
+    throw error;
+  }
+
+  const ofrecidas = (data ?? []).map((o) => o.from_user);
+  const nombres = new Map<string, string | null>();
+  if (ofrecidas.length > 0) {
+    const { data: perfiles } = await supabase
+      .from("profiles")
+      .select("id, nombre")
+      .in("id", ofrecidas);
+    for (const p of perfiles ?? []) nombres.set(p.id, p.nombre);
+  }
+
+  return (data ?? []).map((o) => ({
+    id: o.id,
+    orgId: o.org_id,
+    nombre: o.organizations?.nombre ?? "Organización",
+    ofrecidaPor: nombres.get(o.from_user) ?? null,
+    createdAt: o.created_at,
+  }));
+}

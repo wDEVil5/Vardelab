@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/queries";
-import { getMyPendingInvitations } from "@/features/organizations/queries";
+import {
+  getMyOwnershipOffers,
+  getMyPendingInvitations,
+} from "@/features/organizations/queries";
 import { InvitationActions } from "@/features/organizations/components/invitation-actions";
+import { OwnershipOfferActions } from "@/features/organizations/components/ownership-offer-actions";
 
 export const metadata: Metadata = {
   title: "Invitaciones · Vardelab",
@@ -23,6 +27,7 @@ export default async function MisInvitacionesPage() {
   if (!user) redirect("/ingresar?next=/mis-invitaciones");
 
   const invitaciones = await getMyPendingInvitations();
+  const ofertas = await getMyOwnershipOffers();
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-8 lg:py-10">
@@ -30,6 +35,34 @@ export default async function MisInvitacionesPage() {
       <p className="mt-1 text-sm text-muted">
         Organizaciones que te invitaron a co-gestionarlas. No tienes acceso hasta que las aceptes.
       </p>
+
+      {ofertas.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-sm font-semibold text-ink">Te ofrecieron ser dueño</h2>
+          <p className="mt-1 text-xs text-muted">
+            Si aceptas, pasas a ser el dueño de la organización y quien te la ofreció pasa a ser miembro.
+          </p>
+          <ul className="mt-3 flex flex-col gap-3">
+            {ofertas.map((oferta) => (
+              <li
+                key={oferta.id}
+                className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-electric/30 bg-electric/5 p-5"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-ink">{oferta.nombre}</p>
+                  <p className="mt-0.5 text-xs text-muted">
+                    {oferta.ofrecidaPor ? `Te la ofreció ${oferta.ofrecidaPor} · ` : ""}
+                    {FORMATO_FECHA.format(new Date(oferta.createdAt))}
+                  </p>
+                </div>
+                <OwnershipOfferActions offerId={oferta.id} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <h2 className="mt-8 text-sm font-semibold text-ink">Invitaciones a co-gestionar</h2>
 
       {invitaciones.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-border bg-surface/50 px-6 py-14 text-center">
