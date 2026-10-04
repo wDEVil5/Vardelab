@@ -100,17 +100,19 @@ test('invitar con un correo mal formado no llega a tocar la base', async () => {
   assert.equal(queries.length, 0);
 });
 
-test('invitar a alguien que ya tiene cuenta queda activo de una y le manda correo', async () => {
-  const { exports, sendEmailCalls, paths } = load('features/organizations/actions.ts', {
+test('invitar a alguien que ya tiene cuenta queda pendiente hasta que acepte, y le manda correo a su bandeja', async () => {
+  const { exports, sendEmailCalls, queries } = load('features/organizations/actions.ts', {
     currentUser: PATROCINADOR,
     rpcResponses: [{ data: 'u9', error: null }],
     responses: [{ error: null }, { data: { nombre: 'Fundación Semilla' } }],
   });
   const result = await exports.inviteOrganizationMember({}, form({ orgId: 'o1', email: 'nueva@correo.cl' }));
   assert.equal(result.ok, true);
+  const insert = queries[0].steps.find(([m]) => m === 'insert');
+  assert.equal(insert[1].status, 'pendiente');
+  assert.equal(insert[1].user_id, 'u9');
   assert.equal(sendEmailCalls.length, 1);
-  assert.equal(sendEmailCalls[0][3], '/mis-organizaciones/o1/miembros');
-  assert.ok(paths.includes('/mis-organizaciones/o1/miembros'));
+  assert.equal(sendEmailCalls[0][3], '/mis-invitaciones');
 });
 
 test('invitar a alguien sin cuenta todavía queda pendiente y el correo manda a /registro', async () => {
@@ -190,4 +192,34 @@ test('un rechazo de permiso no se presenta como error de miembro', async () => {
   });
   const result = await exports.transferOrganizationOwnership({}, form({ orgId: 'o1', newOwnerId: 'u2' }));
   assert.match(result.error, /permiso/);
+});
+
+test('aceptar una invitación llama a la función SQL con la membresía y revalida la bandeja', async () => {
+  const { exports, rpcCalls, paths } = load('features/organizations/actions.ts', {
+    rpcResponses: [{ data: true, error: null }],
+  });
+  const result = await exports.acceptOrganizationInvitation({}, form({ memberId: 'm1' }));
+  assert.equal(result.ok, true);
+  assert.equal(rpcCalls[0].name, 'accept_organization_invitation');
+  assert.equal(rpcCalls[0].args._member_id, 'm1');
+  assert.ok(paths.includes('/mis-invitaciones'));
+});
+
+test('si la invitación ya no está disponible, aceptarla informa sin mentir', async () => {
+  const { exports } = load('features/organizations/actions.ts', {
+    rpcResponses: [{ data: false, error: null }],
+  });
+  const result = await exports.acceptOrganizationInvitation({}, form({ memberId: 'm1' }));
+  assert.match(result.error, /No se pudo aceptar/);
+});
+
+test('rechazar una invitación borra solo las pendientes', async () => {
+  const { exports, queries } = load('features/organizations/actions.ts', {
+    responses: [{ error: null }],
+  });
+  const result = await exports.declineOrganizationInvitation({}, form({ memberId: 'm1' }));
+  assert.equal(result.ok, true);
+  const steps = queries[0].steps.map(([m]) => m);
+  assert.ok(steps.includes('delete'));
+  assert.ok(queries[0].steps.some(([m, col, val]) => m === 'eq' && col === 'status' && val === 'pendiente'));
 });

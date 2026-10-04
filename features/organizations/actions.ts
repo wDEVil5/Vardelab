@@ -327,7 +327,7 @@ export async function inviteOrganizationMember(
     org_id: orgId,
     invited_email: email,
     user_id: userId ?? null,
-    status: userId ? "activo" : "pendiente",
+    status: "pendiente",
     invited_by: user.id,
   });
 
@@ -342,9 +342,9 @@ export async function inviteOrganizationMember(
   // Correo a la dirección tal cual se escribió en el formulario (M43): sirve
   // para los dos casos (ya tiene cuenta o no), a diferencia de
   // `sendEmailToUser` que necesita un `user_id` que acá puede no existir
-  // todavía. Si la persona no tiene cuenta, el link manda a /registro — el
-  // trigger `handle_new_user` (M37) activa la invitación pendiente en cuanto
-  // se registre con este mismo correo.
+  // todavía. La invitación queda pendiente hasta que la persona la acepte
+  // desde /mis-invitaciones (M110); si no tiene cuenta, el link manda a
+  // /registro y la verá al registrarse con este mismo correo.
   const { data: org } = await supabase
     .from("organizations")
     .select("nombre")
@@ -355,7 +355,7 @@ export async function inviteOrganizationMember(
       email,
       "invitacion_organizacion",
       `Te invitaron a co-gestionar "${org?.nombre ?? "una organización"}" en Vardelab.`,
-      userId ? `/mis-organizaciones/${orgId}/miembros` : "/registro",
+      userId ? "/mis-invitaciones" : "/registro",
     ),
   );
 
@@ -454,5 +454,60 @@ export async function transferOrganizationOwnership(
   revalidatePath(`/mis-organizaciones/${orgId}/miembros`);
   revalidatePath(`/mis-organizaciones/${orgId}/editar`);
   revalidatePath("/mis-organizaciones");
+  return { ok: true };
+}
+
+export type InvitationResponseState = { error?: string; ok?: boolean };
+
+/**
+ * Acepta una invitación a co-gestionar la organización (M110). Solo la puede
+ * aceptar quien fue invitado: la función SQL lo verifica con `auth.uid()`.
+ */
+export async function acceptOrganizationInvitation(
+  _prevState: InvitationResponseState,
+  formData: FormData,
+): Promise<InvitationResponseState> {
+  const memberId = String(formData.get("memberId") ?? "");
+  if (!memberId) return { error: "Falta la invitación." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("accept_organization_invitation", {
+    _member_id: memberId,
+  });
+
+  if (error || !data) {
+    if (error) console.error("[acceptOrganizationInvitation]", error.message);
+    return { error: "No se pudo aceptar la invitación. Puede que ya no esté disponible." };
+  }
+
+  revalidatePath("/mis-invitaciones");
+  revalidatePath("/mis-organizaciones");
+  return { ok: true };
+}
+
+/**
+ * Rechaza una invitación borrando la fila del propio invitado; la policy de
+ * delete de `organization_members` ya permite a quien es invitado hacerlo.
+ */
+export async function declineOrganizationInvitation(
+  _prevState: InvitationResponseState,
+  formData: FormData,
+): Promise<InvitationResponseState> {
+  const memberId = String(formData.get("memberId") ?? "");
+  if (!memberId) return { error: "Falta la invitación." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("organization_members")
+    .delete()
+    .eq("id", memberId)
+    .eq("status", "pendiente");
+
+  if (error) {
+    console.error("[declineOrganizationInvitation]", error.message);
+    return { error: "No se pudo rechazar la invitación. Inténtalo de nuevo." };
+  }
+
+  revalidatePath("/mis-invitaciones");
   return { ok: true };
 }
