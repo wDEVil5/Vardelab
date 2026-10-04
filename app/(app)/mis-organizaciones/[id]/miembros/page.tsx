@@ -8,10 +8,12 @@ import { getCurrentUser } from "@/features/auth/queries";
 import {
   getMyOrganization,
   getOrganizationMembers,
+  getPendingOwnershipOffer,
 } from "@/features/organizations/queries";
 import { InviteMemberForm } from "@/features/organizations/components/invite-member-form";
 import { RemoveMemberButton } from "@/features/organizations/components/remove-member-button";
 import { TransferOwnershipButton } from "@/features/organizations/components/transfer-ownership-button";
+import { PendingOwnershipOffer } from "@/features/organizations/components/pending-ownership-offer";
 
 export const metadata: Metadata = {
   title: "Miembros de la organización · Vardelab",
@@ -88,6 +90,7 @@ export default async function MiembrosOrganizacionPage({ params }: PageProps) {
 
   const miembros = await getOrganizationMembers(id);
   const esDueno = org.owner_id === user.id;
+  const ofertaPendiente = esDueno ? await getPendingOwnershipOffer(org.id) : null;
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-8 lg:py-10">
@@ -129,6 +132,16 @@ export default async function MiembrosOrganizacionPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      {ofertaPendiente && (
+        <div className="mt-6">
+          <PendingOwnershipOffer
+            offerId={ofertaPendiente.id}
+            orgId={org.id}
+            nombre={ofertaPendiente.nombre}
+          />
+        </div>
+      )}
 
       <div className="mt-6 flex items-center justify-between">
         <h2 className="font-semibold text-ink">
