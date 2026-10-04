@@ -139,3 +139,36 @@ test('quitar a un integrante de la organización funciona', async () => {
   assert.equal(result.error, undefined);
   assert.ok(paths.includes('/mis-organizaciones/o1/miembros'));
 });
+
+test('transferir la propiedad sin datos completos no llama a la base', async () => {
+  const { exports, rpcCalls } = load('features/organizations/actions.ts');
+  const result = await exports.transferOrganizationOwnership({}, form({ orgId: 'o1' }));
+  assert.match(result.error, /Falta/);
+  assert.equal(rpcCalls.length, 0);
+});
+
+test('si la función SQL rechaza la transferencia, no se envía correo', async () => {
+  const { exports, emailCalls } = load('features/organizations/actions.ts', {
+    rpcResponses: [{ error: { message: 'El nuevo dueño debe ser un miembro activo' } }],
+  });
+  const result = await exports.transferOrganizationOwnership({}, form({ orgId: 'o1', newOwnerId: 'u2' }));
+  assert.match(result.error, /miembro activo/);
+  assert.equal(emailCalls.length, 0);
+});
+
+test('transferir con éxito llama a la función SQL, avisa por correo al nuevo dueño y revalida', async () => {
+  const { exports, rpcCalls, emailCalls, paths } = load('features/organizations/actions.ts', {
+    rpcResponses: [{ error: null }],
+    responses: [{ data: { nombre: 'Fundación Semilla' }, error: null }],
+  });
+  const result = await exports.transferOrganizationOwnership({}, form({ orgId: 'o1', newOwnerId: 'u2' }));
+  assert.equal(result.ok, true);
+  assert.equal(rpcCalls[0].name, 'transfer_organization_ownership');
+  assert.equal(rpcCalls[0].args._org_id, 'o1');
+  assert.equal(rpcCalls[0].args._new_owner_id, 'u2');
+  assert.equal(emailCalls[0][0], 'u2');
+  assert.equal(emailCalls[0][1], 'organizacion_propiedad_transferida');
+  assert.match(emailCalls[0][2], /Fundación Semilla/);
+  assert.equal(emailCalls[0][3], '/mis-organizaciones/o1/editar');
+  assert.ok(paths.includes('/mis-organizaciones/o1/miembros'));
+});

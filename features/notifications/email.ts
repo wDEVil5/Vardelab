@@ -99,6 +99,13 @@ const CATALOGO: Record<
     instruccion: "Puedes revisar los datos de tu organización y volver a solicitarla.",
     cta: "Ver mi organización",
   },
+  organizacion_propiedad_transferida: {
+    asunto: "Ahora eres dueño de una organización",
+    instruccion:
+      "Figuras como su dueño en el perfil público y eres quien puede transferirla a otro miembro.",
+    cta: "Ver organización",
+    confianza: "Si no esperabas este cambio, escríbenos a equipo@vardelab.cl para revisarlo.",
+  },
   postulacion_removida: {
     asunto: "Cambios en tu equipo de proyecto",
     instruccion: "Puedes seguir explorando otros proyectos disponibles.",

@@ -15,6 +15,7 @@ const ACCION_LABEL: Record<string, string> = {
   configuracion_actualizada: "Configuración actualizada",
   organizacion_verificada: "Organización verificada",
   organizacion_rechazada: "Verificación rechazada",
+  organizacion_propiedad_transferida: "Propiedad transferida",
 };
 
 const ACCION_TONE: Record<string, BadgeTone> = {
@@ -25,6 +26,7 @@ const ACCION_TONE: Record<string, BadgeTone> = {
   configuracion_actualizada: "brand",
   organizacion_verificada: "success",
   organizacion_rechazada: "danger",
+  organizacion_propiedad_transferida: "brand",
 };
 
 const ROL_LABEL: Record<string, string> = {
@@ -98,6 +100,8 @@ function describirEvento(e: AuditLogEntry): string {
       return `${e.actorNombre} verificó la organización "${entidad}".`;
     case "organizacion_rechazada":
       return `${e.actorNombre} rechazó la solicitud de verificación de "${entidad}".`;
+    case "organizacion_propiedad_transferida":
+      return `${e.actorNombre} transfirió la propiedad de "${entidad}".`;
     default:
       return `${e.actorNombre} registró "${etiquetaAccion(e.accion)}" sobre ${entidad}.`;
   }
