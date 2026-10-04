@@ -157,6 +157,25 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"organization_ownership_offers": {
+                  Row: {
+                    "created_at": string,"from_user": string,"id": string,"org_id": string,"status": string,"to_user": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"from_user": string,"id"?: string,"org_id": string,"status"?: string,"to_user": string
+                  }
+                  Update: {
+                    "created_at"?: string,"from_user"?: string,"id"?: string,"org_id"?: string,"status"?: string,"to_user"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "organization_ownership_offers_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"organizations": {
                   Row: {
                     "contacto": string | null,"contacto_email": string | null,"created_at": string,"descripcion": string | null,"id": string,"logo_url": string | null,"nombre": string,"owner_id": string,"sitio_web": string | null,"tipo": Database["public"]['Enums']["org_type"],"updated_at": string,"verificacion": Database["public"]['Enums']["verification_status"]
@@ -474,6 +493,9 @@ isOneToOne: true
 "accept_organization_invitation":
 { Args: { "_member_id": string }; Returns: boolean
                            },
+"accept_organization_ownership":
+{ Args: { "_offer_id": string }; Returns: boolean
+                           },
 "accepted_count_for_role":
 { Args: { "_role_id": string }; Returns: number
                            },
@@ -501,6 +523,9 @@ isOneToOne: true
 "can_manage_team":
 { Args: { "_team_id": string }; Returns: boolean
                            },
+"cancel_organization_ownership_offer":
+{ Args: { "_offer_id": string }; Returns: boolean
+                           },
 "catalog_skill_facets":
 { Args: Record<PropertyKey, never>; Returns: {
               "nombre": string
@@ -514,6 +539,9 @@ isOneToOne: true
                            },
 "completed_projects_count":
 { Args: { "_profile_id": string }; Returns: number
+                           },
+"decline_organization_ownership_offer":
+{ Args: { "_offer_id": string }; Returns: boolean
                            },
 "find_user_id_by_email":
 { Args: { "_email": string }; Returns: string
@@ -551,6 +579,9 @@ isOneToOne: true
                            },
 "notificar_hitos_por_vencer":
 { Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"offer_organization_ownership":
+{ Args: { "_new_owner_id": string,"_org_id": string }; Returns: string
                            },
 "org_recipient_ids":
 { Args: { "_org_id": string }; Returns: string[]
@@ -591,13 +622,10 @@ isOneToOne: true
                            },
 "shares_team_with":
 { Args: { "_other": string }; Returns: boolean
-                           },
-"transfer_organization_ownership":
-{ Args: { "_new_owner_id": string,"_org_id": string }; Returns: undefined
                            }
           }
           Enums: {
-            "app_role": "estudiante"|"patrocinador"|"mentor"|"moderador"|"admin","application_status": "enviada"|"aceptada"|"rechazada"|"retirada"|"removida","lead_estado": "nuevo"|"contactado"|"descartado","lead_tipo": "contacto_organizacion"|"propuesta_desafio","milestone_status": "pendiente"|"en_progreso"|"entregado"|"aprobado","notification_tipo": "postulacion_recibida"|"postulacion_aceptada"|"postulacion_rechazada"|"invitacion_organizacion"|"evaluacion_nueva"|"hito_por_vencer"|"mensaje_nuevo"|"proyecto_cancelado"|"organizacion_verificada"|"organizacion_no_verificada"|"postulacion_removida"|"proyecto_rechazado"|"reporte_escalado"|"reporte_recibido"|"reporte_resuelto"|"organizacion_propiedad_transferida","org_type": "academica"|"social"|"emprendimiento"|"empresa"|"interna","project_modality": "presencial"|"remoto"|"hibrido","project_status": "borrador"|"en_revision"|"publicado"|"seleccion"|"activo"|"revision_final"|"completado"|"suspendido"|"cancelado","report_status": "abierto"|"en_revision"|"resuelto","skill_level": "basico"|"intermedio"|"avanzado","team_status": "formando"|"activo"|"finalizado","verification_status": "sin_verificar"|"en_revision"|"verificado","visibility": "publico"|"privado"
+            "app_role": "estudiante"|"patrocinador"|"mentor"|"moderador"|"admin","application_status": "enviada"|"aceptada"|"rechazada"|"retirada"|"removida","lead_estado": "nuevo"|"contactado"|"descartado","lead_tipo": "contacto_organizacion"|"propuesta_desafio","milestone_status": "pendiente"|"en_progreso"|"entregado"|"aprobado","notification_tipo": "postulacion_recibida"|"postulacion_aceptada"|"postulacion_rechazada"|"invitacion_organizacion"|"evaluacion_nueva"|"hito_por_vencer"|"mensaje_nuevo"|"proyecto_cancelado"|"organizacion_verificada"|"organizacion_no_verificada"|"postulacion_removida"|"proyecto_rechazado"|"reporte_escalado"|"reporte_recibido"|"reporte_resuelto"|"organizacion_propiedad_transferida"|"organizacion_propiedad_ofrecida","org_type": "academica"|"social"|"emprendimiento"|"empresa"|"interna","project_modality": "presencial"|"remoto"|"hibrido","project_status": "borrador"|"en_revision"|"publicado"|"seleccion"|"activo"|"revision_final"|"completado"|"suspendido"|"cancelado","report_status": "abierto"|"en_revision"|"resuelto","skill_level": "basico"|"intermedio"|"avanzado","team_status": "formando"|"activo"|"finalizado","verification_status": "sin_verificar"|"en_revision"|"verificado","visibility": "publico"|"privado"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -717,7 +745,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "app_role": ["estudiante", "patrocinador", "mentor", "moderador", "admin"],"application_status": ["enviada", "aceptada", "rechazada", "retirada", "removida"],"lead_estado": ["nuevo", "contactado", "descartado"],"lead_tipo": ["contacto_organizacion", "propuesta_desafio"],"milestone_status": ["pendiente", "en_progreso", "entregado", "aprobado"],"notification_tipo": ["postulacion_recibida", "postulacion_aceptada", "postulacion_rechazada", "invitacion_organizacion", "evaluacion_nueva", "hito_por_vencer", "mensaje_nuevo", "proyecto_cancelado", "organizacion_verificada", "organizacion_no_verificada", "postulacion_removida", "proyecto_rechazado", "reporte_escalado", "reporte_recibido", "reporte_resuelto", "organizacion_propiedad_transferida"],"org_type": ["academica", "social", "emprendimiento", "empresa", "interna"],"project_modality": ["presencial", "remoto", "hibrido"],"project_status": ["borrador", "en_revision", "publicado", "seleccion", "activo", "revision_final", "completado", "suspendido", "cancelado"],"report_status": ["abierto", "en_revision", "resuelto"],"skill_level": ["basico", "intermedio", "avanzado"],"team_status": ["formando", "activo", "finalizado"],"verification_status": ["sin_verificar", "en_revision", "verificado"],"visibility": ["publico", "privado"]
+            "app_role": ["estudiante", "patrocinador", "mentor", "moderador", "admin"],"application_status": ["enviada", "aceptada", "rechazada", "retirada", "removida"],"lead_estado": ["nuevo", "contactado", "descartado"],"lead_tipo": ["contacto_organizacion", "propuesta_desafio"],"milestone_status": ["pendiente", "en_progreso", "entregado", "aprobado"],"notification_tipo": ["postulacion_recibida", "postulacion_aceptada", "postulacion_rechazada", "invitacion_organizacion", "evaluacion_nueva", "hito_por_vencer", "mensaje_nuevo", "proyecto_cancelado", "organizacion_verificada", "organizacion_no_verificada", "postulacion_removida", "proyecto_rechazado", "reporte_escalado", "reporte_recibido", "reporte_resuelto", "organizacion_propiedad_transferida", "organizacion_propiedad_ofrecida"],"org_type": ["academica", "social", "emprendimiento", "empresa", "interna"],"project_modality": ["presencial", "remoto", "hibrido"],"project_status": ["borrador", "en_revision", "publicado", "seleccion", "activo", "revision_final", "completado", "suspendido", "cancelado"],"report_status": ["abierto", "en_revision", "resuelto"],"skill_level": ["basico", "intermedio", "avanzado"],"team_status": ["formando", "activo", "finalizado"],"verification_status": ["sin_verificar", "en_revision", "verificado"],"visibility": ["publico", "privado"]
           }
         }
 } as const
