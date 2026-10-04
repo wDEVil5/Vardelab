@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, requireUser } from "@/features/auth/queries";
 import { getMyOrgIds } from "@/features/organizations/queries";
 import { INVITACIONES_HABILITADAS } from "@/features/organizations/config";
-import { sendEmail } from "@/features/notifications/email";
+import { sendEmail, sendEmailToUser } from "@/features/notifications/email";
 
 /**
  * Acciones de organizaciones (lado del patrocinador).
@@ -393,4 +393,52 @@ export async function removeOrganizationMember(
 
   revalidatePath(`/mis-organizaciones/${orgId}/miembros`);
   return {};
+}
+
+export type TransferOwnershipState = { error?: string; ok?: boolean };
+
+/**
+ * Transfiere la propiedad a un miembro activo (M106). La función SQL reautoriza
+ * al dueño y hace el cambio junto con la notificación in-app y la auditoría; el
+ * correo sale después de responder, como el resto de avisos por correo.
+ */
+export async function transferOrganizationOwnership(
+  _prevState: TransferOwnershipState,
+  formData: FormData,
+): Promise<TransferOwnershipState> {
+  const orgId = String(formData.get("orgId") ?? "");
+  const newOwnerId = String(formData.get("newOwnerId") ?? "");
+  if (!orgId || !newOwnerId) return { error: "Falta la organización o la persona." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("transfer_organization_ownership", {
+    _org_id: orgId,
+    _new_owner_id: newOwnerId,
+  });
+
+  if (error) {
+    console.error("[transferOrganizationOwnership]", error.message);
+    return {
+      error: "No se pudo transferir la propiedad. Revisa que la persona siga siendo miembro activo.",
+    };
+  }
+
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("nombre")
+    .eq("id", orgId)
+    .maybeSingle();
+  after(() =>
+    sendEmailToUser(
+      newOwnerId,
+      "organizacion_propiedad_transferida",
+      `Ahora eres el dueño de "${org?.nombre ?? "una organización"}" en Vardelab.`,
+      `/mis-organizaciones/${orgId}/editar`,
+    ),
+  );
+
+  revalidatePath(`/mis-organizaciones/${orgId}/miembros`);
+  revalidatePath(`/mis-organizaciones/${orgId}/editar`);
+  revalidatePath("/mis-organizaciones");
+  return { ok: true };
 }

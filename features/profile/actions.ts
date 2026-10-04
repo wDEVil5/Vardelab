@@ -521,8 +521,8 @@ export type DeleteAccountState = { error?: string };
  * `on delete cascade`, así que borrar la cuenta se llevaría puesta la
  * organización entera y, en cascada, los proyectos y evaluaciones de
  * estudiantes que no pidieron borrar nada. Para ese caso se pide resolver la
- * organización primero (transferirla o cerrarla) con soporte — no vale la
- * pena construir un flujo de transferencia de dueño para un piloto chico.
+ * organización primero (transferirla con `transfer_organization_ownership`,
+ * M106, o cerrarla).
  */
 export async function deleteAccount(): Promise<DeleteAccountState> {
   const supabase = await createClient();
@@ -541,7 +541,7 @@ export async function deleteAccount(): Promise<DeleteAccountState> {
   if (count && count > 0) {
     return {
       error:
-        "Eres dueño de una organización. Contacta a soporte para transferirla o cerrarla antes de eliminar tu cuenta.",
+        "Eres dueño de una organización. Transfiérela a un miembro activo o elimínala desde Mis organizaciones antes de borrar tu cuenta.",
     };
   }
 
