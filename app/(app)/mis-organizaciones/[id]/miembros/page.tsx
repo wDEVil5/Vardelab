@@ -11,6 +11,7 @@ import {
 } from "@/features/organizations/queries";
 import { InviteMemberForm } from "@/features/organizations/components/invite-member-form";
 import { RemoveMemberButton } from "@/features/organizations/components/remove-member-button";
+import { TransferOwnershipButton } from "@/features/organizations/components/transfer-ownership-button";
 
 export const metadata: Metadata = {
   title: "Miembros de la organización · Vardelab",
@@ -86,6 +87,7 @@ export default async function MiembrosOrganizacionPage({ params }: PageProps) {
   if (!org) notFound();
 
   const miembros = await getOrganizationMembers(id);
+  const esDueno = org.owner_id === user.id;
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-8 lg:py-10">
@@ -189,6 +191,13 @@ export default async function MiembrosOrganizacionPage({ params }: PageProps) {
                   </span>
                 )}
                 <Badge tone={estado.tone}>{estado.label}</Badge>
+                {esDueno && activo && m.user_id && (
+                  <TransferOwnershipButton
+                    orgId={org.id}
+                    newOwnerId={m.user_id}
+                    nombre={m.nombre ?? m.invited_email}
+                  />
+                )}
                 <RemoveMemberButton memberId={m.id} orgId={org.id} />
               </li>
             );

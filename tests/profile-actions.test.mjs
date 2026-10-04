@@ -97,7 +97,7 @@ test('eliminar la cuenta se bloquea si es dueño de una organización', async ()
     responses: [{ count: 1 }],
   });
   const result = await exports.deleteAccount();
-  assert.match(result.error, /Contacta a soporte/);
+  assert.match(result.error, /Transfiérela a un miembro activo/);
   assert.equal(adminAuthCalls.length, 0);
 });
 

@@ -1,3 +1,4 @@
+
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
@@ -587,10 +588,13 @@ isOneToOne: true
                            },
 "shares_team_with":
 { Args: { "_other": string }; Returns: boolean
+                           },
+"transfer_organization_ownership":
+{ Args: { "_new_owner_id": string,"_org_id": string }; Returns: undefined
                            }
           }
           Enums: {
-            "app_role": "estudiante"|"patrocinador"|"mentor"|"moderador"|"admin","application_status": "enviada"|"aceptada"|"rechazada"|"retirada"|"removida","lead_estado": "nuevo"|"contactado"|"descartado","lead_tipo": "contacto_organizacion"|"propuesta_desafio","milestone_status": "pendiente"|"en_progreso"|"entregado"|"aprobado","notification_tipo": "postulacion_recibida"|"postulacion_aceptada"|"postulacion_rechazada"|"invitacion_organizacion"|"evaluacion_nueva"|"hito_por_vencer"|"mensaje_nuevo"|"proyecto_cancelado"|"organizacion_verificada"|"organizacion_no_verificada"|"postulacion_removida"|"proyecto_rechazado"|"reporte_escalado"|"reporte_recibido"|"reporte_resuelto","org_type": "academica"|"social"|"emprendimiento"|"empresa"|"interna","project_modality": "presencial"|"remoto"|"hibrido","project_status": "borrador"|"en_revision"|"publicado"|"seleccion"|"activo"|"revision_final"|"completado"|"suspendido"|"cancelado","report_status": "abierto"|"en_revision"|"resuelto","skill_level": "basico"|"intermedio"|"avanzado","team_status": "formando"|"activo"|"finalizado","verification_status": "sin_verificar"|"en_revision"|"verificado","visibility": "publico"|"privado"
+            "app_role": "estudiante"|"patrocinador"|"mentor"|"moderador"|"admin","application_status": "enviada"|"aceptada"|"rechazada"|"retirada"|"removida","lead_estado": "nuevo"|"contactado"|"descartado","lead_tipo": "contacto_organizacion"|"propuesta_desafio","milestone_status": "pendiente"|"en_progreso"|"entregado"|"aprobado","notification_tipo": "postulacion_recibida"|"postulacion_aceptada"|"postulacion_rechazada"|"invitacion_organizacion"|"evaluacion_nueva"|"hito_por_vencer"|"mensaje_nuevo"|"proyecto_cancelado"|"organizacion_verificada"|"organizacion_no_verificada"|"postulacion_removida"|"proyecto_rechazado"|"reporte_escalado"|"reporte_recibido"|"reporte_resuelto"|"organizacion_propiedad_transferida","org_type": "academica"|"social"|"emprendimiento"|"empresa"|"interna","project_modality": "presencial"|"remoto"|"hibrido","project_status": "borrador"|"en_revision"|"publicado"|"seleccion"|"activo"|"revision_final"|"completado"|"suspendido"|"cancelado","report_status": "abierto"|"en_revision"|"resuelto","skill_level": "basico"|"intermedio"|"avanzado","team_status": "formando"|"activo"|"finalizado","verification_status": "sin_verificar"|"en_revision"|"verificado","visibility": "publico"|"privado"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -710,8 +714,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "app_role": ["estudiante", "patrocinador", "mentor", "moderador", "admin"],"application_status": ["enviada", "aceptada", "rechazada", "retirada", "removida"],"lead_estado": ["nuevo", "contactado", "descartado"],"lead_tipo": ["contacto_organizacion", "propuesta_desafio"],"milestone_status": ["pendiente", "en_progreso", "entregado", "aprobado"],"notification_tipo": ["postulacion_recibida", "postulacion_aceptada", "postulacion_rechazada", "invitacion_organizacion", "evaluacion_nueva", "hito_por_vencer", "mensaje_nuevo", "proyecto_cancelado", "organizacion_verificada", "organizacion_no_verificada", "postulacion_removida", "proyecto_rechazado", "reporte_escalado", "reporte_recibido", "reporte_resuelto"],"org_type": ["academica", "social", "emprendimiento", "empresa", "interna"],"project_modality": ["presencial", "remoto", "hibrido"],"project_status": ["borrador", "en_revision", "publicado", "seleccion", "activo", "revision_final", "completado", "suspendido", "cancelado"],"report_status": ["abierto", "en_revision", "resuelto"],"skill_level": ["basico", "intermedio", "avanzado"],"team_status": ["formando", "activo", "finalizado"],"verification_status": ["sin_verificar", "en_revision", "verificado"],"visibility": ["publico", "privado"]
+            "app_role": ["estudiante", "patrocinador", "mentor", "moderador", "admin"],"application_status": ["enviada", "aceptada", "rechazada", "retirada", "removida"],"lead_estado": ["nuevo", "contactado", "descartado"],"lead_tipo": ["contacto_organizacion", "propuesta_desafio"],"milestone_status": ["pendiente", "en_progreso", "entregado", "aprobado"],"notification_tipo": ["postulacion_recibida", "postulacion_aceptada", "postulacion_rechazada", "invitacion_organizacion", "evaluacion_nueva", "hito_por_vencer", "mensaje_nuevo", "proyecto_cancelado", "organizacion_verificada", "organizacion_no_verificada", "postulacion_removida", "proyecto_rechazado", "reporte_escalado", "reporte_recibido", "reporte_resuelto", "organizacion_propiedad_transferida"],"org_type": ["academica", "social", "emprendimiento", "empresa", "interna"],"project_modality": ["presencial", "remoto", "hibrido"],"project_status": ["borrador", "en_revision", "publicado", "seleccion", "activo", "revision_final", "completado", "suspendido", "cancelado"],"report_status": ["abierto", "en_revision", "resuelto"],"skill_level": ["basico", "intermedio", "avanzado"],"team_status": ["formando", "activo", "finalizado"],"verification_status": ["sin_verificar", "en_revision", "verificado"],"visibility": ["publico", "privado"]
           }
         }
 } as const
-
