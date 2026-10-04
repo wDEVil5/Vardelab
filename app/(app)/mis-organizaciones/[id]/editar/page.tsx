@@ -161,9 +161,11 @@ export default async function EditarOrganizacionPage({
         </div>
       </div>
 
-      <div className="mt-10">
-        <DeleteOrgButton orgId={org.id} />
-      </div>
+      {org.owner_id === user.id && (
+        <div className="mt-10">
+          <DeleteOrgButton orgId={org.id} />
+        </div>
+      )}
     </div>
   );
 }
