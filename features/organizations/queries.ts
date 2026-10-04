@@ -201,3 +201,44 @@ export async function getOrganizationMembers(orgId: string) {
 export type OrganizationMember = Awaited<
   ReturnType<typeof getOrganizationMembers>
 >[number];
+
+/** Invitaciones pendientes que la persona actual todavía no aceptó (M110). */
+export async function getMyPendingInvitations() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("organization_members")
+    .select("id, org_id, invited_by, created_at, organizations(nombre, tipo)")
+    .eq("user_id", user.id)
+    .eq("status", "pendiente")
+    .order("created_at");
+
+  if (error) {
+    console.error("[getMyPendingInvitations]", error.message);
+    throw error;
+  }
+
+  const invitadores = (data ?? []).map((i) => i.invited_by);
+  const nombres = new Map<string, string | null>();
+  if (invitadores.length > 0) {
+    const { data: perfiles } = await supabase
+      .from("profiles")
+      .select("id, nombre")
+      .in("id", invitadores);
+    for (const p of perfiles ?? []) nombres.set(p.id, p.nombre);
+  }
+
+  return (data ?? []).map((i) => ({
+    id: i.id,
+    orgId: i.org_id,
+    nombre: i.organizations?.nombre ?? "Organización",
+    tipo: i.organizations?.tipo ?? null,
+    invitadoPor: nombres.get(i.invited_by) ?? null,
+    createdAt: i.created_at,
+  }));
+}
