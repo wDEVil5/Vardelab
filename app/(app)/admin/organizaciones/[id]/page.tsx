@@ -5,6 +5,12 @@ import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { VerifiedInfoBadge } from "@/components/ui/verified-info-popover";
 import { getOrganizationDetailForAdmin } from "@/features/admin/queries";
 import { OrgVerificationActions } from "@/features/admin/components/org-verification-actions";
+import { AdminOwnershipOfferForm } from "@/features/admin/components/admin-ownership-offer-form";
+import { PendingOwnershipOffer } from "@/features/organizations/components/pending-ownership-offer";
+import {
+  getOrganizationMembers,
+  getPendingOwnershipOffer,
+} from "@/features/organizations/queries";
 import { externalUrl } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -60,6 +66,14 @@ export default async function AdminOrganizacionDetallePage({ params }: PageProps
 
   const org = await getOrganizationDetailForAdmin(id);
   if (!org) notFound();
+
+  const [miembros, oferta] = await Promise.all([
+    getOrganizationMembers(org.id),
+    getPendingOwnershipOffer(org.id),
+  ]);
+  const miembrosActivos = miembros
+    .filter((m): m is typeof m & { user_id: string } => m.status === "activo" && Boolean(m.user_id))
+    .map((m) => ({ userId: m.user_id, etiqueta: m.nombre ?? m.invited_email }));
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-10 lg:py-12">
@@ -137,6 +151,24 @@ export default async function AdminOrganizacionDetallePage({ params }: PageProps
             </ul>
           </div>
         )}
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-border bg-white p-7">
+        <h2 className="font-semibold text-ink">Propiedad</h2>
+        <p className="mt-1 text-sm text-muted">
+          Dueño actual:{" "}
+          <span className="font-medium text-ink">{org.duenoNombre ?? "Sin nombre registrado"}</span>
+        </p>
+        <div className="mt-4 flex flex-col gap-4">
+          {oferta && (
+            <PendingOwnershipOffer offerId={oferta.id} orgId={org.id} nombre={oferta.nombre} />
+          )}
+          <AdminOwnershipOfferForm orgId={org.id} miembros={miembrosActivos} />
+        </div>
+        <p className="mt-4 text-xs text-muted">
+          Para rescatar una organización sin dueño activo. La persona recibe la oferta y la
+          propiedad cambia solo cuando la acepta.
+        </p>
       </div>
 
       {org.verificacion === "en_revision" && (
