@@ -28,27 +28,30 @@ test('crear una organización válida redirige al listado', async () => {
   assert.equal(to, '/mis-organizaciones?creada=1');
 });
 
-test('eliminar una organización ajena no llega a consultar sus proyectos', async () => {
+test('un miembro que no es dueño no puede eliminar la organización y no llega a consultar sus proyectos', async () => {
   const { exports, queries } = load('features/organizations/actions.ts', {
-    extraModules: { '@/features/organizations/queries': { getMyOrgIds: async () => ['otra-org'] } },
+    currentUser: { id: 'u-miembro', esPatrocinador: true },
+    extraModules: { '@/features/organizations/queries': { getMyOrganization: async () => ({ id: 'o1', owner_id: 'u-dueno' }) } },
   });
   const result = await exports.deleteOrganization({}, form({ orgId: 'o1' }));
-  assert.match(result.error, /No puedes eliminar/);
+  assert.match(result.error, /Solo el dueño/);
   assert.equal(queries.length, 0);
 });
 
 test('eliminar una organización con proyectos no la deja borrar', async () => {
   const { exports } = load('features/organizations/actions.ts', {
-    extraModules: { '@/features/organizations/queries': { getMyOrgIds: async () => ['o1'] } },
+    currentUser: PATROCINADOR,
+    extraModules: { '@/features/organizations/queries': { getMyOrganization: async () => ({ id: 'o1', owner_id: 'u1' }) } },
     responses: [{ count: 2 }],
   });
   const result = await exports.deleteOrganization({}, form({ orgId: 'o1' }));
   assert.match(result.error, /con proyectos/);
 });
 
-test('eliminar una organización sin proyectos sí la borra', async () => {
+test('el dueño de una organización sin proyectos sí la borra', async () => {
   const { exports } = load('features/organizations/actions.ts', {
-    extraModules: { '@/features/organizations/queries': { getMyOrgIds: async () => ['o1'] } },
+    currentUser: PATROCINADOR,
+    extraModules: { '@/features/organizations/queries': { getMyOrganization: async () => ({ id: 'o1', owner_id: 'u1' }) } },
     responses: [{ count: 0 }, { error: null }],
   });
   const to = await expectRedirect(exports.deleteOrganization({}, form({ orgId: 'o1' })));
