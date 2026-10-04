@@ -175,3 +175,19 @@ test('transferir con éxito llama a la función SQL, avisa por correo al nuevo d
   assert.equal(emailCalls[0][3], '/mis-organizaciones/o1/editar');
   assert.ok(paths.includes('/mis-organizaciones/o1/miembros'));
 });
+
+test('transferir a una cuenta suspendida explica el motivo real', async () => {
+  const { exports } = load('features/organizations/actions.ts', {
+    rpcResponses: [{ error: { message: 'La cuenta destino está suspendida' } }],
+  });
+  const result = await exports.transferOrganizationOwnership({}, form({ orgId: 'o1', newOwnerId: 'u2' }));
+  assert.match(result.error, /suspendida/);
+});
+
+test('un rechazo de permiso no se presenta como error de miembro', async () => {
+  const { exports } = load('features/organizations/actions.ts', {
+    rpcResponses: [{ error: { message: 'No autorizado' } }],
+  });
+  const result = await exports.transferOrganizationOwnership({}, form({ orgId: 'o1', newOwnerId: 'u2' }));
+  assert.match(result.error, /permiso/);
+});
