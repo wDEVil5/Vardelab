@@ -121,8 +121,7 @@ export default async function MiembrosOrganizacionPage({ params }: PageProps) {
           <div className="min-w-0 flex-1">
             <h2 className="font-semibold text-ink">Invitar por correo</h2>
             <p className="mt-1 text-sm text-muted">
-              Si ya tiene cuenta en Vardelab queda activo de una; si no,
-              apenas se registre con ese correo.
+              Le llega un correo y queda con acceso cuando acepte la invitación. Si todavía no tiene cuenta, la verá al registrarse con ese correo.
             </p>
             <div className="mt-4">
               <InviteMemberForm orgId={org.id} />
