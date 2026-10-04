@@ -145,36 +145,36 @@ test('quitar a un integrante de la organización funciona', async () => {
   assert.ok(paths.includes('/mis-organizaciones/o1/miembros'));
 });
 
-test('transferir la propiedad sin datos completos no llama a la base', async () => {
+test('ofrecer la propiedad sin datos completos no llama a la base', async () => {
   const { exports, rpcCalls } = load('features/organizations/actions.ts');
-  const result = await exports.transferOrganizationOwnership({}, form({ orgId: 'o1' }));
+  const result = await exports.offerOrganizationOwnership({}, form({ orgId: 'o1' }));
   assert.match(result.error, /Falta/);
   assert.equal(rpcCalls.length, 0);
 });
 
-test('si la función SQL rechaza la transferencia, no se envía correo', async () => {
+test('si la función SQL rechaza la oferta, no se envía correo', async () => {
   const { exports, emailCalls } = load('features/organizations/actions.ts', {
     rpcResponses: [{ error: { message: 'El nuevo dueño debe ser un miembro activo' } }],
   });
-  const result = await exports.transferOrganizationOwnership({}, form({ orgId: 'o1', newOwnerId: 'u2' }));
+  const result = await exports.offerOrganizationOwnership({}, form({ orgId: 'o1', newOwnerId: 'u2' }));
   assert.match(result.error, /miembro activo/);
   assert.equal(emailCalls.length, 0);
 });
 
-test('transferir con éxito llama a la función SQL, avisa por correo al nuevo dueño y revalida', async () => {
+test('ofrecer la propiedad llama a la función SQL, avisa por correo a quien recibe la oferta y revalida', async () => {
   const { exports, rpcCalls, emailCalls, paths } = load('features/organizations/actions.ts', {
     rpcResponses: [{ error: null }],
     responses: [{ data: { nombre: 'Fundación Semilla' }, error: null }],
   });
-  const result = await exports.transferOrganizationOwnership({}, form({ orgId: 'o1', newOwnerId: 'u2' }));
+  const result = await exports.offerOrganizationOwnership({}, form({ orgId: 'o1', newOwnerId: 'u2' }));
   assert.equal(result.ok, true);
-  assert.equal(rpcCalls[0].name, 'transfer_organization_ownership');
+  assert.equal(rpcCalls[0].name, 'offer_organization_ownership');
   assert.equal(rpcCalls[0].args._org_id, 'o1');
   assert.equal(rpcCalls[0].args._new_owner_id, 'u2');
   assert.equal(emailCalls[0][0], 'u2');
-  assert.equal(emailCalls[0][1], 'organizacion_propiedad_transferida');
+  assert.equal(emailCalls[0][1], 'organizacion_propiedad_ofrecida');
   assert.match(emailCalls[0][2], /Fundación Semilla/);
-  assert.equal(emailCalls[0][3], '/mis-organizaciones/o1/editar');
+  assert.equal(emailCalls[0][3], '/mis-invitaciones');
   assert.ok(paths.includes('/mis-organizaciones/o1/miembros'));
 });
 
@@ -182,7 +182,7 @@ test('transferir a una cuenta suspendida explica el motivo real', async () => {
   const { exports } = load('features/organizations/actions.ts', {
     rpcResponses: [{ error: { message: 'La cuenta destino está suspendida' } }],
   });
-  const result = await exports.transferOrganizationOwnership({}, form({ orgId: 'o1', newOwnerId: 'u2' }));
+  const result = await exports.offerOrganizationOwnership({}, form({ orgId: 'o1', newOwnerId: 'u2' }));
   assert.match(result.error, /suspendida/);
 });
 
@@ -190,7 +190,7 @@ test('un rechazo de permiso no se presenta como error de miembro', async () => {
   const { exports } = load('features/organizations/actions.ts', {
     rpcResponses: [{ error: { message: 'No autorizado' } }],
   });
-  const result = await exports.transferOrganizationOwnership({}, form({ orgId: 'o1', newOwnerId: 'u2' }));
+  const result = await exports.offerOrganizationOwnership({}, form({ orgId: 'o1', newOwnerId: 'u2' }));
   assert.match(result.error, /permiso/);
 });
 
@@ -222,4 +222,40 @@ test('rechazar una invitación borra solo las pendientes', async () => {
   const steps = queries[0].steps.map(([m]) => m);
   assert.ok(steps.includes('delete'));
   assert.ok(queries[0].steps.some(([m, col, val]) => m === 'eq' && col === 'status' && val === 'pendiente'));
+});
+
+test('aceptar la oferta llama a la función SQL y revalida la bandeja', async () => {
+  const { exports, rpcCalls, paths } = load('features/organizations/actions.ts', {
+    rpcResponses: [{ error: null }],
+  });
+  const result = await exports.acceptOrganizationOwnership({}, form({ offerId: 'of1' }));
+  assert.equal(result.ok, true);
+  assert.equal(rpcCalls[0].name, 'accept_organization_ownership');
+  assert.equal(rpcCalls[0].args._offer_id, 'of1');
+  assert.ok(paths.includes('/mis-invitaciones'));
+});
+
+test('aceptar una oferta que ya no está disponible lo dice sin tecnicismos', async () => {
+  const { exports } = load('features/organizations/actions.ts', {
+    rpcResponses: [{ error: { message: 'La oferta ya no está pendiente' } }],
+  });
+  const result = await exports.acceptOrganizationOwnership({}, form({ offerId: 'of1' }));
+  assert.equal(result.error, 'Esta oferta ya no está disponible.');
+});
+
+test('rechazar una oferta llama a la función SQL', async () => {
+  const { exports, rpcCalls } = load('features/organizations/actions.ts', {
+    rpcResponses: [{ data: true, error: null }],
+  });
+  const result = await exports.declineOrganizationOwnership({}, form({ offerId: 'of1' }));
+  assert.equal(result.ok, true);
+  assert.equal(rpcCalls[0].name, 'decline_organization_ownership_offer');
+});
+
+test('cancelar una oferta que ya no está pendiente informa el error', async () => {
+  const { exports } = load('features/organizations/actions.ts', {
+    rpcResponses: [{ data: false, error: null }],
+  });
+  const result = await exports.cancelOrganizationOwnershipOffer({}, form({ offerId: 'of1', orgId: 'o1' }));
+  assert.match(result.error, /No se pudo cancelar/);
 });

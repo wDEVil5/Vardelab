@@ -99,6 +99,13 @@ const CATALOGO: Record<
     instruccion: "Puedes revisar los datos de tu organización y volver a solicitarla.",
     cta: "Ver mi organización",
   },
+  organizacion_propiedad_ofrecida: {
+    asunto: "Te ofrecieron ser dueño de una organización",
+    instruccion:
+      "Si la aceptas, pasas a ser su dueño, y quien te la ofreció pasa a ser miembro. Nada cambia hasta que la aceptes.",
+    cta: "Ver invitaciones",
+    confianza: "Si no esperabas esta oferta, puedes rechazarla desde Invitaciones.",
+  },
   organizacion_propiedad_transferida: {
     asunto: "Ahora eres dueño de una organización",
     instruccion:

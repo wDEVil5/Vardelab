@@ -3,18 +3,18 @@
 import { useActionState, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
-  transferOrganizationOwnership,
-  type TransferOwnershipState,
+  offerOrganizationOwnership,
+  type OwnershipState,
 } from "@/features/organizations/actions";
 import { buttonClasses } from "@/components/ui/button";
 
-const INITIAL: TransferOwnershipState = {};
+const INITIAL: OwnershipState = {};
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 /**
- * Transferir la propiedad a un miembro activo: deja de ser el dueño y el
- * miembro pasa a serlo. Solo el nuevo dueño puede devolverla, así que exige
- * confirmación en dos pasos, igual que quitar a alguien.
+ * Ofrecer la propiedad a un miembro activo. Exige confirmación en dos pasos,
+ * igual que quitar a alguien, porque la oferta le llega a la persona y cambia
+ * su situación en la organización si la acepta.
  */
 export function TransferOwnershipButton({
   orgId,
@@ -25,8 +25,13 @@ export function TransferOwnershipButton({
   newOwnerId: string;
   nombre: string;
 }) {
-  const [state, formAction] = useActionState(transferOrganizationOwnership, INITIAL);
+  const [state, formAction] = useActionState(offerOrganizationOwnership, INITIAL);
   const [confirming, setConfirming] = useState(false);
+  const [okVisto, setOkVisto] = useState(state.ok);
+  if (state.ok !== okVisto) {
+    setOkVisto(state.ok);
+    if (state.ok) setConfirming(false);
+  }
   const reduceMotion = useReducedMotion();
 
   return (
@@ -45,11 +50,11 @@ export function TransferOwnershipButton({
           <input type="hidden" name="orgId" value={orgId} />
           <input type="hidden" name="newOwnerId" value={newOwnerId} />
           <p className="text-xs text-muted">
-            {nombre} será el dueño. Tú seguirás como miembro.
+            {nombre} recibirá la oferta. La propiedad cambia solo si la acepta.
           </p>
           <div className="flex items-center gap-1.5">
             <button type="submit" className={buttonClasses({ variant: "primary", size: "sm" })}>
-              Sí, transferir
+              Sí, ofrecer
             </button>
             <button
               type="button"
@@ -76,7 +81,7 @@ export function TransferOwnershipButton({
           transition={{ duration: 0.12 }}
           className={buttonClasses({ variant: "outline-primary", size: "sm" })}
         >
-          Hacer dueño
+          Ofrecer propiedad
         </motion.button>
       )}
     </AnimatePresence>
