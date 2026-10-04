@@ -78,17 +78,17 @@ Un patrocinador describe una necesidad mediante una **plantilla obligatoria**; u
 
 > **Fase actual: MVP funcional de punta a punta, ya desplegado en producción para un piloto interno controlado — falta pulir diseño en pantallas secundarias y abrir la convocatoria del piloto real.**
 
-La **especificación de producto (PRD) está completa** y el **prototipo en Figma** (todas las pantallas del MVP, mobile + desktop) también. El proyecto avanzó en código sobre esa base: **scaffold** (Next.js + Supabase), **modelo de datos completo** (99 migraciones · 25 tablas de dominio con Row Level Security en el 100%), **tipos TypeScript** generados desde el esquema y **despliegue de migraciones por CI**. Ya está construido el **circuito completo del producto**, de punta a punta, y corriendo en **producción real** en [vardelab.cl](https://vardelab.cl) (Vercel + Supabase Cloud, correo transaccional con dominio propio, monitoreo de errores con Sentry y backup diario de la base) — todavía sin abrir a usuarios externos, en fase de piloto interno controlado:
+La **especificación de producto (PRD) está completa** y el **prototipo en Figma** (todas las pantallas del MVP, mobile + desktop) también. El proyecto avanzó en código sobre esa base: **scaffold** (Next.js + Supabase), **modelo de datos completo** (105 migraciones · 26 tablas de dominio con Row Level Security en el 100%), **tipos TypeScript** generados desde el esquema y **despliegue de migraciones por CI**. Ya está construido el **circuito completo del producto**, de punta a punta, y corriendo en **producción real** en [vardelab.cl](https://vardelab.cl) (Vercel + Supabase Cloud, correo transaccional con dominio propio, monitoreo de errores con Sentry y backup diario de la base) — todavía sin abrir a usuarios externos, en fase de piloto interno controlado:
 
 - **Público** — landing, catálogo con búsqueda/filtros, ficha de proyecto y perfil público de portafolio (SSR).
 - **Autenticación** — registro con rol, ingreso, sesión, **confirmación de correo** y **recuperación de contraseña**.
 - **Estudiante** — postular a un rol, seguir/retirar postulaciones, integrar equipo, chatear con el equipo, entregar hitos (con documentos adjuntos), ver evaluación recibida y publicar evidencia de portafolio.
-- **Patrocinador** — crear organización (con verificación), invitar co-gestores, crear/editar/publicar/cancelar proyectos con roles y habilidades, revisar postulaciones, formar equipo, definir hitos, aprobar entregas y evaluar al equipo.
+- **Patrocinador** — crear organización (con verificación), invitar co-gestores (quedan activos cuando aceptan), ofrecer la propiedad de la organización a un miembro (también requiere aceptación), crear/editar/publicar/cancelar proyectos con roles y habilidades, revisar postulaciones, formar equipo, definir hitos, aprobar entregas y evaluar al equipo.
 - **Moderador** — cola de revisión de proyectos y gestión de reportes.
-- **Administrador** — métricas del piloto, vista completa de proyectos y organizaciones (incluye aprobar verificaciones), gestión de catálogos, usuarios y permisos, registro de auditoría y configuración del piloto.
+- **Administrador** — métricas del piloto, vista completa de proyectos y organizaciones (incluye aprobar verificaciones y ofrecer la propiedad de una organización como rescate), gestión de catálogos, usuarios y permisos, registro de auditoría y configuración del piloto.
 - **Transversal** — notificaciones in-app y por correo (postulaciones, mensajes, hitos, verificación) y mensajería en tiempo real por proyecto.
 
-En desarrollo local, **300+ pruebas automatizadas** (lógica de negocio + políticas RLS reales contra Postgres) corren en cada PR vía CI antes de que un cambio llegue a producción. Queda terminar de alinear con Figma algunas pantallas secundarias y abrir la convocatoria del piloto a usuarios externos.
+En desarrollo local, **340+ pruebas automatizadas** (lógica de negocio + políticas RLS reales contra Postgres) corren en cada PR vía CI antes de que un cambio llegue a producción. Queda terminar de alinear con Figma algunas pantallas secundarias y abrir la convocatoria del piloto a usuarios externos.
 
 | Fase | Descripción | Estado |
 |------|-------------|--------|
@@ -124,6 +124,7 @@ En desarrollo local, **300+ pruebas automatizadas** (lógica de negocio + polít
 - Creación de proyecto + moderación previa
 - Catálogo con filtros
 - Postulaciones y formación de equipos
+- Organizaciones con co-gestores (invitación con aceptación) y transferencia de propiedad con consentimiento
 - Hitos, entregas y evaluación
 - Mensajería en tiempo real por proyecto
 - Ficha de portafolio verificable
