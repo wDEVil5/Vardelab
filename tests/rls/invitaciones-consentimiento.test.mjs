@@ -94,3 +94,19 @@ test('registrarse con un correo invitado no activa la invitación: queda pendien
     `el registro activó la invitación sin aceptación: ${salida}`,
   );
 });
+
+test('aceptar la invitación deja un aviso para quien invitó', () => {
+  const salida = queryAs({
+    role: 'authenticated', userId: SEED.DIEGO,
+    sql: `
+      ${CREAR_ORG}
+      ${INVITAR_VALENTINA_PENDIENTE}
+      set request.jwt.claim.sub = '${SEED.VALENTINA}';
+      select public.accept_organization_invitation('${MEMBRESIA}');
+      set role postgres;
+      select 'aviso', user_id, tipo from public.notifications
+        where tipo = 'organizacion_invitacion_aceptada' and user_id = '${SEED.DIEGO}';
+    `,
+  });
+  assert.ok(salida.includes(`aviso|${SEED.DIEGO}|organizacion_invitacion_aceptada`), `sin aviso para quien invitó: ${salida}`);
+});

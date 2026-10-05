@@ -17,6 +17,7 @@ const ACCION_LABEL: Record<string, string> = {
   organizacion_rechazada: "Verificación rechazada",
   organizacion_propiedad_ofrecida: "Propiedad ofrecida",
   organizacion_propiedad_transferida: "Propiedad transferida",
+  organizacion_propiedad_rechazada: "Propiedad rechazada",
 };
 
 const ACCION_TONE: Record<string, BadgeTone> = {
@@ -29,6 +30,7 @@ const ACCION_TONE: Record<string, BadgeTone> = {
   organizacion_rechazada: "danger",
   organizacion_propiedad_ofrecida: "brand",
   organizacion_propiedad_transferida: "brand",
+  organizacion_propiedad_rechazada: "outline",
 };
 
 const ROL_LABEL: Record<string, string> = {
@@ -106,6 +108,8 @@ function describirEvento(e: AuditLogEntry): string {
       return `${e.actorNombre} ofreció la propiedad de "${entidad}".`;
     case "organizacion_propiedad_transferida":
       return `${e.actorNombre} transfirió la propiedad de "${entidad}".`;
+    case "organizacion_propiedad_rechazada":
+      return `${e.actorNombre} rechazó ser dueño de "${entidad}".`;
     default:
       return `${e.actorNombre} registró "${etiquetaAccion(e.accion)}" sobre ${entidad}.`;
   }
