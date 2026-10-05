@@ -83,6 +83,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // resto en vez de mezclarlo como si fuera una sección interna más.
   const items: AppNavItem[] = [
     { href: "/inicio", label: "Inicio", icon: "inicio" },
+    // Las invitaciones y las ofertas de propiedad pueden llegar a cualquier cuenta,
+    // por eso el ítem no depende del rol.
+    { href: "/mis-invitaciones", label: "Invitaciones", icon: "invitaciones" },
     ...(user.esEstudiante
       ? ([
           { href: "/proyecto", label: "Proyecto", icon: "proyecto" },
