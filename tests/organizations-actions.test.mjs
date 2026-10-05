@@ -195,23 +195,30 @@ test('un rechazo de permiso no se presenta como error de miembro', async () => {
   assert.match(result.error, /permiso/);
 });
 
-test('aceptar una invitación llama a la función SQL con la membresía y revalida la bandeja', async () => {
-  const { exports, rpcCalls, paths } = load('features/organizations/actions.ts', {
+test('aceptar una invitación llama a la función SQL, avisa por correo a quien invitó y revalida la bandeja', async () => {
+  const { exports, rpcCalls, emailCalls, paths } = load('features/organizations/actions.ts', {
+    responses: [{ data: { invited_by: 'u9', org_id: 'o1', organizations: { nombre: 'Fundación Semilla' } }, error: null }],
     rpcResponses: [{ data: true, error: null }],
   });
   const result = await exports.acceptOrganizationInvitation({}, form({ memberId: 'm1' }));
   assert.equal(result.ok, true);
   assert.equal(rpcCalls[0].name, 'accept_organization_invitation');
   assert.equal(rpcCalls[0].args._member_id, 'm1');
+  assert.equal(emailCalls[0][0], 'u9');
+  assert.equal(emailCalls[0][1], 'organizacion_invitacion_aceptada');
+  assert.match(emailCalls[0][2], /Fundación Semilla/);
+  assert.equal(emailCalls[0][3], '/mis-organizaciones/o1/miembros');
   assert.ok(paths.includes('/mis-invitaciones'));
 });
 
-test('si la invitación ya no está disponible, aceptarla informa sin mentir', async () => {
-  const { exports } = load('features/organizations/actions.ts', {
+test('si la invitación ya no está disponible, aceptarla informa sin mentir y no avisa a nadie', async () => {
+  const { exports, emailCalls } = load('features/organizations/actions.ts', {
+    responses: [{ data: { invited_by: 'u9', org_id: 'o1', organizations: { nombre: 'Fundación Semilla' } }, error: null }],
     rpcResponses: [{ data: false, error: null }],
   });
   const result = await exports.acceptOrganizationInvitation({}, form({ memberId: 'm1' }));
   assert.match(result.error, /No se pudo aceptar/);
+  assert.equal(emailCalls.length, 0);
 });
 
 test('rechazar una invitación borra solo las pendientes', async () => {
@@ -244,13 +251,18 @@ test('aceptar una oferta que ya no está disponible lo dice sin tecnicismos', as
   assert.equal(result.error, 'Esta oferta ya no está disponible.');
 });
 
-test('rechazar una oferta llama a la función SQL', async () => {
-  const { exports, rpcCalls } = load('features/organizations/actions.ts', {
+test('rechazar una oferta llama a la función SQL y avisa por correo al dueño actual', async () => {
+  const { exports, rpcCalls, emailCalls } = load('features/organizations/actions.ts', {
+    responses: [{ data: { from_user: 'u1', org_id: 'o1', organizations: { nombre: 'Fundación Semilla' } }, error: null }],
     rpcResponses: [{ data: true, error: null }],
   });
   const result = await exports.declineOrganizationOwnership({}, form({ offerId: 'of1' }));
   assert.equal(result.ok, true);
   assert.equal(rpcCalls[0].name, 'decline_organization_ownership_offer');
+  assert.equal(emailCalls[0][0], 'u1');
+  assert.equal(emailCalls[0][1], 'organizacion_propiedad_rechazada');
+  assert.match(emailCalls[0][2], /Fundación Semilla/);
+  assert.equal(emailCalls[0][3], '/mis-organizaciones/o1/miembros');
 });
 
 test('cancelar una oferta que ya no está pendiente informa el error', async () => {

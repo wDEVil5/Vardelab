@@ -113,6 +113,16 @@ const CATALOGO: Record<
     cta: "Ver organización",
     confianza: "Si no esperabas este cambio, escríbenos a equipo@vardelab.cl para revisarlo.",
   },
+  organizacion_invitacion_aceptada: {
+    asunto: "Aceptaron tu invitación a co-gestionar",
+    instruccion: "La persona ya aparece como miembro activo de la organización.",
+    cta: "Ver miembros",
+  },
+  organizacion_propiedad_rechazada: {
+    asunto: "No aceptaron ser dueños de tu organización",
+    instruccion: "Sigues siendo el dueño. Puedes ofrecerle la propiedad a otro miembro activo cuando quieras.",
+    cta: "Ver miembros",
+  },
   postulacion_removida: {
     asunto: "Cambios en tu equipo de proyecto",
     instruccion: "Puedes seguir explorando otros proyectos disponibles.",

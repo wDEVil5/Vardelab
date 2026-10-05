@@ -513,12 +513,35 @@ export async function declineOrganizationOwnership(
   if (!offerId) return { error: "Falta la oferta." };
 
   const supabase = await createClient();
+  // Se lee antes de rechazar: el correo va al dueño actual, y la oferta deja de
+  // estar pendiente al rechazarla.
+  const { data: oferta } = await supabase
+    .from("organization_ownership_offers")
+    .select("from_user, org_id, organizations(nombre)")
+    .eq("id", offerId)
+    .maybeSingle();
+
   const { data, error } = await supabase.rpc("decline_organization_ownership_offer", {
     _offer_id: offerId,
   });
   if (error || !data) {
     if (error) console.error("[declineOrganizationOwnership]", error.message);
     return { error: "No se pudo rechazar la oferta. Puede que ya no esté disponible." };
+  }
+
+  const dueno = oferta?.from_user;
+  if (dueno) {
+    const user = await getCurrentUser();
+    const nombreOrg =
+      (oferta?.organizations as { nombre: string } | null)?.nombre ?? "la organización";
+    after(() =>
+      sendEmailToUser(
+        dueno,
+        "organizacion_propiedad_rechazada",
+        `${user?.nombre ?? "Alguien"} rechazó ser dueño de "${nombreOrg}". Sigues siendo el dueño.`,
+        `/mis-organizaciones/${oferta?.org_id}/miembros`,
+      ),
+    );
   }
 
   revalidatePath("/mis-invitaciones");
@@ -539,6 +562,14 @@ export async function acceptOrganizationInvitation(
   if (!memberId) return { error: "Falta la invitación." };
 
   const supabase = await createClient();
+  // Se lee antes de aceptar: quien invitó y la organización son necesarios
+  // para el correo, y la invitación deja de ser pendiente al aceptarla.
+  const { data: invitacion } = await supabase
+    .from("organization_members")
+    .select("invited_by, org_id, organizations(nombre)")
+    .eq("id", memberId)
+    .maybeSingle();
+
   const { data, error } = await supabase.rpc("accept_organization_invitation", {
     _member_id: memberId,
   });
@@ -546,6 +577,21 @@ export async function acceptOrganizationInvitation(
   if (error || !data) {
     if (error) console.error("[acceptOrganizationInvitation]", error.message);
     return { error: "No se pudo aceptar la invitación. Puede que ya no esté disponible." };
+  }
+
+  const invitador = invitacion?.invited_by;
+  if (invitador) {
+    const user = await getCurrentUser();
+    const nombreOrg =
+      (invitacion?.organizations as { nombre: string } | null)?.nombre ?? "la organización";
+    after(() =>
+      sendEmailToUser(
+        invitador,
+        "organizacion_invitacion_aceptada",
+        `${user?.nombre ?? "Alguien"} aceptó tu invitación a "${nombreOrg}".`,
+        `/mis-organizaciones/${invitacion?.org_id}/miembros`,
+      ),
+    );
   }
 
   revalidatePath("/mis-invitaciones");
