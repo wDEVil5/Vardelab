@@ -14,6 +14,7 @@ type IconName =
   | "inicio"
   | "proyecto"
   | "organizacion"
+  | "invitaciones"
   | "moderacion"
   | "admin"
   | "postulaciones";
@@ -43,6 +44,12 @@ const ICONS: Record<IconName, ReactNode> = {
     <>
       <path d="M3 21h18M5 21V7l7-4 7 4v14" />
       <path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01M10 21v-4h4v4" />
+    </>
+  ),
+  invitaciones: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 7l9 6 9-6" />
     </>
   ),
   moderacion: <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z" />,

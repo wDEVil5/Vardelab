@@ -98,6 +98,7 @@ export function SiteAuthStatus() {
     ? [
         { href: "/inicio", label: "Ir a mi panel", icon: "inicio" },
         { href: "/perfil", label: "Mi perfil", icon: "perfil" },
+        { href: "/mis-invitaciones", label: "Invitaciones", icon: "invitaciones" },
         ...(user.esEstudiante
           ? ([{ href: "/mis-postulaciones", label: "Mis postulaciones", icon: "postulaciones" }] as AccountMenuItem[])
           : []),
