@@ -257,3 +257,23 @@ test('un admin puede cancelar la oferta de propiedad de cualquier dueño', () =>
   });
   assert.ok(salida.includes('estado|cancelada'), `el admin no pudo cancelar: ${salida}`);
 });
+
+test('rechazar la oferta avisa al dueño actual y queda en auditoría', () => {
+  const salida = queryAs({
+    role: 'authenticated', userId: SEED.DIEGO,
+    sql: `
+      ${CREAR_ORG}
+      ${MEMBRESIA_VALENTINA}
+      ${OFRECER_A_VALENTINA}
+      set request.jwt.claim.sub = '${SEED.VALENTINA}';
+      select public.decline_organization_ownership_offer(${OFERTA_ACTUAL});
+      set role postgres;
+      select 'aviso', user_id, tipo from public.notifications
+        where tipo = 'organizacion_propiedad_rechazada' and user_id = '${SEED.DIEGO}';
+      select 'auditoria', accion, entidad_id from public.audit_logs
+        where accion = 'organizacion_propiedad_rechazada' and entidad_id = '${ORG_PRUEBA}';
+    `,
+  });
+  assert.ok(salida.includes(`aviso|${SEED.DIEGO}|organizacion_propiedad_rechazada`), `sin aviso al dueño: ${salida}`);
+  assert.ok(salida.includes(`auditoria|organizacion_propiedad_rechazada|${ORG_PRUEBA}`), `sin auditoría: ${salida}`);
+});
