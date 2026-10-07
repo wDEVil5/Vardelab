@@ -25,13 +25,13 @@ export function OwnershipOfferActions({ offerId }: { offerId: string }) {
       <div className="flex items-center gap-2">
         <form action={declineAction}>
           <input type="hidden" name="offerId" value={offerId} />
-          <button type="submit" className={buttonClasses({ variant: "ghost", size: "sm" })}>
+          <button type="submit" className={`${buttonClasses({ variant: "ghost", size: "sm" })} min-h-11`}>
             Rechazar
           </button>
         </form>
         <form action={acceptAction}>
           <input type="hidden" name="offerId" value={offerId} />
-          <button type="submit" className={buttonClasses({ variant: "primary", size: "sm" })}>
+          <button type="submit" className={`${buttonClasses({ variant: "primary", size: "sm" })} min-h-11`}>
             Aceptar propiedad
           </button>
         </form>
