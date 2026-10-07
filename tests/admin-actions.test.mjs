@@ -172,28 +172,37 @@ test('aprobar la verificación de una organización que ya no está en revisión
   assert.match(result.error, /ya no está en revisión/);
 });
 
-test('aprobar la verificación de una organización en revisión funciona', async () => {
-  const { exports, queries } = load('features/admin/actions.ts', {
+test('aprobar la verificación de una organización en revisión funciona y avisa por correo a dueño y miembros', async () => {
+  const { exports, queries, emailCalls } = load('features/admin/actions.ts', {
     currentUser: ADMIN,
     responses: [
       { data: [{ id: 'o1', nombre: 'Fundación Semilla' }], error: null },
       { error: null },
     ],
+    rpcResponses: [{ data: ['u1', 'u3', ADMIN.id], error: null }],
   });
   const result = await exports.approveOrgVerification({}, form({ orgId: 'o1' }));
   assert.equal(result.error, undefined);
   const auditoria = queries.find((q) => q.table === 'audit_logs');
   assert.ok(auditoria.steps.some(([m, v]) => m === 'insert' && v.accion === 'organizacion_verificada'));
+  assert.deepEqual(emailCalls.map((c) => c[0]), ['u1', 'u3']);
+  assert.equal(emailCalls[0][1], 'organizacion_verificada');
+  assert.match(emailCalls[0][2], /Fundación Semilla" ya está verificada/);
+  assert.equal(emailCalls[0][3], '/mis-organizaciones/o1/editar');
 });
 
-test('rechazar la verificación de una organización en revisión funciona', async () => {
-  const { exports } = load('features/admin/actions.ts', {
+test('rechazar la verificación de una organización en revisión funciona y avisa por correo a dueño y miembros', async () => {
+  const { exports, emailCalls } = load('features/admin/actions.ts', {
     currentUser: ADMIN,
     responses: [
       { data: [{ id: 'o1', nombre: 'Fundación Semilla' }], error: null },
       { error: null },
     ],
+    rpcResponses: [{ data: ['u1', ADMIN.id], error: null }],
   });
   const result = await exports.rejectOrgVerification({}, form({ orgId: 'o1' }));
   assert.equal(result.error, undefined);
+  assert.deepEqual(emailCalls.map((c) => c[0]), ['u1']);
+  assert.equal(emailCalls[0][1], 'organizacion_no_verificada');
+  assert.match(emailCalls[0][2], /no fue aprobada/);
 });
