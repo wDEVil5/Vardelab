@@ -25,13 +25,13 @@ export function InvitationActions({ memberId }: { memberId: string }) {
       <div className="flex items-center gap-2">
         <form action={declineAction}>
           <input type="hidden" name="memberId" value={memberId} />
-          <button type="submit" className={buttonClasses({ variant: "ghost", size: "sm" })}>
+          <button type="submit" className={`${buttonClasses({ variant: "ghost", size: "sm" })} min-h-11`}>
             Rechazar
           </button>
         </form>
         <form action={acceptAction}>
           <input type="hidden" name="memberId" value={memberId} />
-          <button type="submit" className={buttonClasses({ variant: "primary", size: "sm" })}>
+          <button type="submit" className={`${buttonClasses({ variant: "primary", size: "sm" })} min-h-11`}>
             Aceptar
           </button>
         </form>
