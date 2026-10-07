@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/features/auth/queries";
 import { CONFIG_CAMPO_LABEL } from "@/features/admin/queries";
+import { sendEmailToUser } from "@/features/notifications/email";
 import type { Database } from "@/types/database.types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -403,6 +405,26 @@ export async function updatePilotConfig(
   return {};
 }
 
+/**
+ * Correo a dueño y miembros activos por el resultado de la verificación. Usa el
+ * mismo público que el aviso in-app del trigger `organizations_notify_verificacion`
+ * (M62) y excluye al admin que decidió.
+ */
+async function avisarResultadoVerificacion(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  adminId: string,
+  orgId: string,
+  tipo: "organizacion_verificada" | "organizacion_no_verificada",
+  mensaje: string,
+) {
+  const { data: destinatarios } = await supabase.rpc("org_recipient_ids", { _org_id: orgId });
+  for (const uid of (destinatarios ?? []).filter((u) => u !== adminId)) {
+    after(() =>
+      sendEmailToUser(uid, tipo, mensaje, `/mis-organizaciones/${orgId}/editar`),
+    );
+  }
+}
+
 export type OrgVerificationState = { error?: string };
 
 /**
@@ -447,6 +469,14 @@ export async function approveOrgVerification(
     metadata: { nombre: data[0].nombre },
   });
 
+  await avisarResultadoVerificacion(
+    supabase,
+    admin.id,
+    orgId,
+    "organizacion_verificada",
+    `"${data[0].nombre ?? "Tu organización"}" ya está verificada.`,
+  );
+
   revalidatePath(`/admin/organizaciones/${orgId}`);
   revalidatePath("/admin/organizaciones");
   revalidatePath("/organizaciones");
@@ -487,6 +517,14 @@ export async function rejectOrgVerification(
     entidad_id: orgId,
     metadata: { nombre: data[0].nombre },
   });
+
+  await avisarResultadoVerificacion(
+    supabase,
+    admin.id,
+    orgId,
+    "organizacion_no_verificada",
+    `La verificación de "${data[0].nombre ?? "tu organización"}" no fue aprobada.`,
+  );
 
   revalidatePath(`/admin/organizaciones/${orgId}`);
   revalidatePath("/admin/organizaciones");
