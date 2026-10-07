@@ -1,18 +1,17 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   changeUserRole,
   suspendUser,
   reactivateUser,
   type AdminUsersState,
 } from "@/features/admin/actions";
-import { buttonClasses } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { Modal } from "@/components/ui/modal";
 
 const INITIAL: AdminUsersState = {};
-const EASE = [0.22, 1, 0.36, 1] as const;
 
 const ROLES: { value: string; label: string }[] = [
   { value: "estudiante", label: "Estudiante" },
@@ -24,9 +23,13 @@ const ROLES: { value: string; label: string }[] = [
 
 /**
  * Acciones de una fila del panel de usuarios: cambiar rol (select + botón, sin
- * confirmación en dos pasos porque no es destructivo y se puede revertir) y
- * suspender/reactivar (confirmación en dos pasos, mismo patrón que
- * `DeleteProjectButton` — nada de `window.confirm`).
+ * confirmación porque no es destructivo y se puede revertir) y
+ * suspender/reactivar (confirmación en modal: afecta la cuenta de otra
+ * persona, así que vale la pena explicar qué implica antes de aplicarlo).
+ *
+ * No hace falta cerrar el modal manualmente al tener éxito: `UsersTable` le da
+ * a esta fila `key={String(u.suspendido)}`, así que al cambiar ese estado el
+ * componente se remonta entero y el modal vuelve a su valor inicial (cerrado).
  */
 export function UserRowActions({
   userId,
@@ -43,9 +46,9 @@ export function UserRowActions({
   const [suspendState, suspendAction] = useActionState(suspendUser, INITIAL);
   const [reactivateState, reactivateAction] = useActionState(reactivateUser, INITIAL);
   const [confirmando, setConfirmando] = useState<"suspender" | "reactivar" | null>(null);
-  const reduceMotion = useReducedMotion();
 
   const error = roleState.error || suspendState.error || reactivateState.error;
+  const accion = confirmando ?? (suspendido ? "reactivar" : "suspender");
 
   return (
     <div className="flex flex-col items-end gap-1.5">
@@ -79,68 +82,17 @@ export function UserRowActions({
         </form>
 
         <div className="flex items-center gap-2 border-l border-border pl-3">
-          <AnimatePresence mode="wait" initial={false}>
-            {confirmando ? (
-              <motion.div
-                key="confirm"
-                initial={reduceMotion ? false : { opacity: 0, scaleX: 0.4, x: 12 }}
-                animate={{ opacity: 1, scaleX: 1, x: 0 }}
-                exit={reduceMotion ? undefined : { opacity: 0, scaleX: 0.4, x: 12 }}
-                transition={{ duration: 0.2, ease: EASE }}
-                style={{ transformOrigin: "right center" }}
-                className="relative rounded-lg"
-              >
-                {/* El aro parpadea de verdad (`animate-ring-blink`, definido en
-                    globals.css: alterna abrupto entre visible y casi invisible)
-                    en vez de crecer como `animate-ping` o apenas respirar como
-                    `animate-pulse` de Tailwind, que pasaba desapercibido. Mismo
-                    tamaño siempre, pegado a los botones. Va en un `span` aparte,
-                    detrás de los botones: lo que parpadea es el aro, no los
-                    botones mismos (que necesitan quedar legibles y clicables todo
-                    el rato). */}
-                <span
-                  aria-hidden
-                  className={`animate-ring-blink pointer-events-none absolute inset-0 rounded-lg ring-[3px] ${confirmando === "suspender" ? "ring-coral" : "ring-electric"}`}
-                />
-                <form
-                  action={confirmando === "suspender" ? suspendAction : reactivateAction}
-                  className="relative flex items-center gap-1.5 p-1"
-                >
-                  <input type="hidden" name="userId" value={userId} />
-                  <button
-                    type="submit"
-                    className={buttonClasses({ variant: confirmando === "suspender" ? "danger" : "primary", size: "sm" })}
-                  >
-                    Confirmar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmando(null)}
-                    className={buttonClasses({ variant: "ghost", size: "sm" })}
-                  >
-                    Cancelar
-                  </button>
-                </form>
-              </motion.div>
-            ) : (
-              <motion.button
-                key="trigger"
-                type="button"
-                initial={reduceMotion ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={reduceMotion ? undefined : { opacity: 0 }}
-                transition={{ duration: 0.12 }}
-                onClick={() => setConfirmando(suspendido ? "reactivar" : "suspender")}
-                disabled={!suspendido && esUnoMismo}
-                className={buttonClasses({
-                  variant: suspendido ? "outline-primary" : "outline-danger",
-                  size: "sm",
-                })}
-              >
-                {suspendido ? "Reactivar" : "Suspender"}
-              </motion.button>
-            )}
-          </AnimatePresence>
+          <button
+            type="button"
+            onClick={() => setConfirmando(suspendido ? "reactivar" : "suspender")}
+            disabled={!suspendido && esUnoMismo}
+            className={buttonClasses({
+              variant: suspendido ? "outline-primary" : "outline-danger",
+              size: "sm",
+            })}
+          >
+            {suspendido ? "Reactivar" : "Suspender"}
+          </button>
         </div>
       </div>
 
@@ -149,6 +101,37 @@ export function UserRowActions({
           {error}
         </p>
       )}
+
+      <Modal
+        open={confirmando !== null}
+        onClose={() => setConfirmando(null)}
+        title={accion === "suspender" ? "¿Suspender esta cuenta?" : "¿Reactivar esta cuenta?"}
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-ink">
+            {accion === "suspender"
+              ? "La persona no podrá iniciar sesión hasta que la reactives. Esto no borra sus datos."
+              : "Vuelve a poder iniciar sesión de inmediato."}
+          </p>
+
+          <form
+            action={accion === "suspender" ? suspendAction : reactivateAction}
+            className="flex justify-end gap-2"
+          >
+            <input type="hidden" name="userId" value={userId} />
+            <button
+              type="button"
+              onClick={() => setConfirmando(null)}
+              className={buttonClasses({ variant: "ghost", size: "sm" })}
+            >
+              Cancelar
+            </button>
+            <Button type="submit" variant={accion === "suspender" ? "danger" : "primary"} size="sm">
+              {accion === "suspender" ? "Sí, suspender" : "Sí, reactivar"}
+            </Button>
+          </form>
+        </div>
+      </Modal>
     </div>
   );
 }

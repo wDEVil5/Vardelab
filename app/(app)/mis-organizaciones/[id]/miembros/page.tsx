@@ -189,7 +189,7 @@ export default async function MiembrosOrganizacionPage({ params }: PageProps) {
                 >
                   {activo ? iniciales(m.nombre) : <IconReloj className="size-4" />}
                 </span>
-                <div className="min-w-[12rem] flex-1">
+                <div className="min-w-48 flex-1">
                   <p className="truncate text-sm font-medium text-ink">
                     {m.nombre ?? m.invited_email}
                   </p>
@@ -210,7 +210,11 @@ export default async function MiembrosOrganizacionPage({ params }: PageProps) {
                     nombre={m.nombre ?? m.invited_email}
                   />
                 )}
-                <RemoveMemberButton memberId={m.id} orgId={org.id} />
+                <RemoveMemberButton
+                  memberId={m.id}
+                  orgId={org.id}
+                  nombre={m.nombre ?? m.invited_email}
+                />
               </li>
             );
           })}
