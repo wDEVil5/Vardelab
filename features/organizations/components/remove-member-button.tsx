@@ -1,70 +1,72 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { removeOrganizationMember, type RemoveMemberState } from "@/features/organizations/actions";
-import { buttonClasses } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
 
 const INITIAL: RemoveMemberState = {};
-const EASE = [0.22, 1, 0.36, 1] as const;
 
 /**
- * Botón "Quitar" con confirmación en dos pasos (mismo patrón que
- * `RemoveTeamMemberButton`) — deja de gestionar la organización, no es algo
- * para borrar sin querer.
+ * Botón "Quitar" con confirmación en modal (no inline): deja de gestionar la
+ * organización, así que no es algo para borrar sin querer, y la fila de
+ * miembros es angosta para explicar bien qué implica.
+ *
+ * No hace falta cerrar el modal manualmente al tener éxito: la fila
+ * desaparece de la lista al quitar a la persona, así que el componente entero
+ * se desmonta.
  */
-export function RemoveMemberButton({ memberId, orgId }: { memberId: string; orgId: string }) {
+export function RemoveMemberButton({
+  memberId,
+  orgId,
+  nombre,
+}: {
+  memberId: string;
+  orgId: string;
+  nombre: string;
+}) {
   const [state, formAction] = useActionState(removeOrganizationMember, INITIAL);
-  const [confirming, setConfirming] = useState(false);
-  const reduceMotion = useReducedMotion();
+  const [open, setOpen] = useState(false);
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      {confirming ? (
-        <motion.form
-          key="confirm"
-          action={formAction}
-          initial={reduceMotion ? false : { opacity: 0, scaleX: 0.5, x: 12 }}
-          animate={{ opacity: 1, scaleX: 1, x: 0 }}
-          exit={reduceMotion ? undefined : { opacity: 0, scaleX: 0.5, x: 12 }}
-          transition={{ duration: 0.2, ease: EASE }}
-          style={{ transformOrigin: "right center" }}
-          className="flex flex-col items-end gap-1"
-        >
-          <input type="hidden" name="memberId" value={memberId} />
-          <input type="hidden" name="orgId" value={orgId} />
-          <div className="flex items-center gap-1.5">
-            <button type="submit" className={buttonClasses({ variant: "danger", size: "sm" })}>
-              Sí, quitar
-            </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={buttonClasses({ variant: "ghost", size: "sm" })}
+      >
+        Quitar
+      </button>
+
+      <Modal open={open} onClose={() => setOpen(false)} title="¿Quitar a este miembro?">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-ink">
+            <strong>{nombre}</strong> deja de tener acceso a la organización de
+            inmediato. Puedes volver a invitarla cuando quieras.
+          </p>
+
+          {state.error && (
+            <p role="alert" className="text-sm text-coral">
+              {state.error}
+            </p>
+          )}
+
+          <form action={formAction} className="flex justify-end gap-2">
+            <input type="hidden" name="memberId" value={memberId} />
+            <input type="hidden" name="orgId" value={orgId} />
             <button
               type="button"
-              onClick={() => setConfirming(false)}
+              onClick={() => setOpen(false)}
               className={buttonClasses({ variant: "ghost", size: "sm" })}
             >
               Cancelar
             </button>
-          </div>
-          {state.error && (
-            <p role="alert" className="text-xs text-coral">
-              {state.error}
-            </p>
-          )}
-        </motion.form>
-      ) : (
-        <motion.button
-          key="trigger"
-          type="button"
-          onClick={() => setConfirming(true)}
-          initial={reduceMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={reduceMotion ? undefined : { opacity: 0 }}
-          transition={{ duration: 0.12 }}
-          className={buttonClasses({ variant: "ghost", size: "sm" })}
-        >
-          Quitar
-        </motion.button>
-      )}
-    </AnimatePresence>
+            <Button type="submit" variant="danger" size="sm">
+              Sí, quitar
+            </Button>
+          </form>
+        </div>
+      </Modal>
+    </>
   );
 }
