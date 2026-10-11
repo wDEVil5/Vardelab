@@ -2,6 +2,38 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { load, form } from './helpers.mjs';
 
+test('un lead con un tipo inválido no se guarda', async () => {
+  const { exports } = load('features/leads/actions.ts');
+  const result = await exports.submitLead({}, form({
+    tipo: 'inventado', nombre: 'X', email: 'x@x.cl', mensaje: 'Hola',
+  }));
+  assert.match(result.error, /Recarga e inténtalo de nuevo/);
+});
+
+test('un lead sin nombre no se guarda', async () => {
+  const { exports } = load('features/leads/actions.ts');
+  const result = await exports.submitLead({}, form({
+    tipo: 'contacto_organizacion', nombre: '  ', email: 'x@x.cl', mensaje: 'Hola',
+  }));
+  assert.match(result.error, /Cuéntanos tu nombre/);
+});
+
+test('un lead con mensaje vacío no se guarda', async () => {
+  const { exports } = load('features/leads/actions.ts');
+  const result = await exports.submitLead({}, form({
+    tipo: 'contacto_organizacion', nombre: 'X', email: 'x@x.cl', mensaje: '  ',
+  }));
+  assert.match(result.error, /Describe brevemente/);
+});
+
+test('un lead con mensaje de más de 2000 caracteres no se guarda', async () => {
+  const { exports } = load('features/leads/actions.ts');
+  const result = await exports.submitLead({}, form({
+    tipo: 'contacto_organizacion', nombre: 'X', email: 'x@x.cl', mensaje: 'a'.repeat(2001),
+  }));
+  assert.match(result.error, /máximo 2000 caracteres/);
+});
+
 test('un lead con correo mal formado no se guarda', async () => {
   const { exports } = load('features/leads/actions.ts');
   const result = await exports.submitLead({}, form({

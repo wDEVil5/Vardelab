@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
+import { z } from 'zod';
 
 const CHAIN_METHODS = [
   'select', 'insert', 'update', 'upsert', 'delete', 'eq', 'neq', 'in', 'ilike', 'not',
@@ -159,6 +160,9 @@ export function load(relativePath, {
       // una carga aislada de por sí, así que la identidad basta (no hace
       // falta reproducir la memoización real para probar el comportamiento).
       if (name === 'react') return { cache: (fn) => fn };
+      // zod no necesita mock: es una librería pura sin dependencias, se usa
+      // la real para que las acciones se validen de verdad en los tests.
+      if (name === 'zod') return { z };
       if (name === '@/lib/supabase/server') return { createClient: async () => db };
       if (name === '@/features/auth/queries') {
         return {
