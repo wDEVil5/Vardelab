@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/features/auth/queries";
 import type { Database } from "@/types/database.types";
@@ -25,10 +26,7 @@ import { sendPlainEmail } from "@/features/notifications/email";
 const CONTACTO_VARDELAB = "wilnesdevil9@gmail.com";
 
 type LeadTipo = Database["public"]["Enums"]["lead_tipo"];
-const TIPOS: readonly LeadTipo[] = [
-  "contacto_organizacion",
-  "propuesta_desafio",
-];
+const TIPOS = ["contacto_organizacion", "propuesta_desafio"] as const satisfies readonly LeadTipo[];
 
 const TIPO_LABEL: Record<LeadTipo, string> = {
   contacto_organizacion: "Contacto",
@@ -38,32 +36,43 @@ const TIPO_LABEL: Record<LeadTipo, string> = {
 // Validación de correo mínima y tolerante (el formato exacto lo valida el envío).
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// El orden de los campos define el orden en que se revisan: zod junta los
+// issues de un `z.object` en el orden del shape, así que `issues[0]` es
+// siempre el primer campo inválido, igual que la cadena de `if` que reemplaza.
+const SubmitLeadSchema = z.object({
+  tipo: z.enum(TIPOS, { error: "No se pudo procesar el envío. Recarga e inténtalo de nuevo." }),
+  nombre: z.string().trim().min(1, "Cuéntanos tu nombre."),
+  email: z.string().trim().regex(EMAIL_RE, "Ingresa un correo válido."),
+  organizacion: z.string().trim(),
+  mensaje: z
+    .string()
+    .trim()
+    .min(1, "Describe brevemente tu necesidad o idea.")
+    .max(2000, "El mensaje es demasiado largo (máximo 2000 caracteres)."),
+});
+
 export type SubmitLeadState = { ok?: boolean; error?: string };
 
 export async function submitLead(
   _prevState: SubmitLeadState,
   formData: FormData,
 ): Promise<SubmitLeadState> {
-  const tipo = String(formData.get("tipo") ?? "");
-  const nombre = String(formData.get("nombre") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
-  const organizacion = String(formData.get("organizacion") ?? "").trim();
-  const mensaje = String(formData.get("mensaje") ?? "").trim();
-
-  if (!TIPOS.includes(tipo as LeadTipo)) {
-    return { error: "No se pudo procesar el envío. Recarga e inténtalo de nuevo." };
+  const parsed = SubmitLeadSchema.safeParse({
+    tipo: String(formData.get("tipo") ?? ""),
+    nombre: String(formData.get("nombre") ?? ""),
+    email: String(formData.get("email") ?? ""),
+    organizacion: String(formData.get("organizacion") ?? ""),
+    mensaje: String(formData.get("mensaje") ?? ""),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
   }
-  if (!nombre) return { error: "Cuéntanos tu nombre." };
-  if (!EMAIL_RE.test(email)) return { error: "Ingresa un correo válido." };
-  if (!mensaje) return { error: "Describe brevemente tu necesidad o idea." };
-  if (mensaje.length > 2000) {
-    return { error: "El mensaje es demasiado largo (máximo 2000 caracteres)." };
-  }
+  const { tipo, nombre, email, organizacion, mensaje } = parsed.data;
 
   const supabase = await createClient();
 
   const { error } = await supabase.from("leads").insert({
-    tipo: tipo as LeadTipo,
+    tipo,
     nombre,
     email,
     organizacion: organizacion || null,
@@ -81,7 +90,7 @@ export async function submitLead(
     }),
     sendPlainEmail(
       CONTACTO_VARDELAB,
-      `Nuevo lead: ${TIPO_LABEL[tipo as LeadTipo]}`,
+      `Nuevo lead: ${TIPO_LABEL[tipo]}`,
       `${nombre} (${email})${organizacion ? ` de ${organizacion}` : ""} escribió: "${mensaje}"`,
       { instruccion: "Podés gestionarlo desde el panel de leads.", cta: "Ver leads", link: "/leads" },
     ),
@@ -91,7 +100,12 @@ export async function submitLead(
 }
 
 type LeadEstado = Database["public"]["Enums"]["lead_estado"];
-const ESTADOS: readonly LeadEstado[] = ["nuevo", "contactado", "descartado"];
+const ESTADOS = ["nuevo", "contactado", "descartado"] as const satisfies readonly LeadEstado[];
+
+const UpdateLeadStatusSchema = z.object({
+  leadId: z.string().min(1),
+  estado: z.enum(ESTADOS),
+});
 
 /**
  * Gestión de un lead (lado del staff): marcarlo contactado, descartado, o
@@ -99,9 +113,12 @@ const ESTADOS: readonly LeadEstado[] = ["nuevo", "contactado", "descartado"];
  * si el usuario no tiene ese rol, Supabase rechaza la actualización.
  */
 export async function updateLeadStatus(formData: FormData): Promise<void> {
-  const leadId = String(formData.get("leadId") ?? "");
-  const estado = String(formData.get("estado") ?? "");
-  if (!leadId || !ESTADOS.includes(estado as LeadEstado)) return;
+  const parsed = UpdateLeadStatusSchema.safeParse({
+    leadId: String(formData.get("leadId") ?? ""),
+    estado: String(formData.get("estado") ?? ""),
+  });
+  if (!parsed.success) return;
+  const { leadId, estado } = parsed.data;
 
   const supabase = await createClient();
 
@@ -109,7 +126,7 @@ export async function updateLeadStatus(formData: FormData): Promise<void> {
 
   const { error } = await supabase
     .from("leads")
-    .update({ estado: estado as LeadEstado })
+    .update({ estado })
     .eq("id", leadId);
 
   if (error) {
