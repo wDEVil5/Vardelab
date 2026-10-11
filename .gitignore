@@ -55,6 +55,7 @@ logos-marca/
 tmp/
 BACKEND.md
 REGLAS_NEGOCIO.md
+GIT_FECHAS_COMMITS.md
 .vscode/
 .responsive-audit/
 .tmp-shots/
