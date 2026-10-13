@@ -88,7 +88,7 @@ La **especificación de producto (PRD) está completa** y el **prototipo en Figm
 - **Administrador** — métricas del piloto, vista completa de proyectos y organizaciones (incluye aprobar verificaciones y ofrecer la propiedad de una organización como rescate), gestión de catálogos, usuarios y permisos, registro de auditoría y configuración del piloto.
 - **Transversal** — notificaciones in-app y por correo (postulaciones, mensajes, hitos, verificación) y mensajería en tiempo real por proyecto.
 
-En desarrollo local, **343 pruebas automatizadas** (lógica de negocio + políticas RLS reales contra Postgres) corren en cada PR vía CI antes de que un cambio llegue a producción. Queda terminar de alinear con Figma algunas pantallas secundarias y abrir la convocatoria del piloto a usuarios externos.
+En desarrollo local, **347 pruebas automatizadas** (lógica de negocio + políticas RLS reales contra Postgres) corren en cada PR vía CI antes de que un cambio llegue a producción. Queda terminar de alinear con Figma algunas pantallas secundarias y abrir la convocatoria del piloto a usuarios externos.
 
 | Fase | Descripción | Estado |
 |------|-------------|--------|
