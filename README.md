@@ -11,6 +11,7 @@ Convierte necesidades reales en microproyectos acotados y acompañados, para que
 ![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Zod](https://img.shields.io/badge/Zod-3E67B1?logo=zod&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
@@ -105,7 +106,7 @@ En desarrollo local, **347 pruebas automatizadas** (lógica de negocio + políti
 | Frontend | **Next.js** (React) + **TypeScript** | Web responsive con SSR para el catálogo público |
 | Backend administrado | **Supabase** | Autenticación, PostgreSQL, almacenamiento y políticas de acceso |
 | Base de datos | **PostgreSQL** | Modelo relacional (proyectos, roles, postulaciones, equipos…) |
-| Seguridad | **Row Level Security** + headers (CSP/HSTS) + rate limiting propio | Permisos por rol y por propiedad del registro en la base; límites de intentos en login/registro/recuperación vía una tabla en Postgres (pensada para migrar a **Upstash Redis** si el volumen lo pide más adelante) |
+| Seguridad | **Row Level Security** + headers (CSP/HSTS) + rate limiting propio + **Zod** | Permisos por rol y por propiedad del registro en la base; límites de intentos en login/registro/recuperación vía una tabla en Postgres (pensada para migrar a **Upstash Redis** si el volumen lo pide más adelante); validación de entradas en las Server Actions con Zod (migración progresiva desde parsing manual, en curso) |
 | Correo transaccional | **Supabase Auth** (confirmación/recuperación) + **Brevo** | Confirmación de cuentas, recuperación de contraseña y notificaciones (postulaciones, mensajes, hitos, verificación). El envío está encapsulado en un único módulo (`features/notifications/email.ts`), pensado para migrar a **Amazon SES** sin tocar el resto del código |
 | Despliegue | **Vercel** | Entrega continua + dominio propio (HTTPS) |
 | CI/CD | **GitHub Actions** | Despliegue automático de migraciones al mergear a `main` |
