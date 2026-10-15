@@ -118,6 +118,11 @@ const CATALOGO: Record<
     instruccion: "La persona ya aparece como miembro activo de la organización.",
     cta: "Ver miembros",
   },
+  organizacion_invitacion_rechazada: {
+    asunto: "Rechazaron tu invitación a co-gestionar",
+    instruccion: "Puedes invitar a otra persona cuando quieras desde Miembros.",
+    cta: "Ver miembros",
+  },
   organizacion_propiedad_rechazada: {
     asunto: "No aceptaron ser dueños de tu organización",
     instruccion: "Sigues siendo el dueño. Puedes ofrecerle la propiedad a otro miembro activo cuando quieras.",

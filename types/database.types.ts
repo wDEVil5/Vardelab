@@ -27,6 +27,7 @@ export type Database = {
                   Row: {
                     "applicant_id": string,"created_at": string,"disponibilidad": string | null,"evidencia": string | null,"id": string,"mensaje": string | null,"project_id": string,"project_role_id": string,"status": Database["public"]['Enums']["application_status"],"updated_at": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "applicant_id": string,"created_at"?: string,"disponibilidad"?: string | null,"evidencia"?: string | null,"id"?: string,"mensaje"?: string | null,"project_id": string,"project_role_id": string,"status"?: Database["public"]['Enums']["application_status"],"updated_at"?: string
                   }
@@ -52,6 +53,7 @@ isOneToOne: false
                   Row: {
                     "accion": string,"actor_id": string | null,"created_at": string,"entidad": string | null,"entidad_id": string | null,"id": string,"metadata": Json | null
                   }
+                  ComputedFields: never
                   Insert: {
                     "accion": string,"actor_id"?: string | null,"created_at"?: string,"entidad"?: string | null,"entidad_id"?: string | null,"id"?: string,"metadata"?: Json | null
                   }
@@ -65,6 +67,7 @@ isOneToOne: false
                   Row: {
                     "activo": boolean,"created_at": string,"etiqueta": string,"id": string,"orden": number,"updated_at": string,"url": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "activo"?: boolean,"created_at"?: string,"etiqueta": string,"id"?: string,"orden"?: number,"updated_at"?: string,"url": string
                   }
@@ -78,6 +81,7 @@ isOneToOne: false
                   Row: {
                     "comentario": string | null,"created_at": string,"criterios": Json | null,"evaluatee_id": string,"evaluator_id": string | null,"id": string,"project_id": string,"puntaje": number | null,"updated_at": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "comentario"?: string | null,"created_at"?: string,"criterios"?: Json | null,"evaluatee_id": string,"evaluator_id"?: string | null,"id"?: string,"project_id": string,"puntaje"?: number | null,"updated_at"?: string
                   }
@@ -97,6 +101,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"email": string,"estado": Database["public"]['Enums']["lead_estado"],"id": string,"mensaje": string,"nombre": string,"organizacion": string | null,"tipo": Database["public"]['Enums']["lead_tipo"]
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"email": string,"estado"?: Database["public"]['Enums']["lead_estado"],"id"?: string,"mensaje": string,"nombre": string,"organizacion"?: string | null,"tipo": Database["public"]['Enums']["lead_tipo"]
                   }
@@ -110,6 +115,7 @@ isOneToOne: false
                   Row: {
                     "aviso_vencimiento_enviado_at": string | null,"created_at": string,"descripcion": string | null,"estado": Database["public"]['Enums']["milestone_status"],"fecha_limite": string | null,"id": string,"orden": number,"project_id": string,"titulo": string,"updated_at": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "aviso_vencimiento_enviado_at"?: string | null,"created_at"?: string,"descripcion"?: string | null,"estado"?: Database["public"]['Enums']["milestone_status"],"fecha_limite"?: string | null,"id"?: string,"orden"?: number,"project_id": string,"titulo": string,"updated_at"?: string
                   }
@@ -129,6 +135,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"id": string,"leida": boolean,"link": string | null,"mensaje": string,"tipo": Database["public"]['Enums']["notification_tipo"],"user_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"id"?: string,"leida"?: boolean,"link"?: string | null,"mensaje": string,"tipo": Database["public"]['Enums']["notification_tipo"],"user_id": string
                   }
@@ -142,6 +149,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"id": string,"invited_by": string,"invited_email": string,"org_id": string,"status": string,"user_id": string | null
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"id"?: string,"invited_by": string,"invited_email": string,"org_id": string,"status"?: string,"user_id"?: string | null
                   }
@@ -161,6 +169,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"from_user": string,"id": string,"org_id": string,"status": string,"to_user": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"from_user": string,"id"?: string,"org_id": string,"status"?: string,"to_user": string
                   }
@@ -180,6 +189,7 @@ isOneToOne: false
                   Row: {
                     "contacto": string | null,"contacto_email": string | null,"created_at": string,"descripcion": string | null,"id": string,"logo_url": string | null,"nombre": string,"owner_id": string,"sitio_web": string | null,"tipo": Database["public"]['Enums']["org_type"],"updated_at": string,"verificacion": Database["public"]['Enums']["verification_status"]
                   }
+                  ComputedFields: never
                   Insert: {
                     "contacto"?: string | null,"contacto_email"?: string | null,"created_at"?: string,"descripcion"?: string | null,"id"?: string,"logo_url"?: string | null,"nombre": string,"owner_id": string,"sitio_web"?: string | null,"tipo": Database["public"]['Enums']["org_type"],"updated_at"?: string,"verificacion"?: Database["public"]['Enums']["verification_status"]
                   }
@@ -193,6 +203,7 @@ isOneToOne: false
                   Row: {
                     "autoaprobacion_proyectos": boolean,"id": boolean,"moderacion_previa_obligatoria": boolean,"notif_hito_proximo_vencer": boolean,"notif_postulacion_recibida": boolean,"notif_respuesta_moderacion": boolean,"notif_resumen_semanal": boolean,"patrocinadores_externos": boolean,"registro_abierto": boolean,"updated_at": string,"updated_by": string | null
                   }
+                  ComputedFields: never
                   Insert: {
                     "autoaprobacion_proyectos"?: boolean,"id"?: boolean,"moderacion_previa_obligatoria"?: boolean,"notif_hito_proximo_vencer"?: boolean,"notif_postulacion_recibida"?: boolean,"notif_respuesta_moderacion"?: boolean,"notif_resumen_semanal"?: boolean,"patrocinadores_externos"?: boolean,"registro_abierto"?: boolean,"updated_at"?: string,"updated_by"?: string | null
                   }
@@ -206,6 +217,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"descripcion": string | null,"id": string,"oculto_motivo": string | null,"oculto_por_moderacion": boolean,"profile_id": string,"project_id": string | null,"titulo": string,"updated_at": string,"url": string | null,"visibility": Database["public"]['Enums']["visibility"]
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"descripcion"?: string | null,"id"?: string,"oculto_motivo"?: string | null,"oculto_por_moderacion"?: boolean,"profile_id": string,"project_id"?: string | null,"titulo": string,"updated_at"?: string,"url"?: string | null,"visibility"?: Database["public"]['Enums']["visibility"]
                   }
@@ -231,6 +243,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"evidencia": string | null,"id": string,"nivel": Database["public"]['Enums']["skill_level"] | null,"profile_id": string,"skill_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"evidencia"?: string | null,"id"?: string,"nivel"?: Database["public"]['Enums']["skill_level"] | null,"profile_id": string,"skill_id": string
                   }
@@ -256,6 +269,7 @@ isOneToOne: false
                   Row: {
                     "avatar_url": string | null,"bio": string | null,"cargo": string | null,"carrera": string | null,"created_at": string,"disponibilidad": string | null,"enlaces": NonNullable<Json>,"id": string,"intereses": string | null,"moderador_intro_completado": boolean,"nombre": string | null,"onboarding_completado": boolean,"semestre": number | null,"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
                   }
+                  ComputedFields: never
                   Insert: {
                     "avatar_url"?: string | null,"bio"?: string | null,"cargo"?: string | null,"carrera"?: string | null,"created_at"?: string,"disponibilidad"?: string | null,"enlaces"?: NonNullable<Json>,"id": string,"intereses"?: string | null,"moderador_intro_completado"?: boolean,"nombre"?: string | null,"onboarding_completado"?: boolean,"semestre"?: number | null,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
                   }
@@ -269,6 +283,7 @@ isOneToOne: false
                   Row: {
                     "body": string,"created_at": string,"id": string,"project_id": string,"sender_id": string | null
                   }
+                  ComputedFields: never
                   Insert: {
                     "body": string,"created_at"?: string,"id"?: string,"project_id": string,"sender_id"?: string | null
                   }
@@ -288,6 +303,7 @@ isOneToOne: false
                   Row: {
                     "categoria": string,"created_at": string,"id": string,"project_id": string,"resuelta": boolean,"texto": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "categoria": string,"created_at"?: string,"id"?: string,"project_id": string,"resuelta"?: boolean,"texto": string
                   }
@@ -307,6 +323,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"id": string,"nivel_minimo": Database["public"]['Enums']["skill_level"] | null,"project_role_id": string,"skill_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"id"?: string,"nivel_minimo"?: Database["public"]['Enums']["skill_level"] | null,"project_role_id": string,"skill_id": string
                   }
@@ -332,6 +349,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"cupos": number,"descripcion": string | null,"horas_semanales": number | null,"id": string,"nombre": string,"project_id": string,"updated_at": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"cupos"?: number,"descripcion"?: string | null,"horas_semanales"?: number | null,"id"?: string,"nombre": string,"project_id": string,"updated_at"?: string
                   }
@@ -351,6 +369,7 @@ isOneToOne: false
                   Row: {
                     "alcance": string | null,"autoriza_divulgacion": boolean,"comentario_moderacion": string | null,"created_at": string,"created_by": string | null,"dedicacion_semanal": string | null,"descripcion": string | null,"duracion_semanas": number | null,"entregable": string | null,"expectativas": string | null,"fecha_fin": string | null,"fecha_inicio": string | null,"id": string,"modalidad": Database["public"]['Enums']["project_modality"] | null,"org_id": string,"problema": string | null,"respuesta_patrocinador": string | null,"resumen": string | null,"revisado_at": string | null,"status": Database["public"]['Enums']["project_status"],"titulo": string,"updated_at": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "alcance"?: string | null,"autoriza_divulgacion"?: boolean,"comentario_moderacion"?: string | null,"created_at"?: string,"created_by"?: string | null,"dedicacion_semanal"?: string | null,"descripcion"?: string | null,"duracion_semanas"?: number | null,"entregable"?: string | null,"expectativas"?: string | null,"fecha_fin"?: string | null,"fecha_inicio"?: string | null,"id"?: string,"modalidad"?: Database["public"]['Enums']["project_modality"] | null,"org_id": string,"problema"?: string | null,"respuesta_patrocinador"?: string | null,"resumen"?: string | null,"revisado_at"?: string | null,"status"?: Database["public"]['Enums']["project_status"],"titulo": string,"updated_at"?: string
                   }
@@ -370,6 +389,7 @@ isOneToOne: false
                   Row: {
                     "intentos": number,"key": string,"window_start": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "intentos"?: number,"key": string,"window_start"?: string
                   }
@@ -383,6 +403,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"descripcion": string | null,"escalado_admin": boolean,"escalado_at": string | null,"escalado_nota": string | null,"escalado_por": string | null,"id": string,"motivo": string,"reporter_id": string | null,"resolucion": string | null,"status": Database["public"]['Enums']["report_status"],"target_id": string | null,"target_type": string,"updated_at": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"descripcion"?: string | null,"escalado_admin"?: boolean,"escalado_at"?: string | null,"escalado_nota"?: string | null,"escalado_por"?: string | null,"id"?: string,"motivo": string,"reporter_id"?: string | null,"resolucion"?: string | null,"status"?: Database["public"]['Enums']["report_status"],"target_id"?: string | null,"target_type": string,"updated_at"?: string
                   }
@@ -396,6 +417,7 @@ isOneToOne: false
                   Row: {
                     "activo": boolean,"categoria": string,"created_at": string,"id": string,"nombre": string,"updated_at": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "activo"?: boolean,"categoria": string,"created_at"?: string,"id"?: string,"nombre": string,"updated_at"?: string
                   }
@@ -409,6 +431,7 @@ isOneToOne: false
                   Row: {
                     "archivo_url": string | null,"created_at": string,"id": string,"milestone_id": string,"nota": string | null,"submitted_by": string | null,"updated_at": string,"url": string | null
                   }
+                  ComputedFields: never
                   Insert: {
                     "archivo_url"?: string | null,"created_at"?: string,"id"?: string,"milestone_id": string,"nota"?: string | null,"submitted_by"?: string | null,"updated_at"?: string,"url"?: string | null
                   }
@@ -428,6 +451,7 @@ isOneToOne: false
                   Row: {
                     "contribucion": string | null,"created_at": string,"id": string,"project_role_id": string | null,"team_id": string,"user_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "contribucion"?: string | null,"created_at"?: string,"id"?: string,"project_role_id"?: string | null,"team_id": string,"user_id": string
                   }
@@ -453,6 +477,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"estado": Database["public"]['Enums']["team_status"],"fecha_inicio": string | null,"id": string,"project_id": string,"updated_at": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"estado"?: Database["public"]['Enums']["team_status"],"fecha_inicio"?: string | null,"id"?: string,"project_id": string,"updated_at"?: string
                   }
@@ -472,6 +497,7 @@ isOneToOne: true
                   Row: {
                     "created_at": string,"id": string,"role": Database["public"]['Enums']["app_role"],"user_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"id"?: string,"role": Database["public"]['Enums']["app_role"],"user_id": string
                   }
@@ -539,6 +565,9 @@ isOneToOne: true
                            },
 "completed_projects_count":
 { Args: { "_profile_id": string }; Returns: number
+                           },
+"decline_organization_invitation":
+{ Args: { "_member_id": string }; Returns: boolean
                            },
 "decline_organization_ownership_offer":
 { Args: { "_offer_id": string }; Returns: boolean
@@ -625,7 +654,7 @@ isOneToOne: true
                            }
           }
           Enums: {
-            "app_role": "estudiante"|"patrocinador"|"mentor"|"moderador"|"admin","application_status": "enviada"|"aceptada"|"rechazada"|"retirada"|"removida","lead_estado": "nuevo"|"contactado"|"descartado","lead_tipo": "contacto_organizacion"|"propuesta_desafio","milestone_status": "pendiente"|"en_progreso"|"entregado"|"aprobado","notification_tipo": "postulacion_recibida"|"postulacion_aceptada"|"postulacion_rechazada"|"invitacion_organizacion"|"evaluacion_nueva"|"hito_por_vencer"|"mensaje_nuevo"|"proyecto_cancelado"|"organizacion_verificada"|"organizacion_no_verificada"|"postulacion_removida"|"proyecto_rechazado"|"reporte_escalado"|"reporte_recibido"|"reporte_resuelto"|"organizacion_propiedad_transferida"|"organizacion_propiedad_ofrecida"|"organizacion_invitacion_aceptada"|"organizacion_propiedad_rechazada","org_type": "academica"|"social"|"emprendimiento"|"empresa"|"interna","project_modality": "presencial"|"remoto"|"hibrido","project_status": "borrador"|"en_revision"|"publicado"|"seleccion"|"activo"|"revision_final"|"completado"|"suspendido"|"cancelado","report_status": "abierto"|"en_revision"|"resuelto","skill_level": "basico"|"intermedio"|"avanzado","team_status": "formando"|"activo"|"finalizado","verification_status": "sin_verificar"|"en_revision"|"verificado","visibility": "publico"|"privado"
+            "app_role": "estudiante"|"patrocinador"|"mentor"|"moderador"|"admin","application_status": "enviada"|"aceptada"|"rechazada"|"retirada"|"removida","lead_estado": "nuevo"|"contactado"|"descartado","lead_tipo": "contacto_organizacion"|"propuesta_desafio","milestone_status": "pendiente"|"en_progreso"|"entregado"|"aprobado","notification_tipo": "postulacion_recibida"|"postulacion_aceptada"|"postulacion_rechazada"|"invitacion_organizacion"|"evaluacion_nueva"|"hito_por_vencer"|"mensaje_nuevo"|"proyecto_cancelado"|"organizacion_verificada"|"organizacion_no_verificada"|"postulacion_removida"|"proyecto_rechazado"|"reporte_escalado"|"reporte_recibido"|"reporte_resuelto"|"organizacion_propiedad_transferida"|"organizacion_propiedad_ofrecida"|"organizacion_invitacion_aceptada"|"organizacion_propiedad_rechazada"|"organizacion_invitacion_rechazada","org_type": "academica"|"social"|"emprendimiento"|"empresa"|"interna","project_modality": "presencial"|"remoto"|"hibrido","project_status": "borrador"|"en_revision"|"publicado"|"seleccion"|"activo"|"revision_final"|"completado"|"suspendido"|"cancelado","report_status": "abierto"|"en_revision"|"resuelto","skill_level": "basico"|"intermedio"|"avanzado","team_status": "formando"|"activo"|"finalizado","verification_status": "sin_verificar"|"en_revision"|"verificado","visibility": "publico"|"privado"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -745,7 +774,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "app_role": ["estudiante", "patrocinador", "mentor", "moderador", "admin"],"application_status": ["enviada", "aceptada", "rechazada", "retirada", "removida"],"lead_estado": ["nuevo", "contactado", "descartado"],"lead_tipo": ["contacto_organizacion", "propuesta_desafio"],"milestone_status": ["pendiente", "en_progreso", "entregado", "aprobado"],"notification_tipo": ["postulacion_recibida", "postulacion_aceptada", "postulacion_rechazada", "invitacion_organizacion", "evaluacion_nueva", "hito_por_vencer", "mensaje_nuevo", "proyecto_cancelado", "organizacion_verificada", "organizacion_no_verificada", "postulacion_removida", "proyecto_rechazado", "reporte_escalado", "reporte_recibido", "reporte_resuelto", "organizacion_propiedad_transferida", "organizacion_propiedad_ofrecida", "organizacion_invitacion_aceptada", "organizacion_propiedad_rechazada"],"org_type": ["academica", "social", "emprendimiento", "empresa", "interna"],"project_modality": ["presencial", "remoto", "hibrido"],"project_status": ["borrador", "en_revision", "publicado", "seleccion", "activo", "revision_final", "completado", "suspendido", "cancelado"],"report_status": ["abierto", "en_revision", "resuelto"],"skill_level": ["basico", "intermedio", "avanzado"],"team_status": ["formando", "activo", "finalizado"],"verification_status": ["sin_verificar", "en_revision", "verificado"],"visibility": ["publico", "privado"]
+            "app_role": ["estudiante", "patrocinador", "mentor", "moderador", "admin"],"application_status": ["enviada", "aceptada", "rechazada", "retirada", "removida"],"lead_estado": ["nuevo", "contactado", "descartado"],"lead_tipo": ["contacto_organizacion", "propuesta_desafio"],"milestone_status": ["pendiente", "en_progreso", "entregado", "aprobado"],"notification_tipo": ["postulacion_recibida", "postulacion_aceptada", "postulacion_rechazada", "invitacion_organizacion", "evaluacion_nueva", "hito_por_vencer", "mensaje_nuevo", "proyecto_cancelado", "organizacion_verificada", "organizacion_no_verificada", "postulacion_removida", "proyecto_rechazado", "reporte_escalado", "reporte_recibido", "reporte_resuelto", "organizacion_propiedad_transferida", "organizacion_propiedad_ofrecida", "organizacion_invitacion_aceptada", "organizacion_propiedad_rechazada", "organizacion_invitacion_rechazada"],"org_type": ["academica", "social", "emprendimiento", "empresa", "interna"],"project_modality": ["presencial", "remoto", "hibrido"],"project_status": ["borrador", "en_revision", "publicado", "seleccion", "activo", "revision_final", "completado", "suspendido", "cancelado"],"report_status": ["abierto", "en_revision", "resuelto"],"skill_level": ["basico", "intermedio", "avanzado"],"team_status": ["formando", "activo", "finalizado"],"verification_status": ["sin_verificar", "en_revision", "verificado"],"visibility": ["publico", "privado"]
           }
         }
 } as const

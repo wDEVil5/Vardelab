@@ -221,15 +221,29 @@ test('si la invitación ya no está disponible, aceptarla informa sin mentir y n
   assert.equal(emailCalls.length, 0);
 });
 
-test('rechazar una invitación borra solo las pendientes', async () => {
-  const { exports, queries } = load('features/organizations/actions.ts', {
-    responses: [{ error: null }],
+test('rechazar una invitación llama a la función SQL, avisa por correo a quien invitó y revalida', async () => {
+  const { exports, rpcCalls, emailCalls } = load('features/organizations/actions.ts', {
+    responses: [{ data: { invited_by: 'u9', org_id: 'o1', organizations: { nombre: 'Fundación Semilla' } }, error: null }],
+    rpcResponses: [{ data: true, error: null }],
   });
   const result = await exports.declineOrganizationInvitation({}, form({ memberId: 'm1' }));
   assert.equal(result.ok, true);
-  const steps = queries[0].steps.map(([m]) => m);
-  assert.ok(steps.includes('delete'));
-  assert.ok(queries[0].steps.some(([m, col, val]) => m === 'eq' && col === 'status' && val === 'pendiente'));
+  assert.equal(rpcCalls[0].name, 'decline_organization_invitation');
+  assert.equal(rpcCalls[0].args._member_id, 'm1');
+  assert.equal(emailCalls[0][0], 'u9');
+  assert.equal(emailCalls[0][1], 'organizacion_invitacion_rechazada');
+  assert.match(emailCalls[0][2], /Fundación Semilla/);
+  assert.equal(emailCalls[0][3], '/mis-organizaciones/o1/miembros');
+});
+
+test('rechazar una invitación que ya no existe no avisa a nadie', async () => {
+  const { exports, emailCalls } = load('features/organizations/actions.ts', {
+    responses: [{ data: { invited_by: 'u9', org_id: 'o1', organizations: { nombre: 'Fundación Semilla' } }, error: null }],
+    rpcResponses: [{ data: false, error: null }],
+  });
+  const result = await exports.declineOrganizationInvitation({}, form({ memberId: 'm1' }));
+  assert.match(result.error, /No se pudo rechazar/);
+  assert.equal(emailCalls.length, 0);
 });
 
 test('aceptar la oferta llama a la función SQL y revalida la bandeja', async () => {
