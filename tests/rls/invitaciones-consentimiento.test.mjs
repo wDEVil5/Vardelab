@@ -110,3 +110,35 @@ test('aceptar la invitación deja un aviso para quien invitó', () => {
   });
   assert.ok(salida.includes(`aviso|${SEED.DIEGO}|organizacion_invitacion_aceptada`), `sin aviso para quien invitó: ${salida}`);
 });
+
+test('rechazar la invitación borra la fila y deja un aviso para quien invitó', () => {
+  const salida = queryAs({
+    role: 'authenticated', userId: SEED.DIEGO,
+    sql: `
+      ${CREAR_ORG}
+      ${INVITAR_VALENTINA_PENDIENTE}
+      set request.jwt.claim.sub = '${SEED.VALENTINA}';
+      select public.decline_organization_invitation('${MEMBRESIA}');
+      set role postgres;
+      select 'fila', count(*) from public.organization_members where id = '${MEMBRESIA}';
+      select 'aviso', user_id, tipo from public.notifications
+        where tipo = 'organizacion_invitacion_rechazada' and user_id = '${SEED.DIEGO}';
+    `,
+  });
+  assert.ok(salida.includes('fila|0'), `la fila no se borró: ${salida}`);
+  assert.ok(salida.includes(`aviso|${SEED.DIEGO}|organizacion_invitacion_rechazada`), `sin aviso para quien invitó: ${salida}`);
+});
+
+test('solo la persona invitada puede rechazar su propia invitación', () => {
+  const salida = queryAs({
+    role: 'authenticated', userId: SEED.DIEGO,
+    sql: `
+      ${CREAR_ORG}
+      ${INVITAR_VALENTINA_PENDIENTE}
+      select public.decline_organization_invitation('${MEMBRESIA}');
+      set role postgres;
+      select 'fila', status from public.organization_members where id = '${MEMBRESIA}';
+    `,
+  });
+  assert.ok(salida.includes('fila|pendiente'), `otro distinto al invitado pudo rechazarla: ${salida}`);
+});

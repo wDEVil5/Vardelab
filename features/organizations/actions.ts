@@ -600,8 +600,10 @@ export async function acceptOrganizationInvitation(
 }
 
 /**
- * Rechaza una invitación borrando la fila del propio invitado; la policy de
- * delete de `organization_members` ya permite a quien es invitado hacerlo.
+ * Rechaza una invitación. Antes era un delete directo del cliente; ahora pasa
+ * por `decline_organization_invitation` (M113), que además deja un aviso
+ * in-app para quien invitó. El correo lo manda esta acción, mismo patrón que
+ * `acceptOrganizationInvitation`.
  */
 export async function declineOrganizationInvitation(
   _prevState: InvitationResponseState,
@@ -611,15 +613,36 @@ export async function declineOrganizationInvitation(
   if (!memberId) return { error: "Falta la invitación." };
 
   const supabase = await createClient();
-  const { error } = await supabase
+  // Se lee antes de rechazar: quien invitó y la organización son necesarios
+  // para el correo, y la invitación deja de existir al rechazarla.
+  const { data: invitacion } = await supabase
     .from("organization_members")
-    .delete()
+    .select("invited_by, org_id, organizations(nombre)")
     .eq("id", memberId)
-    .eq("status", "pendiente");
+    .maybeSingle();
 
-  if (error) {
-    console.error("[declineOrganizationInvitation]", error.message);
+  const { data, error } = await supabase.rpc("decline_organization_invitation", {
+    _member_id: memberId,
+  });
+
+  if (error || !data) {
+    if (error) console.error("[declineOrganizationInvitation]", error.message);
     return { error: "No se pudo rechazar la invitación. Inténtalo de nuevo." };
+  }
+
+  const invitador = invitacion?.invited_by;
+  if (invitador) {
+    const user = await getCurrentUser();
+    const nombreOrg =
+      (invitacion?.organizations as { nombre: string } | null)?.nombre ?? "la organización";
+    after(() =>
+      sendEmailToUser(
+        invitador,
+        "organizacion_invitacion_rechazada",
+        `${user?.nombre ?? "Alguien"} rechazó tu invitación a "${nombreOrg}".`,
+        `/mis-organizaciones/${invitacion?.org_id}/miembros`,
+      ),
+    );
   }
 
   revalidatePath("/mis-invitaciones");

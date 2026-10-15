@@ -81,6 +81,12 @@ const TRAZOS: Record<Notification["tipo"], ReactNode> = {
       <path d="M8 12l3 3 5-5" />
     </>
   ),
+  organizacion_invitacion_rechazada: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9 9l6 6M15 9l-6 6" />
+    </>
+  ),
   organizacion_propiedad_rechazada: (
     <>
       <circle cx="12" cy="12" r="9" />
@@ -134,6 +140,7 @@ const TONO: Record<Notification["tipo"], string> = {
   organizacion_propiedad_ofrecida: "bg-electric/10 text-electric",
   organizacion_propiedad_transferida: "bg-electric/10 text-electric",
   organizacion_invitacion_aceptada: "bg-sprout/15 text-sprout",
+  organizacion_invitacion_rechazada: "bg-ink/10 text-ink",
   organizacion_propiedad_rechazada: "bg-ink/10 text-ink",
   postulacion_removida: "bg-ink/10 text-ink",
   reporte_escalado: "bg-coral/15 text-coral",
