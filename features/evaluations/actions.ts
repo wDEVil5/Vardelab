@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/features/auth/queries";
 import { sendEmailToUser } from "@/features/notifications/email";
@@ -17,32 +18,42 @@ import { sendEmailToUser } from "@/features/notifications/email";
 
 export type EvaluateState = { error?: string; ok?: boolean };
 
-// Lee y valida un criterio 1–5 del formulario. Mismo CHECK de rango que
-// `puntaje` (M6): un criterio fuera de rango es un error de datos, no algo
-// que la UI (estrellas) debería poder producir.
-function leerCriterio(formData: FormData, campo: string): number | null {
-  const raw = String(formData.get(campo) ?? "").trim();
-  const n = Number(raw);
-  return Number.isInteger(n) && n >= 1 && n <= 5 ? n : null;
-}
+// Mismo CHECK de rango que `puntaje` (M6): un criterio fuera de 1–5 es un
+// error de datos, no algo que la UI (estrellas) debería poder producir. Los
+// tres criterios comparten un solo mensaje, como antes de migrar a zod.
+const CriterioSchema = z
+  .string()
+  .trim()
+  .transform((v) => Number(v))
+  .refine((n) => Number.isInteger(n) && n >= 1 && n <= 5, {
+    error: "Califica los tres criterios (calidad, colaboración y cumplimiento).",
+  });
+
+// Mismo orden que la cadena de `if` que reemplaza: projectId/evaluateeId se
+// revisan antes que los criterios, así que issues[0] respeta esa prioridad.
+const EvaluateMemberSchema = z.object({
+  projectId: z.string().min(1, "Falta el integrante a evaluar."),
+  evaluateeId: z.string().min(1, "Falta el integrante a evaluar."),
+  comentario: z.string().trim(),
+  calidad: CriterioSchema,
+  colaboracion: CriterioSchema,
+  cumplimientoHitos: CriterioSchema,
+});
 
 export async function evaluateMember(
   _prevState: EvaluateState,
   formData: FormData,
 ): Promise<EvaluateState> {
-  const projectId = String(formData.get("projectId") ?? "");
-  const evaluateeId = String(formData.get("evaluateeId") ?? "");
-  const comentario = String(formData.get("comentario") ?? "").trim();
-
-  if (!projectId || !evaluateeId) return { error: "Falta el integrante a evaluar." };
-
-  const calidad = leerCriterio(formData, "calidad");
-  const colaboracion = leerCriterio(formData, "colaboracion");
-  const cumplimientoHitos = leerCriterio(formData, "cumplimientoHitos");
-
-  if (calidad == null || colaboracion == null || cumplimientoHitos == null) {
-    return { error: "Califica los tres criterios (calidad, colaboración y cumplimiento)." };
-  }
+  const parsed = EvaluateMemberSchema.safeParse({
+    projectId: String(formData.get("projectId") ?? ""),
+    evaluateeId: String(formData.get("evaluateeId") ?? ""),
+    comentario: String(formData.get("comentario") ?? ""),
+    calidad: String(formData.get("calidad") ?? ""),
+    colaboracion: String(formData.get("colaboracion") ?? ""),
+    cumplimientoHitos: String(formData.get("cumplimientoHitos") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { projectId, evaluateeId, comentario, calidad, colaboracion, cumplimientoHitos } = parsed.data;
 
   // `puntaje` se conserva como la nota global (promedio redondeado de los
   // tres criterios): es lo que ya muestran el panel del estudiante y el
