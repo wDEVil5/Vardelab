@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/features/auth/queries";
 
@@ -11,23 +12,33 @@ import { getCurrentUser } from "@/features/auth/queries";
  * equipo. Aquí solo se valida el largo para dar un mensaje de error claro.
  */
 
+// Mismo orden que la cadena de `if` que reemplaza: issues[0] es siempre el
+// primer campo inválido porque zod junta los issues en el orden del shape.
+const SendMessageSchema = z.object({
+  projectId: z.string().min(1, "Falta el proyecto."),
+  body: z
+    .string()
+    .trim()
+    .min(1, "Escribe un mensaje.")
+    .max(2000, "El mensaje es demasiado largo (máximo 2000 caracteres)."),
+  redirectPath: z.string(),
+});
+
 export type SendMessageState = { error?: string };
 
 export async function sendMessage(
   _prevState: SendMessageState,
   formData: FormData,
 ): Promise<SendMessageState> {
-  const projectId = String(formData.get("projectId") ?? "");
-  const body = String(formData.get("body") ?? "").trim();
-  // Ruta a revalidar tras enviar: el hilo vive en páginas distintas según el
-  // rol (seguimiento del patrocinador, espacio de proyecto del estudiante).
-  const redirectPath = String(formData.get("redirectPath") ?? "");
-
-  if (!projectId) return { error: "Falta el proyecto." };
-  if (!body) return { error: "Escribe un mensaje." };
-  if (body.length > 2000) {
-    return { error: "El mensaje es demasiado largo (máximo 2000 caracteres)." };
-  }
+  const parsed = SendMessageSchema.safeParse({
+    projectId: String(formData.get("projectId") ?? ""),
+    body: String(formData.get("body") ?? ""),
+    // Ruta a revalidar tras enviar: el hilo vive en páginas distintas según
+    // el rol (seguimiento del patrocinador, espacio de proyecto del estudiante).
+    redirectPath: String(formData.get("redirectPath") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { projectId, body, redirectPath } = parsed.data;
 
   const supabase = await createClient();
   const {
