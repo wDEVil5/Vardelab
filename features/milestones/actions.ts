@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -10,24 +11,39 @@ import { createClient } from "@/lib/supabase/server";
 
 export type AddMilestoneState = { error?: string; created?: string };
 
+// Orden: opcional, entero ≥ 0. Por defecto 0 (string vacío -> 0 antes de
+// chequear el rango, igual que `ordenRaw ? Number(ordenRaw) : 0`).
+const OrdenSchema = z
+  .string()
+  .trim()
+  .transform((v) => (v ? Number(v) : 0))
+  .refine((n) => Number.isInteger(n) && n >= 0, {
+    error: "El orden debe ser un número entero de 0 o más.",
+  });
+
+// Mismo orden que la cadena de `if` que reemplaza: projectId, luego título,
+// luego orden.
+const AddMilestoneSchema = z.object({
+  projectId: z.string().min(1, "Falta el proyecto."),
+  titulo: z.string().trim().min(1, "El hito necesita un título."),
+  descripcion: z.string().trim(),
+  fechaLimite: z.string().trim(),
+  orden: OrdenSchema,
+});
+
 export async function addMilestone(
   _prevState: AddMilestoneState,
   formData: FormData,
 ): Promise<AddMilestoneState> {
-  const projectId = String(formData.get("projectId") ?? "");
-  const titulo = String(formData.get("titulo") ?? "").trim();
-  const descripcion = String(formData.get("descripcion") ?? "").trim();
-  const fechaLimite = String(formData.get("fecha_limite") ?? "").trim();
-  const ordenRaw = String(formData.get("orden") ?? "").trim();
-
-  if (!projectId) return { error: "Falta el proyecto." };
-  if (!titulo) return { error: "El hito necesita un título." };
-
-  // Orden: opcional, entero ≥ 0. Por defecto 0.
-  const orden = ordenRaw ? Number(ordenRaw) : 0;
-  if (!Number.isInteger(orden) || orden < 0) {
-    return { error: "El orden debe ser un número entero de 0 o más." };
-  }
+  const parsed = AddMilestoneSchema.safeParse({
+    projectId: String(formData.get("projectId") ?? ""),
+    titulo: String(formData.get("titulo") ?? ""),
+    descripcion: String(formData.get("descripcion") ?? ""),
+    fechaLimite: String(formData.get("fecha_limite") ?? ""),
+    orden: String(formData.get("orden") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { projectId, titulo, descripcion, fechaLimite, orden } = parsed.data;
 
   const supabase = await createClient();
   const { error } = await supabase.from("milestones").insert({
