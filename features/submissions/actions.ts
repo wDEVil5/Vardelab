@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/features/auth/queries";
 
@@ -29,32 +30,55 @@ const ARCHIVO_TIPOS_PERMITIDOS = [
 ];
 const ARCHIVO_TAMANO_MAXIMO = 20 * 1024 * 1024; // 20 MB
 
+// milestoneId/projectId van primero en el shape para que issues[0] los
+// respete antes que el resto (confirmado: los issues de `superRefine` se
+// agregan DESPUÉS de los de cada campo, nunca antes). El resto de los
+// chequeos (al menos un enlace/nota/archivo, formato y tamaño del archivo)
+// dependen de varios campos a la vez, así que van en `superRefine` en el
+// mismo orden que la cadena de `if` que reemplazan.
+const AddSubmissionSchema = z
+  .object({
+    milestoneId: z.string().min(1, "Falta el hito."),
+    projectId: z.string().min(1, "Falta el proyecto."),
+    url: z.string().trim(),
+    nota: z.string().trim(),
+    archivo: z.union([z.instanceof(File), z.null()]),
+    redirectTo: z.string().trim(),
+  })
+  .superRefine((data, ctx) => {
+    const tieneArchivo = data.archivo instanceof File && data.archivo.size > 0;
+    if (!data.url && !data.nota && !tieneArchivo) {
+      ctx.addIssue({ code: "custom", message: "Agrega al menos un enlace, un archivo o una nota." });
+      return;
+    }
+    if (tieneArchivo && data.archivo) {
+      if (!ARCHIVO_TIPOS_PERMITIDOS.includes(data.archivo.type)) {
+        ctx.addIssue({ code: "custom", message: "Formato no admitido. Usa PDF, Word, imagen o ZIP." });
+        return;
+      }
+      if (data.archivo.size > ARCHIVO_TAMANO_MAXIMO) {
+        ctx.addIssue({ code: "custom", message: "El archivo no puede pesar más de 20 MB." });
+      }
+    }
+  });
+
 export async function addSubmission(
   _prevState: SubmissionState,
   formData: FormData,
 ): Promise<SubmissionState> {
-  const milestoneId = String(formData.get("milestoneId") ?? "");
-  const projectId = String(formData.get("projectId") ?? "");
-  const url = String(formData.get("url") ?? "").trim();
-  const nota = String(formData.get("nota") ?? "").trim();
-  const archivo = formData.get("archivo");
+  const archivoCampo = formData.get("archivo");
+  const parsed = AddSubmissionSchema.safeParse({
+    milestoneId: String(formData.get("milestoneId") ?? ""),
+    projectId: String(formData.get("projectId") ?? ""),
+    url: String(formData.get("url") ?? ""),
+    nota: String(formData.get("nota") ?? ""),
+    archivo: archivoCampo instanceof File ? archivoCampo : null,
+    // Si viene, se navega a esta ruta tras guardar (E-06 vuelve al proyecto).
+    redirectTo: String(formData.get("redirectTo") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { milestoneId, projectId, url, nota, archivo, redirectTo } = parsed.data;
   const tieneArchivo = archivo instanceof File && archivo.size > 0;
-  // Si viene, se navega a esta ruta tras guardar (E-06 vuelve al proyecto).
-  const redirectTo = String(formData.get("redirectTo") ?? "").trim();
-
-  if (!milestoneId) return { error: "Falta el hito." };
-  if (!projectId) return { error: "Falta el proyecto." };
-  if (!url && !nota && !tieneArchivo) {
-    return { error: "Agrega al menos un enlace, un archivo o una nota." };
-  }
-  if (tieneArchivo) {
-    if (!ARCHIVO_TIPOS_PERMITIDOS.includes(archivo.type)) {
-      return { error: "Formato no admitido. Usa PDF, Word, imagen o ZIP." };
-    }
-    if (archivo.size > ARCHIVO_TAMANO_MAXIMO) {
-      return { error: "El archivo no puede pesar más de 20 MB." };
-    }
-  }
 
   const supabase = await createClient();
   const user = await requireUser(supabase);
