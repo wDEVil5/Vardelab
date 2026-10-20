@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/features/auth/queries";
 
@@ -175,17 +176,35 @@ export type ModeracionPortfolioState = { error?: string; ok?: boolean };
  * el motivo antes de gastar un viaje a la base, y se deja el rastro en
  * `audit_logs` (moderador ya puede insertar ahí desde M100).
  */
+// `motivo` solo es obligatorio cuando `oculto` es true — una dependencia
+// entre dos campos, no una validación de uno solo, así que va en
+// `superRefine` (sus issues se agregan después de los de `itemId`, respetando
+// el mismo orden que la cadena de `if` que reemplaza).
+const SetModeracionSchema = z
+  .object({
+    itemId: z.string().min(1, "No se encontró la evidencia."),
+    profileId: z.string(),
+    oculto: z.boolean(),
+    motivo: z.string().trim(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.oculto && !data.motivo) {
+      ctx.addIssue({ code: "custom", message: "Deja un motivo para ocultarla." });
+    }
+  });
+
 export async function setPortfolioItemModeracion(
   _prevState: ModeracionPortfolioState,
   formData: FormData,
 ): Promise<ModeracionPortfolioState> {
-  const itemId = String(formData.get("itemId") ?? "");
-  const profileId = String(formData.get("profileId") ?? "");
-  const oculto = formData.get("oculto") === "true";
-  const motivo = String(formData.get("motivo") ?? "").trim();
-
-  if (!itemId) return { error: "No se encontró la evidencia." };
-  if (oculto && !motivo) return { error: "Deja un motivo para ocultarla." };
+  const parsed = SetModeracionSchema.safeParse({
+    itemId: String(formData.get("itemId") ?? ""),
+    profileId: String(formData.get("profileId") ?? ""),
+    oculto: formData.get("oculto") === "true",
+    motivo: String(formData.get("motivo") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { itemId, profileId, oculto, motivo } = parsed.data;
 
   const supabase = await createClient();
   const {
