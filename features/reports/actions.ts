@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/features/auth/queries";
 import { getMyOrgIds } from "@/features/organizations/queries";
@@ -16,6 +17,24 @@ import { checkRateLimit, getClientIp, RATE_LIMIT_MESSAGE } from "@/lib/rate-limi
 
 export type SubmitReportState = { ok?: boolean; error?: string };
 
+// "conversacion" (M100, `ReportConversationButton`) es un `target_type`
+// aparte de "proyecto" a propósito: `target_id` apunta al mismo proyecto,
+// pero mantenerlo distinto es lo que le permite a
+// `/moderacion/reportes/[id]` mostrar "Ver conversación" solo cuando el
+// reporte de verdad es sobre la conversación — un reporte general del
+// proyecto (por cualquier otro motivo, desde su ficha) no debe darle
+// acceso al moderador al chat privado del equipo.
+// `targetId` comparte el mensaje de `targetType` porque el chequeo original
+// los trataba como una sola condición (ambos vuelven el mismo error).
+const SubmitReportSchema = z.object({
+  targetType: z.enum(["proyecto", "perfil", "organizacion", "conversacion"], {
+    error: "No se pudo procesar el reporte. Recarga e inténtalo de nuevo.",
+  }),
+  targetId: z.string().min(1, "No se pudo procesar el reporte. Recarga e inténtalo de nuevo."),
+  motivo: z.string().trim().min(1, "Elige un motivo."),
+  descripcion: z.string().trim().max(1000, "La descripción es demasiado larga (máximo 1000 caracteres)."),
+});
+
 /**
  * Registra un reporte sobre una entidad (proyecto o perfil). Requiere sesión:
  * la RLS exige `reporter_id = auth.uid()`, así que no hay reporte anónimo.
@@ -24,28 +43,14 @@ export async function submitReport(
   _prevState: SubmitReportState,
   formData: FormData,
 ): Promise<SubmitReportState> {
-  const targetType = String(formData.get("targetType") ?? "");
-  const targetId = String(formData.get("targetId") ?? "");
-  const motivo = String(formData.get("motivo") ?? "").trim();
-  const descripcion = String(formData.get("descripcion") ?? "").trim();
-
-  // "conversacion" (M100, `ReportConversationButton`) es un `target_type`
-  // aparte de "proyecto" a propósito: `target_id` apunta al mismo proyecto,
-  // pero mantenerlo distinto es lo que le permite a
-  // `/moderacion/reportes/[id]` mostrar "Ver conversación" solo cuando el
-  // reporte de verdad es sobre la conversación — un reporte general del
-  // proyecto (por cualquier otro motivo, desde su ficha) no debe darle
-  // acceso al moderador al chat privado del equipo.
-  if (
-    !["proyecto", "perfil", "organizacion", "conversacion"].includes(targetType) ||
-    !targetId
-  ) {
-    return { error: "No se pudo procesar el reporte. Recarga e inténtalo de nuevo." };
-  }
-  if (!motivo) return { error: "Elige un motivo." };
-  if (descripcion.length > 1000) {
-    return { error: "La descripción es demasiado larga (máximo 1000 caracteres)." };
-  }
+  const parsed = SubmitReportSchema.safeParse({
+    targetType: String(formData.get("targetType") ?? ""),
+    targetId: String(formData.get("targetId") ?? ""),
+    motivo: String(formData.get("motivo") ?? ""),
+    descripcion: String(formData.get("descripcion") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { targetType, targetId, motivo, descripcion } = parsed.data;
 
   const supabase = await createClient();
   const user = await requireUser(supabase);
@@ -144,17 +149,25 @@ export async function markReportInReview(
  * resolver cualquier reporte, esto solo le avisa (trigger
  * `notify_reporte_escalado`) que este caso puntual lo necesita a él.
  */
+const EscalateReportSchema = z.object({
+  reportId: z.string().min(1, "Falta el reporte."),
+  nota: z
+    .string()
+    .trim()
+    .min(1, "Deja una nota de por qué lo escalas.")
+    .max(1000, "La nota es demasiado larga (máximo 1000 caracteres)."),
+});
+
 export async function escalateReport(
   _prevState: ReportActionState,
   formData: FormData,
 ): Promise<ReportActionState> {
-  const reportId = String(formData.get("reportId") ?? "");
-  const nota = String(formData.get("nota") ?? "").trim();
-  if (!reportId) return { error: "Falta el reporte." };
-  if (!nota) return { error: "Deja una nota de por qué lo escalas." };
-  if (nota.length > 1000) {
-    return { error: "La nota es demasiado larga (máximo 1000 caracteres)." };
-  }
+  const parsed = EscalateReportSchema.safeParse({
+    reportId: String(formData.get("reportId") ?? ""),
+    nota: String(formData.get("nota") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { reportId, nota } = parsed.data;
 
   const supabase = await createClient();
   const user = await requireUser(supabase);
@@ -189,17 +202,25 @@ export async function escalateReport(
  * Resuelve un reporte, con una nota obligatoria: es el registro de qué se hizo
  * (mismo criterio que el motivo de rechazo de proyectos, M21).
  */
+const ResolveReportSchema = z.object({
+  reportId: z.string().min(1, "Falta el reporte."),
+  resolucion: z
+    .string()
+    .trim()
+    .min(1, "Deja una nota de qué se hizo.")
+    .max(1000, "La nota es demasiado larga (máximo 1000 caracteres)."),
+});
+
 export async function resolveReport(
   _prevState: ReportActionState,
   formData: FormData,
 ): Promise<ReportActionState> {
-  const reportId = String(formData.get("reportId") ?? "");
-  const resolucion = String(formData.get("resolucion") ?? "").trim();
-  if (!reportId) return { error: "Falta el reporte." };
-  if (!resolucion) return { error: "Deja una nota de qué se hizo." };
-  if (resolucion.length > 1000) {
-    return { error: "La nota es demasiado larga (máximo 1000 caracteres)." };
-  }
+  const parsed = ResolveReportSchema.safeParse({
+    reportId: String(formData.get("reportId") ?? ""),
+    resolucion: String(formData.get("resolucion") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { reportId, resolucion } = parsed.data;
 
   const supabase = await createClient();
   const { data, error } = await supabase
