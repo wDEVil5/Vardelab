@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/features/auth/queries";
 import { isPasswordValid } from "@/features/auth/password";
@@ -25,27 +26,36 @@ export type SignUpState = { error?: string; ok?: boolean };
 // validación temprana del lado del servidor para dar un mensaje claro.
 const ROLES_AUTOSERVICIO = ["estudiante", "patrocinador"] as const;
 
+// email/nombre/password comparten un solo mensaje porque el chequeo original
+// los trataba como una sola condición ("falta algo"), con prioridad por
+// sobre la validez de la contraseña y el rol — por eso van primero en el
+// shape: zod agrega los issues de cada campo en el orden del shape, así que
+// cualquiera de los tres vacío se reporta antes que "contraseña inválida" o
+// "rol inválido", sin importar cuál de los tres esté vacío.
+const SignUpSchema = z.object({
+  email: z.string().trim().min(1, "Completa nombre, correo y contraseña."),
+  nombre: z.string().trim().min(1, "Completa nombre, correo y contraseña."),
+  password: z
+    .string()
+    .min(1, "Completa nombre, correo y contraseña.")
+    .refine(isPasswordValid, {
+      error: "La contraseña no cumple los requisitos: 8+ caracteres, mayúscula, minúscula y número.",
+    }),
+  rol: z.enum(ROLES_AUTOSERVICIO, { error: "Selecciona un tipo de cuenta válido." }),
+});
+
 export async function signUp(
   _prevState: SignUpState,
   formData: FormData,
 ): Promise<SignUpState> {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-  const nombre = String(formData.get("nombre") ?? "").trim();
-  const rol = String(formData.get("rol") ?? "");
-
-  if (!email || !password || !nombre) {
-    return { error: "Completa nombre, correo y contraseña." };
-  }
-  if (!isPasswordValid(password)) {
-    return {
-      error:
-        "La contraseña no cumple los requisitos: 8+ caracteres, mayúscula, minúscula y número.",
-    };
-  }
-  if (!ROLES_AUTOSERVICIO.includes(rol as (typeof ROLES_AUTOSERVICIO)[number])) {
-    return { error: "Selecciona un tipo de cuenta válido." };
-  }
+  const parsed = SignUpSchema.safeParse({
+    email: String(formData.get("email") ?? ""),
+    nombre: String(formData.get("nombre") ?? ""),
+    password: String(formData.get("password") ?? ""),
+    rol: String(formData.get("rol") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { email, nombre, password, rol } = parsed.data;
 
   // 5 registros por IP cada hora: acota la creación masiva de cuentas sin
   // afectar a alguien que se equivoca un par de veces con su propio correo.
@@ -258,26 +268,35 @@ export async function updatePassword(
  * `updatePassword`, pensada para el enlace de recuperación) — se queda en la
  * misma página en vez de saltar a la pantalla de auth de pantalla completa.
  */
+// `confirmPassword` depende de `password` (deben ser iguales) — no es una
+// validación de un solo campo, así que va en `superRefine`; sus issues se
+// agregan después de los de cada campo, igual orden que la cadena de `if`
+// que reemplaza (contraseña actual -> contraseña válida -> coinciden).
+const ChangePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Ingresa tu contraseña actual."),
+    password: z.string().refine(isPasswordValid, {
+      error: "La contraseña no cumple los requisitos: 8+ caracteres, mayúscula, minúscula y número.",
+    }),
+    confirmPassword: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({ code: "custom", message: "Las contraseñas no coinciden." });
+    }
+  });
+
 export async function changePassword(
   _prevState: UpdatePasswordState,
   formData: FormData,
 ): Promise<UpdatePasswordState> {
-  const currentPassword = String(formData.get("currentPassword") ?? "");
-  const password = String(formData.get("password") ?? "");
-  const confirmPassword = String(formData.get("confirmPassword") ?? "");
-
-  if (!currentPassword) {
-    return { error: "Ingresa tu contraseña actual." };
-  }
-  if (!isPasswordValid(password)) {
-    return {
-      error:
-        "La contraseña no cumple los requisitos: 8+ caracteres, mayúscula, minúscula y número.",
-    };
-  }
-  if (password !== confirmPassword) {
-    return { error: "Las contraseñas no coinciden." };
-  }
+  const parsed = ChangePasswordSchema.safeParse({
+    currentPassword: String(formData.get("currentPassword") ?? ""),
+    password: String(formData.get("password") ?? ""),
+    confirmPassword: String(formData.get("confirmPassword") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { currentPassword, password } = parsed.data;
 
   const supabase = await createClient();
   const user = await requireUser(supabase, "/perfil");
@@ -326,15 +345,21 @@ export type ChangeEmailState = { error?: string; ok?: boolean };
  * `changePassword`: re-autentica con la contraseña actual antes de disparar
  * el cambio.
  */
+const RequestEmailChangeSchema = z.object({
+  currentPassword: z.string().min(1, "Ingresa tu contraseña actual."),
+  newEmail: z.string().trim().min(1, "Ingresa el nuevo correo."),
+});
+
 export async function requestEmailChange(
   _prevState: ChangeEmailState,
   formData: FormData,
 ): Promise<ChangeEmailState> {
-  const currentPassword = String(formData.get("currentPassword") ?? "");
-  const newEmail = String(formData.get("newEmail") ?? "").trim();
-
-  if (!currentPassword) return { error: "Ingresa tu contraseña actual." };
-  if (!newEmail) return { error: "Ingresa el nuevo correo." };
+  const parsed = RequestEmailChangeSchema.safeParse({
+    currentPassword: String(formData.get("currentPassword") ?? ""),
+    newEmail: String(formData.get("newEmail") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { currentPassword, newEmail } = parsed.data;
 
   const supabase = await createClient();
   const user = await requireUser(supabase, "/perfil");
