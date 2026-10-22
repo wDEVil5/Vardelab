@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmailToUser } from "@/features/notifications/email";
 import { getCurrentUser, requireUser } from "@/features/auth/queries";
@@ -20,22 +21,29 @@ import { getCurrentUser, requireUser } from "@/features/auth/queries";
 
 export type ApplyState = { error?: string };
 
+// `projectId`/`roleId` comparten mensaje porque el chequeo original los
+// trataba como una sola condición ("falta el rol").
+const ApplyToRoleSchema = z.object({
+  projectId: z.string().min(1, "Falta el rol al que postulas."),
+  roleId: z.string().min(1, "Falta el rol al que postulas."),
+  mensaje: z.string().trim().min(1, "Escribe un mensaje para tu postulación."),
+  evidencia: z.string().trim(),
+  disponibilidad: z.string().trim(),
+});
+
 export async function applyToRole(
   _prevState: ApplyState,
   formData: FormData,
 ): Promise<ApplyState> {
-  const projectId = String(formData.get("projectId") ?? "");
-  const roleId = String(formData.get("roleId") ?? "");
-  const mensaje = String(formData.get("mensaje") ?? "").trim();
-  const evidencia = String(formData.get("evidencia") ?? "").trim();
-  const disponibilidad = String(formData.get("disponibilidad") ?? "").trim();
-
-  if (!roleId || !projectId) {
-    return { error: "Falta el rol al que postulas." };
-  }
-  if (!mensaje) {
-    return { error: "Escribe un mensaje para tu postulación." };
-  }
+  const parsed = ApplyToRoleSchema.safeParse({
+    projectId: String(formData.get("projectId") ?? ""),
+    roleId: String(formData.get("roleId") ?? ""),
+    mensaje: String(formData.get("mensaje") ?? ""),
+    evidencia: String(formData.get("evidencia") ?? ""),
+    disponibilidad: String(formData.get("disponibilidad") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { projectId, roleId, mensaje, evidencia, disponibilidad } = parsed.data;
 
   const currentUser = await getCurrentUser();
   if (!currentUser) {
