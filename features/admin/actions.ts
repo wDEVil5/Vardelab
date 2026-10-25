@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/features/auth/queries";
@@ -35,6 +36,29 @@ const SUSPENSION_LARGA = "876000h";
  * de Postgres — una sola transacción, no dos llamadas sueltas desde aquí. Así
  * un fallo a mitad de camino no deja a nadie sin rol.
  */
+// `adminId` no viene del formulario: se inyecta ya resuelto (viene de la
+// sesión) para poder validar en el mismo `safeParse` la regla de "no
+// quitarse el propio rol de admin", que depende de un campo del formulario
+// (`userId`/`rol`) y de quién es el actor — por eso va en `superRefine`, no
+// en un chequeo de campo: sus issues se agregan después de los de
+// `userId`/`rol`, mismo orden que la cadena de `if` que reemplaza.
+const ChangeUserRoleSchema = z
+  .object({
+    userId: z.string().min(1, "Rol o usuario inválido."),
+    rol: z.string().refine((r) => ROLES_VALIDOS.includes(r as AppRole), {
+      error: "Rol o usuario inválido.",
+    }),
+    adminId: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.userId === data.adminId && data.rol !== "admin") {
+      ctx.addIssue({
+        code: "custom",
+        message: "No es posible quitar el propio rol de administrador desde aquí.",
+      });
+    }
+  });
+
 export async function changeUserRole(
   _prevState: AdminUsersState,
   formData: FormData,
@@ -42,20 +66,19 @@ export async function changeUserRole(
   const admin = await getCurrentUser();
   if (!admin?.esAdmin) return { error: "No autorizado." };
 
-  const userId = String(formData.get("userId") ?? "");
-  const rol = String(formData.get("rol") ?? "") as AppRole;
-  if (!userId || !ROLES_VALIDOS.includes(rol)) {
-    return { error: "Rol o usuario inválido." };
-  }
-  if (userId === admin.id && rol !== "admin") {
-    return { error: "No es posible quitar el propio rol de administrador desde aquí." };
-  }
+  const parsed = ChangeUserRoleSchema.safeParse({
+    userId: String(formData.get("userId") ?? ""),
+    rol: String(formData.get("rol") ?? ""),
+    adminId: admin.id,
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { userId, rol } = parsed.data;
 
   const supabase = await createClient();
 
   const { error: rpcError } = await supabase.rpc("set_user_role", {
     _user_id: userId,
-    _role: rol,
+    _role: rol as AppRole,
   });
   if (rpcError) {
     console.error("[changeUserRole]", rpcError.message);
@@ -79,6 +102,20 @@ export async function changeUserRole(
  * columna de estado propia, Supabase Auth ya resuelve esto). Requiere el
  * cliente `service_role`: la RLS no alcanza al esquema `auth`.
  */
+// Mismo motivo que `ChangeUserRoleSchema`: `adminId` se inyecta (no viene
+// del formulario) para validar "no suspender la propia cuenta" junto con
+// `userId` en un solo `safeParse`, vía `superRefine`.
+const SuspendUserSchema = z
+  .object({
+    userId: z.string().min(1, "Falta el usuario."),
+    adminId: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.userId === data.adminId) {
+      ctx.addIssue({ code: "custom", message: "No es posible suspender la propia cuenta." });
+    }
+  });
+
 export async function suspendUser(
   _prevState: AdminUsersState,
   formData: FormData,
@@ -86,11 +123,12 @@ export async function suspendUser(
   const admin = await getCurrentUser();
   if (!admin?.esAdmin) return { error: "No autorizado." };
 
-  const userId = String(formData.get("userId") ?? "");
-  if (!userId) return { error: "Falta el usuario." };
-  if (userId === admin.id) {
-    return { error: "No es posible suspender la propia cuenta." };
-  }
+  const parsed = SuspendUserSchema.safeParse({
+    userId: String(formData.get("userId") ?? ""),
+    adminId: admin.id,
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { userId } = parsed.data;
 
   const adminClient = createAdminClient();
   const { error } = await adminClient.auth.admin.updateUserById(userId, {
@@ -150,6 +188,28 @@ export type CatalogState = { error?: string; requiereConfirmacion?: boolean };
 const NOMBRE_MAX = 60;
 const CATEGORIA_MAX = 40;
 
+// `nombre`/`categoria` comparten los dos mensajes (el chequeo original
+// trataba "falta alguno" y luego "alguno demasiado largo" como una sola
+// condición sobre los dos campos a la vez) — un chequeo de campo
+// independiente por campo no alcanza para reproducir esa prioridad exacta
+// (un campo vacío con el otro demasiado largo podría devolver el mensaje
+// equivocado primero), así que ambos van en `superRefine`, replicando la
+// misma secuencia que la cadena de `if` que reemplaza.
+const CreateSkillSchema = z
+  .object({
+    nombre: z.string().trim(),
+    categoria: z.string().trim(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.nombre || !data.categoria) {
+      ctx.addIssue({ code: "custom", message: "Nombre y categoría son obligatorios." });
+      return;
+    }
+    if (data.nombre.length > NOMBRE_MAX || data.categoria.length > CATEGORIA_MAX) {
+      ctx.addIssue({ code: "custom", message: "Nombre o categoría demasiado largos." });
+    }
+  });
+
 /** Crea una habilidad nueva en el catálogo (D-02). */
 export async function createSkill(
   _prevState: CatalogState,
@@ -158,12 +218,12 @@ export async function createSkill(
   const admin = await getCurrentUser();
   if (!admin?.esAdmin) return { error: "No autorizado." };
 
-  const nombre = String(formData.get("nombre") ?? "").trim();
-  const categoria = String(formData.get("categoria") ?? "").trim();
-  if (!nombre || !categoria) return { error: "Nombre y categoría son obligatorios." };
-  if (nombre.length > NOMBRE_MAX || categoria.length > CATEGORIA_MAX) {
-    return { error: "Nombre o categoría demasiado largos." };
-  }
+  const parsed = CreateSkillSchema.safeParse({
+    nombre: String(formData.get("nombre") ?? ""),
+    categoria: String(formData.get("categoria") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { nombre, categoria } = parsed.data;
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -190,6 +250,25 @@ export async function createSkill(
   return {};
 }
 
+// Mismo motivo que `CreateSkillSchema`: los tres campos comparten el primer
+// mensaje y nombre/categoria comparten el segundo, así que va todo en
+// `superRefine` para preservar el orden exacto de la cadena original.
+const UpdateSkillSchema = z
+  .object({
+    skillId: z.string(),
+    nombre: z.string().trim(),
+    categoria: z.string().trim(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.skillId || !data.nombre || !data.categoria) {
+      ctx.addIssue({ code: "custom", message: "Nombre y categoría son obligatorios." });
+      return;
+    }
+    if (data.nombre.length > NOMBRE_MAX || data.categoria.length > CATEGORIA_MAX) {
+      ctx.addIssue({ code: "custom", message: "Nombre o categoría demasiado largos." });
+    }
+  });
+
 /** Edita nombre y/o categoría de una habilidad existente. */
 export async function updateSkill(
   _prevState: CatalogState,
@@ -198,15 +277,13 @@ export async function updateSkill(
   const admin = await getCurrentUser();
   if (!admin?.esAdmin) return { error: "No autorizado." };
 
-  const skillId = String(formData.get("skillId") ?? "");
-  const nombre = String(formData.get("nombre") ?? "").trim();
-  const categoria = String(formData.get("categoria") ?? "").trim();
-  if (!skillId || !nombre || !categoria) {
-    return { error: "Nombre y categoría son obligatorios." };
-  }
-  if (nombre.length > NOMBRE_MAX || categoria.length > CATEGORIA_MAX) {
-    return { error: "Nombre o categoría demasiado largos." };
-  }
+  const parsed = UpdateSkillSchema.safeParse({
+    skillId: String(formData.get("skillId") ?? ""),
+    nombre: String(formData.get("nombre") ?? ""),
+    categoria: String(formData.get("categoria") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { skillId, nombre, categoria } = parsed.data;
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -276,6 +353,22 @@ export async function toggleSkillActivo(
  * única operación que tiene sentido sobre ella; no se puede "crear" una
  * categoría vacía ni "desactivarla" como a una habilidad.
  */
+// `categoriaActual` solo tiene el chequeo de "falta" (comparte mensaje con
+// `categoriaNueva`); `categoriaNueva` además valida el largo. Al ser la
+// única con dos chequeos propios, el orden del shape ya alcanza para
+// preservar la prioridad original (sin necesitar `superRefine`) — mismo
+// razonamiento que `password` en `SignUpSchema` (features/auth/actions.ts,
+// 2026-10-21). El chequeo de "mismo nombre -> no-op exitoso" no es una
+// validación (no es un error), así que queda fuera del schema.
+const RenameCategoriaSchema = z.object({
+  categoriaActual: z.string().trim().min(1, "Falta el nombre nuevo."),
+  categoriaNueva: z
+    .string()
+    .trim()
+    .min(1, "Falta el nombre nuevo.")
+    .max(CATEGORIA_MAX, "Nombre demasiado largo."),
+});
+
 export async function renameCategoria(
   _prevState: CatalogState,
   formData: FormData,
@@ -283,11 +376,13 @@ export async function renameCategoria(
   const admin = await getCurrentUser();
   if (!admin?.esAdmin) return { error: "No autorizado." };
 
-  const categoriaActual = String(formData.get("categoriaActual") ?? "").trim();
-  const categoriaNueva = String(formData.get("categoriaNueva") ?? "").trim();
+  const parsed = RenameCategoriaSchema.safeParse({
+    categoriaActual: String(formData.get("categoriaActual") ?? ""),
+    categoriaNueva: String(formData.get("categoriaNueva") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { categoriaActual, categoriaNueva } = parsed.data;
   const confirmarFusion = formData.get("confirmarFusion") === "true";
-  if (!categoriaActual || !categoriaNueva) return { error: "Falta el nombre nuevo." };
-  if (categoriaNueva.length > CATEGORIA_MAX) return { error: "Nombre demasiado largo." };
   if (categoriaActual === categoriaNueva) return {};
 
   const supabase = await createClient();
