@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/features/auth/queries";
@@ -13,32 +14,51 @@ import { requireUser } from "@/features/auth/queries";
 
 export type ProfileState = { error?: string };
 
+// `nombre` es la única validación "dura" (campo obligatorio); `semestre` es
+// opcional, pero si viene debe ser un entero 1–14 — el `transform` hace la
+// conversión a número (o `null`) dentro del propio schema, mismo patrón que
+// `OrdenSchema` en features/milestones/actions.ts (2026-10-17).
+const SemestreSchema = z
+  .string()
+  .trim()
+  .transform((v) => (v ? Number(v) : null))
+  .refine((n) => n === null || (Number.isInteger(n) && n >= 1 && n <= 14), {
+    error: "El semestre debe ser un número entre 1 y 14.",
+  });
+
+const UpdateProfileSchema = z.object({
+  nombre: z.string().trim().min(1, "Tu nombre no puede quedar vacío."),
+  cargo: z.string().trim(),
+  carrera: z.string().trim(),
+  semestre: SemestreSchema,
+  bio: z.string().trim(),
+  intereses: z.string().trim(),
+  disponibilidad: z.string().trim(),
+  github: z.string().trim(),
+  linkedin: z.string().trim(),
+  sitio: z.string().trim(),
+});
+
 export async function updateProfile(
   _prevState: ProfileState,
   formData: FormData,
 ): Promise<ProfileState> {
-  const nombre = String(formData.get("nombre") ?? "").trim();
-  const cargo = String(formData.get("cargo") ?? "").trim();
-  const carrera = String(formData.get("carrera") ?? "").trim();
-  const semestreRaw = String(formData.get("semestre") ?? "").trim();
-  const bio = String(formData.get("bio") ?? "").trim();
-  const intereses = String(formData.get("intereses") ?? "").trim();
-  const disponibilidad = String(formData.get("disponibilidad") ?? "").trim();
-  const github = String(formData.get("github") ?? "").trim();
-  const linkedin = String(formData.get("linkedin") ?? "").trim();
-  const sitio = String(formData.get("sitio") ?? "").trim();
-
-  if (!nombre) return { error: "Tu nombre no puede quedar vacío." };
-
-  // Semestre: opcional; si viene, un entero razonable (1–14).
-  let semestre: number | null = null;
-  if (semestreRaw) {
-    const n = Number(semestreRaw);
-    if (!Number.isInteger(n) || n < 1 || n > 14) {
-      return { error: "El semestre debe ser un número entre 1 y 14." };
-    }
-    semestre = n;
-  }
+  const parsed = UpdateProfileSchema.safeParse({
+    nombre: String(formData.get("nombre") ?? ""),
+    cargo: String(formData.get("cargo") ?? ""),
+    carrera: String(formData.get("carrera") ?? ""),
+    semestre: String(formData.get("semestre") ?? ""),
+    bio: String(formData.get("bio") ?? ""),
+    intereses: String(formData.get("intereses") ?? ""),
+    disponibilidad: String(formData.get("disponibilidad") ?? ""),
+    github: String(formData.get("github") ?? ""),
+    linkedin: String(formData.get("linkedin") ?? ""),
+    sitio: String(formData.get("sitio") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const {
+    nombre, cargo, carrera, semestre, bio, intereses, disponibilidad, github, linkedin, sitio,
+  } = parsed.data;
 
   // Enlaces: solo se guardan los que se completaron.
   const enlaces: Record<string, string> = {};
@@ -328,20 +348,28 @@ const AVATAR_TAMANO_MAXIMO = 2 * 1024 * 1024; // 2 MB, igual que el límite del 
  * evita tener que borrar el anterior. El nombre incluye la hora de subida
  * como query param para invalidar el caché del navegador ante un reemplazo.
  */
+// Encadenado sobre el propio `File` (no un `z.object`): los tres chequeos
+// originales caen todos sobre el mismo valor, uno tras otro, así que no hace
+// falta `superRefine` — cada `.refine()` solo se evalúa si el anterior pasó
+// (verificado con un script `node -e` aparte usando zod real: un valor que
+// no es `File` nunca llega a tocar `.size`/`.type`, no revienta).
+const AvatarSchema = z
+  .instanceof(File, { error: "Selecciona una imagen." })
+  .refine((f) => f.size > 0, { error: "Selecciona una imagen." })
+  .refine((f) => AVATAR_TIPOS_PERMITIDOS.includes(f.type), {
+    error: "Formato no admitido. Usa PNG, JPG o WEBP.",
+  })
+  .refine((f) => f.size <= AVATAR_TAMANO_MAXIMO, {
+    error: "La imagen no puede pesar más de 2 MB.",
+  });
+
 export async function uploadAvatar(
   _prevState: AvatarState,
   formData: FormData,
 ): Promise<AvatarState> {
-  const file = formData.get("avatar");
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "Selecciona una imagen." };
-  }
-  if (!AVATAR_TIPOS_PERMITIDOS.includes(file.type)) {
-    return { error: "Formato no admitido. Usa PNG, JPG o WEBP." };
-  }
-  if (file.size > AVATAR_TAMANO_MAXIMO) {
-    return { error: "La imagen no puede pesar más de 2 MB." };
-  }
+  const parsed = AvatarSchema.safeParse(formData.get("avatar"));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const file = parsed.data;
 
   const supabase = await createClient();
   const user = await requireUser(supabase);
@@ -417,22 +445,25 @@ export type AddSkillState = { error?: string };
 
 const NIVELES = ["basico", "intermedio", "avanzado"] as const;
 
+const InsertProfileSkillSchema = z.object({
+  skillId: z.string().min(1, "Selecciona una habilidad."),
+  nivel: z.enum(NIVELES, { error: "Selecciona un nivel válido." }),
+});
+
 /** Mutación compartida por `addProfileSkill` (perfil) y `addOnboardingSkill`
  * (wizard): separada para que cada una decida aparte qué revalidar, sin
  * duplicar la validación ni el insert. */
 async function insertProfileSkill(skillId: string, nivel: string): Promise<AddSkillState> {
-  if (!skillId) return { error: "Selecciona una habilidad." };
-  if (!NIVELES.includes(nivel as (typeof NIVELES)[number])) {
-    return { error: "Selecciona un nivel válido." };
-  }
+  const parsed = InsertProfileSkillSchema.safeParse({ skillId, nivel });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
   const user = await requireUser(supabase);
 
   const { error } = await supabase.from("profile_skills").insert({
     profile_id: user.id,
-    skill_id: skillId,
-    nivel: nivel as (typeof NIVELES)[number],
+    skill_id: parsed.data.skillId,
+    nivel: parsed.data.nivel,
   });
 
   if (error) {
