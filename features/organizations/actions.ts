@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, requireUser } from "@/features/auth/queries";
 import { getMyOrganization } from "@/features/organizations/queries";
@@ -31,21 +32,31 @@ const TIPOS = [
   "interna",
 ] as const;
 
+// `nombre` y `tipo` no comparten mensaje ni se pisan entre sí (cada uno solo
+// puede fallar por su propio motivo), así que el orden del shape alcanza.
+const CreateOrganizationSchema = z.object({
+  nombre: z.string().trim().min(1, "La organización necesita un nombre."),
+  tipo: z.enum(TIPOS, { error: "Selecciona un tipo de organización válido." }),
+  descripcion: z.string().trim(),
+  sitioWeb: z.string().trim(),
+  contacto: z.string().trim(),
+  contactoEmail: z.string().trim(),
+});
+
 export async function createOrganization(
   _prevState: CreateOrgState,
   formData: FormData,
 ): Promise<CreateOrgState> {
-  const nombre = String(formData.get("nombre") ?? "").trim();
-  const tipo = String(formData.get("tipo") ?? "");
-  const descripcion = String(formData.get("descripcion") ?? "").trim();
-  const sitioWeb = String(formData.get("sitio_web") ?? "").trim();
-  const contacto = String(formData.get("contacto") ?? "").trim();
-  const contactoEmail = String(formData.get("contacto_email") ?? "").trim();
-
-  if (!nombre) return { error: "La organización necesita un nombre." };
-  if (!TIPOS.includes(tipo as (typeof TIPOS)[number])) {
-    return { error: "Selecciona un tipo de organización válido." };
-  }
+  const parsed = CreateOrganizationSchema.safeParse({
+    nombre: String(formData.get("nombre") ?? ""),
+    tipo: String(formData.get("tipo") ?? ""),
+    descripcion: String(formData.get("descripcion") ?? ""),
+    sitioWeb: String(formData.get("sitio_web") ?? ""),
+    contacto: String(formData.get("contacto") ?? ""),
+    contactoEmail: String(formData.get("contacto_email") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { nombre, tipo, descripcion, sitioWeb, contacto, contactoEmail } = parsed.data;
 
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect("/ingresar");
@@ -61,7 +72,7 @@ export async function createOrganization(
   const { error } = await supabase.from("organizations").insert({
     owner_id: currentUser.id,
     nombre,
-    tipo: tipo as (typeof TIPOS)[number],
+    tipo,
     descripcion: descripcion || null,
     sitio_web: sitioWeb || null,
     contacto: contacto || null,
@@ -85,30 +96,40 @@ export type EditOrgState = { error?: string };
  * La RLS `organizations_update_own` (M3) exige `owner_id = auth.uid()`, y aquí
  * se filtra el update por `id` para acotarlo a la organización indicada.
  */
+// `id`, `nombre` y `tipo` tampoco comparten mensaje entre sí (mismo
+// razonamiento que `CreateOrganizationSchema`).
+const UpdateOrganizationSchema = z.object({
+  id: z.string().min(1, "Falta la organización."),
+  nombre: z.string().trim().min(1, "La organización necesita un nombre."),
+  tipo: z.enum(TIPOS, { error: "Selecciona un tipo de organización válido." }),
+  descripcion: z.string().trim(),
+  sitioWeb: z.string().trim(),
+  contacto: z.string().trim(),
+  contactoEmail: z.string().trim(),
+});
+
 export async function updateOrganization(
   _prevState: EditOrgState,
   formData: FormData,
 ): Promise<EditOrgState> {
-  const id = String(formData.get("orgId") ?? "");
-  const nombre = String(formData.get("nombre") ?? "").trim();
-  const tipo = String(formData.get("tipo") ?? "");
-  const descripcion = String(formData.get("descripcion") ?? "").trim();
-  const sitioWeb = String(formData.get("sitio_web") ?? "").trim();
-  const contacto = String(formData.get("contacto") ?? "").trim();
-  const contactoEmail = String(formData.get("contacto_email") ?? "").trim();
-
-  if (!id) return { error: "Falta la organización." };
-  if (!nombre) return { error: "La organización necesita un nombre." };
-  if (!TIPOS.includes(tipo as (typeof TIPOS)[number])) {
-    return { error: "Selecciona un tipo de organización válido." };
-  }
+  const parsed = UpdateOrganizationSchema.safeParse({
+    id: String(formData.get("orgId") ?? ""),
+    nombre: String(formData.get("nombre") ?? ""),
+    tipo: String(formData.get("tipo") ?? ""),
+    descripcion: String(formData.get("descripcion") ?? ""),
+    sitioWeb: String(formData.get("sitio_web") ?? ""),
+    contacto: String(formData.get("contacto") ?? ""),
+    contactoEmail: String(formData.get("contacto_email") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { id, nombre, tipo, descripcion, sitioWeb, contacto, contactoEmail } = parsed.data;
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("organizations")
     .update({
       nombre,
-      tipo: tipo as (typeof TIPOS)[number],
+      tipo,
       descripcion: descripcion || null,
       sitio_web: sitioWeb || null,
       contacto: contacto || null,
@@ -236,23 +257,32 @@ const LOGO_TAMANO_MAXIMO = 2 * 1024 * 1024; // 2 MB, igual que el bucket (M35).
  * nombrado con su propio id — la política de Storage (`org_logos_insert_own`,
  * M35) es la que realmente impide subir el logo de una organización ajena.
  */
+// `orgId` y `logo` no se pisan entre sí; los tres chequeos del archivo caen
+// sobre el mismo valor, encadenados con `.refine()` — mismo patrón que
+// `AvatarSchema` (features/profile/actions.ts, 2026-10-25).
+const UploadOrgLogoSchema = z.object({
+  orgId: z.string().min(1, "Falta la organización."),
+  logo: z
+    .instanceof(File, { error: "Selecciona una imagen." })
+    .refine((f) => f.size > 0, { error: "Selecciona una imagen." })
+    .refine((f) => LOGO_TIPOS_PERMITIDOS.includes(f.type), {
+      error: "Formato no admitido. Usa PNG, JPG o WEBP.",
+    })
+    .refine((f) => f.size <= LOGO_TAMANO_MAXIMO, {
+      error: "La imagen no puede pesar más de 2 MB.",
+    }),
+});
+
 export async function uploadOrgLogo(
   _prevState: OrgLogoState,
   formData: FormData,
 ): Promise<OrgLogoState> {
-  const orgId = String(formData.get("orgId") ?? "");
-  const file = formData.get("logo");
-
-  if (!orgId) return { error: "Falta la organización." };
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "Selecciona una imagen." };
-  }
-  if (!LOGO_TIPOS_PERMITIDOS.includes(file.type)) {
-    return { error: "Formato no admitido. Usa PNG, JPG o WEBP." };
-  }
-  if (file.size > LOGO_TAMANO_MAXIMO) {
-    return { error: "La imagen no puede pesar más de 2 MB." };
-  }
+  const parsed = UploadOrgLogoSchema.safeParse({
+    orgId: String(formData.get("orgId") ?? ""),
+    logo: formData.get("logo"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { orgId, logo: file } = parsed.data;
 
   const supabase = await createClient();
   await requireUser(supabase);
@@ -297,6 +327,16 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * (M38); si no, 'pendiente' hasta que se registre con ese correo
  * (`handle_new_user` la activa en ese momento).
  */
+// `orgId` y `email` no se pisan entre sí.
+const InviteOrganizationMemberSchema = z.object({
+  orgId: z.string().min(1, "Falta la organización."),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .refine((e) => EMAIL_RE.test(e), { error: "Ingresa un correo válido." }),
+});
+
 export async function inviteOrganizationMember(
   _prevState: InviteMemberState,
   formData: FormData,
@@ -305,11 +345,12 @@ export async function inviteOrganizationMember(
     return { error: "Esta función todavía no está disponible." };
   }
 
-  const orgId = String(formData.get("orgId") ?? "");
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-
-  if (!orgId) return { error: "Falta la organización." };
-  if (!EMAIL_RE.test(email)) return { error: "Ingresa un correo válido." };
+  const parsed = InviteOrganizationMemberSchema.safeParse({
+    orgId: String(formData.get("orgId") ?? ""),
+    email: String(formData.get("email") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { orgId, email } = parsed.data;
 
   const supabase = await createClient();
   const user = await requireUser(supabase);
