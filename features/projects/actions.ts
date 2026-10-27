@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/features/auth/queries";
 import { sendEmailToUser } from "@/features/notifications/email";
@@ -20,43 +21,59 @@ export type CreateProjectState = { error?: string };
 
 const MODALIDADES = ["presencial", "remoto", "hibrido"] as const;
 
+// Duración: opcional, pero si viene debe ser un entero razonable (1–52).
+// Reutilizada por `createProject` y `updateProject` (mismo mensaje, mismo
+// rango) — mismo criterio que `CriterioSchema` en features/evaluations/actions.ts
+// (2026-10-16).
+const DuracionSemanasSchema = z
+  .string()
+  .trim()
+  .transform((v) => (v ? Number(v) : null))
+  .refine((n) => n === null || (Number.isInteger(n) && n >= 1 && n <= 52), {
+    error: "La duración debe ser un número de semanas entre 1 y 52.",
+  });
+
+// `problema`/`alcance`/`entregable` comparten mensaje (el chequeo original
+// los trataba como una sola condición); el resto de los campos no se pisan
+// entre sí, así que el orden del shape (igual al de la cadena de `if`
+// original) alcanza sin `superRefine`.
+const CreateProjectSchema = z.object({
+  orgId: z.string().min(1, "Selecciona la organización del proyecto."),
+  titulo: z.string().trim().min(1, "El proyecto necesita un título."),
+  problema: z.string().trim().min(1, "Completa problema, alcance y entregable."),
+  alcance: z.string().trim().min(1, "Completa problema, alcance y entregable."),
+  entregable: z.string().trim().min(1, "Completa problema, alcance y entregable."),
+  modalidad: z.enum(MODALIDADES, { error: "Selecciona una modalidad válida." }),
+  duracion: DuracionSemanasSchema,
+  dedicacionSemanal: z
+    .string()
+    .trim()
+    .max(60, "La dedicación semanal es demasiado larga (máximo 60 caracteres)."),
+  resumen: z.string().trim(),
+  expectativas: z.string().trim(),
+});
+
 export async function createProject(
   _prevState: CreateProjectState,
   formData: FormData,
 ): Promise<CreateProjectState> {
-  const orgId = String(formData.get("orgId") ?? "");
-  const titulo = String(formData.get("titulo") ?? "").trim();
-  const resumen = String(formData.get("resumen") ?? "").trim();
-  const problema = String(formData.get("problema") ?? "").trim();
-  const alcance = String(formData.get("alcance") ?? "").trim();
-  const entregable = String(formData.get("entregable") ?? "").trim();
-  const expectativas = String(formData.get("expectativas") ?? "").trim();
-  const modalidad = String(formData.get("modalidad") ?? "");
-  const duracionRaw = String(formData.get("duracion_semanas") ?? "").trim();
-  const dedicacionSemanal = String(formData.get("dedicacion_semanal") ?? "").trim();
-
-  if (!orgId) return { error: "Selecciona la organización del proyecto." };
-  if (!titulo) return { error: "El proyecto necesita un título." };
-  if (!problema || !alcance || !entregable) {
-    return { error: "Completa problema, alcance y entregable." };
-  }
-  if (!MODALIDADES.includes(modalidad as (typeof MODALIDADES)[number])) {
-    return { error: "Selecciona una modalidad válida." };
-  }
-
-  // Duración: opcional, pero si viene debe ser un entero razonable (1–52).
-  let duracion: number | null = null;
-  if (duracionRaw) {
-    const n = Number(duracionRaw);
-    if (!Number.isInteger(n) || n < 1 || n > 52) {
-      return { error: "La duración debe ser un número de semanas entre 1 y 52." };
-    }
-    duracion = n;
-  }
-
-  if (dedicacionSemanal.length > 60) {
-    return { error: "La dedicación semanal es demasiado larga (máximo 60 caracteres)." };
-  }
+  const parsed = CreateProjectSchema.safeParse({
+    orgId: String(formData.get("orgId") ?? ""),
+    titulo: String(formData.get("titulo") ?? ""),
+    problema: String(formData.get("problema") ?? ""),
+    alcance: String(formData.get("alcance") ?? ""),
+    entregable: String(formData.get("entregable") ?? ""),
+    modalidad: String(formData.get("modalidad") ?? ""),
+    duracion: String(formData.get("duracion_semanas") ?? ""),
+    dedicacionSemanal: String(formData.get("dedicacion_semanal") ?? ""),
+    resumen: String(formData.get("resumen") ?? ""),
+    expectativas: String(formData.get("expectativas") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const {
+    orgId, titulo, problema, alcance, entregable, modalidad, duracion, dedicacionSemanal,
+    resumen, expectativas,
+  } = parsed.data;
 
   const supabase = await createClient();
 
@@ -71,7 +88,7 @@ export async function createProject(
     alcance,
     entregable,
     expectativas: expectativas || null,
-    modalidad: modalidad as (typeof MODALIDADES)[number],
+    modalidad,
     duracion_semanas: duracion,
     dedicacion_semanal: dedicacionSemanal || null,
     status: "borrador",
@@ -93,42 +110,46 @@ export async function createProject(
  * (publicación). La RLS `projects_update_manager` (M3) exige gestionar el
  * proyecto; el update se filtra por `id`.
  */
+// Mismo razonamiento que `CreateProjectSchema`: `id`/`titulo`/`problema`-
+// `alcance`-`entregable`/`modalidad` no se pisan entre sí (más allá del
+// mensaje compartido entre los tres campos del "completa problema...").
+const UpdateProjectSchema = z.object({
+  id: z.string().min(1, "Falta el proyecto."),
+  titulo: z.string().trim().min(1, "El proyecto necesita un título."),
+  problema: z.string().trim().min(1, "Completa problema, alcance y entregable."),
+  alcance: z.string().trim().min(1, "Completa problema, alcance y entregable."),
+  entregable: z.string().trim().min(1, "Completa problema, alcance y entregable."),
+  modalidad: z.enum(MODALIDADES, { error: "Selecciona una modalidad válida." }),
+  duracion: DuracionSemanasSchema,
+  dedicacionSemanal: z
+    .string()
+    .trim()
+    .max(60, "La dedicación semanal es demasiado larga (máximo 60 caracteres)."),
+  resumen: z.string().trim(),
+  expectativas: z.string().trim(),
+});
+
 export async function updateProject(
   _prevState: CreateProjectState,
   formData: FormData,
 ): Promise<CreateProjectState> {
-  const id = String(formData.get("projectId") ?? "");
-  const titulo = String(formData.get("titulo") ?? "").trim();
-  const resumen = String(formData.get("resumen") ?? "").trim();
-  const problema = String(formData.get("problema") ?? "").trim();
-  const alcance = String(formData.get("alcance") ?? "").trim();
-  const entregable = String(formData.get("entregable") ?? "").trim();
-  const expectativas = String(formData.get("expectativas") ?? "").trim();
-  const modalidad = String(formData.get("modalidad") ?? "");
-  const duracionRaw = String(formData.get("duracion_semanas") ?? "").trim();
-  const dedicacionSemanal = String(formData.get("dedicacion_semanal") ?? "").trim();
-
-  if (!id) return { error: "Falta el proyecto." };
-  if (!titulo) return { error: "El proyecto necesita un título." };
-  if (!problema || !alcance || !entregable) {
-    return { error: "Completa problema, alcance y entregable." };
-  }
-  if (!MODALIDADES.includes(modalidad as (typeof MODALIDADES)[number])) {
-    return { error: "Selecciona una modalidad válida." };
-  }
-
-  let duracion: number | null = null;
-  if (duracionRaw) {
-    const n = Number(duracionRaw);
-    if (!Number.isInteger(n) || n < 1 || n > 52) {
-      return { error: "La duración debe ser un número de semanas entre 1 y 52." };
-    }
-    duracion = n;
-  }
-
-  if (dedicacionSemanal.length > 60) {
-    return { error: "La dedicación semanal es demasiado larga (máximo 60 caracteres)." };
-  }
+  const parsed = UpdateProjectSchema.safeParse({
+    id: String(formData.get("projectId") ?? ""),
+    titulo: String(formData.get("titulo") ?? ""),
+    problema: String(formData.get("problema") ?? ""),
+    alcance: String(formData.get("alcance") ?? ""),
+    entregable: String(formData.get("entregable") ?? ""),
+    modalidad: String(formData.get("modalidad") ?? ""),
+    duracion: String(formData.get("duracion_semanas") ?? ""),
+    dedicacionSemanal: String(formData.get("dedicacion_semanal") ?? ""),
+    resumen: String(formData.get("resumen") ?? ""),
+    expectativas: String(formData.get("expectativas") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const {
+    id, titulo, problema, alcance, entregable, modalidad, duracion, dedicacionSemanal,
+    resumen, expectativas,
+  } = parsed.data;
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -140,7 +161,7 @@ export async function updateProject(
       alcance,
       entregable,
       expectativas: expectativas || null,
-      modalidad: modalidad as (typeof MODALIDADES)[number],
+      modalidad,
       duracion_semanas: duracion,
       dedicacion_semanal: dedicacionSemanal || null,
     })
@@ -192,6 +213,47 @@ function parseSkillsInput(raw: string): SkillInput[] | null {
 // enum de nivel, así que comparten la constante.
 const NIVELES_ROL = ["basico", "intermedio", "avanzado"] as const;
 
+// Cupos: entero ≥ 1 (la tabla tiene CHECK cupos > 0). Por defecto 1 si no
+// viene — a diferencia de `DuracionSemanasSchema`, acá "vacío" no es "sin
+// validar": se convierte a 1 y SÍ se valida (siempre es válido, pero la
+// conversión ocurre igual).
+const CuposSchema = z
+  .string()
+  .trim()
+  .transform((v) => (v ? Number(v) : 1))
+  .refine((n) => Number.isInteger(n) && n >= 1, {
+    error: "Los cupos deben ser un número entero de 1 o más.",
+  });
+
+// Horas semanales: opcional; si viene, entero entre 1 y 60 (CHECK de M19).
+// Reutilizada por `addRole` y `updateRole` (mismo mensaje, mismo rango).
+const HorasSemanalesSchema = z
+  .string()
+  .trim()
+  .transform((v) => (v ? Number(v) : null))
+  .refine((n) => n === null || (Number.isInteger(n) && n >= 1 && n <= 60), {
+    error: "Las horas por semana deben ser un entero entre 1 y 60.",
+  });
+
+const SkillsInputSchema = z
+  .string()
+  .transform((raw) => parseSkillsInput(raw))
+  .refine((v): v is SkillInput[] => v !== null, {
+    error: "Revisa las habilidades: algo no quedó bien formado.",
+  });
+
+// `projectId`/`nombre`/`skills`/`cupos` no se pisan entre sí (cada uno solo
+// puede fallar por su propio motivo), así que el orden del shape (igual al
+// de la cadena de `if` original) alcanza sin `superRefine`.
+const AddRoleSchema = z.object({
+  projectId: z.string().min(1, "Falta el proyecto."),
+  nombre: z.string().trim().min(1, "El rol necesita un nombre."),
+  skills: SkillsInputSchema,
+  cupos: CuposSchema,
+  horasSemanales: HorasSemanalesSchema,
+  descripcion: z.string().trim(),
+});
+
 /**
  * Agrega un rol a un proyecto, con sus habilidades exigidas de una (S-04/S-XX:
  * antes había que crear el rol y recién ahí, en una segunda pasada, agregarle
@@ -202,34 +264,16 @@ export async function addRole(
   _prevState: AddRoleState,
   formData: FormData,
 ): Promise<AddRoleState> {
-  const projectId = String(formData.get("projectId") ?? "");
-  const nombre = String(formData.get("nombre") ?? "").trim();
-  const descripcion = String(formData.get("descripcion") ?? "").trim();
-  const cuposRaw = String(formData.get("cupos") ?? "").trim();
-  const horasRaw = String(formData.get("horas_semanales") ?? "").trim();
-  const skills = parseSkillsInput(String(formData.get("skills") ?? ""));
-
-  if (!projectId) return { error: "Falta el proyecto." };
-  if (!nombre) return { error: "El rol necesita un nombre." };
-  if (skills === null) {
-    return { error: "Revisa las habilidades: algo no quedó bien formado." };
-  }
-
-  // Cupos: entero ≥ 1 (la tabla tiene CHECK cupos > 0). Por defecto 1.
-  const cupos = cuposRaw ? Number(cuposRaw) : 1;
-  if (!Number.isInteger(cupos) || cupos < 1) {
-    return { error: "Los cupos deben ser un número entero de 1 o más." };
-  }
-
-  // Horas semanales: opcional; si viene, entero entre 1 y 60 (CHECK de M19).
-  let horasSemanales: number | null = null;
-  if (horasRaw) {
-    const horas = Number(horasRaw);
-    if (!Number.isInteger(horas) || horas < 1 || horas > 60) {
-      return { error: "Las horas por semana deben ser un entero entre 1 y 60." };
-    }
-    horasSemanales = horas;
-  }
+  const parsed = AddRoleSchema.safeParse({
+    projectId: String(formData.get("projectId") ?? ""),
+    nombre: String(formData.get("nombre") ?? ""),
+    skills: String(formData.get("skills") ?? ""),
+    cupos: String(formData.get("cupos") ?? ""),
+    horasSemanales: String(formData.get("horas_semanales") ?? ""),
+    descripcion: String(formData.get("descripcion") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { projectId, nombre, skills, cupos, horasSemanales, descripcion } = parsed.data;
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -284,33 +328,30 @@ export type UpdateRoleState = { error?: string };
  * cálculo de cupos restantes (M72). Si hace falta bajar cupos por debajo de
  * eso, primero hay que quitar a alguien del equipo (`removeTeamMember`).
  */
+// Reutiliza `CuposSchema`/`HorasSemanalesSchema` de `addRole`.
+const UpdateRoleSchema = z.object({
+  roleId: z.string().min(1, "Falta el rol."),
+  projectId: z.string(),
+  nombre: z.string().trim().min(1, "El rol necesita un nombre."),
+  descripcion: z.string().trim(),
+  cupos: CuposSchema,
+  horasSemanales: HorasSemanalesSchema,
+});
+
 export async function updateRole(
   _prevState: UpdateRoleState,
   formData: FormData,
 ): Promise<UpdateRoleState> {
-  const roleId = String(formData.get("roleId") ?? "");
-  const projectId = String(formData.get("projectId") ?? "");
-  const nombre = String(formData.get("nombre") ?? "").trim();
-  const descripcion = String(formData.get("descripcion") ?? "").trim();
-  const cuposRaw = String(formData.get("cupos") ?? "").trim();
-  const horasRaw = String(formData.get("horas_semanales") ?? "").trim();
-
-  if (!roleId) return { error: "Falta el rol." };
-  if (!nombre) return { error: "El rol necesita un nombre." };
-
-  const cupos = cuposRaw ? Number(cuposRaw) : 1;
-  if (!Number.isInteger(cupos) || cupos < 1) {
-    return { error: "Los cupos deben ser un número entero de 1 o más." };
-  }
-
-  let horasSemanales: number | null = null;
-  if (horasRaw) {
-    const horas = Number(horasRaw);
-    if (!Number.isInteger(horas) || horas < 1 || horas > 60) {
-      return { error: "Las horas por semana deben ser un entero entre 1 y 60." };
-    }
-    horasSemanales = horas;
-  }
+  const parsed = UpdateRoleSchema.safeParse({
+    roleId: String(formData.get("roleId") ?? ""),
+    projectId: String(formData.get("projectId") ?? ""),
+    nombre: String(formData.get("nombre") ?? ""),
+    descripcion: String(formData.get("descripcion") ?? ""),
+    cupos: String(formData.get("cupos") ?? ""),
+    horasSemanales: String(formData.get("horas_semanales") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { roleId, projectId, nombre, descripcion, cupos, horasSemanales } = parsed.data;
 
   const supabase = await createClient();
 
@@ -401,25 +442,33 @@ const NIVELES = ["basico", "intermedio", "avanzado"] as const;
  * `project_role_skills_write_manager` (M3) exige gestionar el proyecto. El
  * `unique(project_role_id, skill_id)` evita duplicados (se traduce a mensaje).
  */
+// `roleId`/`skillId` comparten mensaje (el chequeo original los trataba
+// como una sola condición).
+const AddRoleSkillSchema = z.object({
+  projectId: z.string(),
+  roleId: z.string().min(1, "Selecciona una habilidad."),
+  skillId: z.string().min(1, "Selecciona una habilidad."),
+  nivel: z.enum(NIVELES, { error: "Selecciona un nivel válido." }),
+});
+
 export async function addRoleSkill(
   _prevState: AddRoleSkillState,
   formData: FormData,
 ): Promise<AddRoleSkillState> {
-  const projectId = String(formData.get("projectId") ?? "");
-  const roleId = String(formData.get("roleId") ?? "");
-  const skillId = String(formData.get("skillId") ?? "");
-  const nivel = String(formData.get("nivel") ?? "");
-
-  if (!roleId || !skillId) return { error: "Selecciona una habilidad." };
-  if (!NIVELES.includes(nivel as (typeof NIVELES)[number])) {
-    return { error: "Selecciona un nivel válido." };
-  }
+  const parsed = AddRoleSkillSchema.safeParse({
+    projectId: String(formData.get("projectId") ?? ""),
+    roleId: String(formData.get("roleId") ?? ""),
+    skillId: String(formData.get("skillId") ?? ""),
+    nivel: String(formData.get("nivel") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { projectId, roleId, skillId, nivel } = parsed.data;
 
   const supabase = await createClient();
   const { error } = await supabase.from("project_role_skills").insert({
     project_role_id: roleId,
     skill_id: skillId,
-    nivel_minimo: nivel as (typeof NIVELES)[number],
+    nivel_minimo: nivel,
   });
 
   if (error) {
@@ -650,25 +699,38 @@ function parseObservaciones(raw: string): ObservacionInput[] | null {
   return limpias;
 }
 
+const ObservacionesSchema = z
+  .string()
+  .transform((raw) => parseObservaciones(raw))
+  .refine((v): v is ObservacionInput[] => v !== null, {
+    error: "Revisa las observaciones: algo no quedó bien formado.",
+  });
+
+// `projectId`/`comentario`/`observaciones` no se pisan entre sí (los dos
+// chequeos de `comentario` — vacío, demasiado largo — son del mismo campo,
+// mismo orden que `.min().max()` en `escalateReport`,
+// features/reports/actions.ts, 2026-10-20).
+const RejectProjectSchema = z.object({
+  projectId: z.string().min(1, "Falta el proyecto."),
+  comentario: z
+    .string()
+    .trim()
+    .min(1, "Deja un motivo: es lo que verá la organización.")
+    .max(1000, "El motivo es demasiado largo (máximo 1000 caracteres)."),
+  observaciones: ObservacionesSchema,
+});
+
 export async function rejectProject(
   _prevState: ModerationState,
   formData: FormData,
 ): Promise<ModerationState> {
-  const projectId = String(formData.get("projectId") ?? "");
-  const comentario = String(formData.get("comentario") ?? "").trim();
-  const observaciones = parseObservaciones(
-    String(formData.get("observaciones") ?? ""),
-  );
-  if (!projectId) return { error: "Falta el proyecto." };
-  if (!comentario) {
-    return { error: "Deja un motivo: es lo que verá la organización." };
-  }
-  if (comentario.length > 1000) {
-    return { error: "El motivo es demasiado largo (máximo 1000 caracteres)." };
-  }
-  if (observaciones === null) {
-    return { error: "Revisa las observaciones: algo no quedó bien formado." };
-  }
+  const parsed = RejectProjectSchema.safeParse({
+    projectId: String(formData.get("projectId") ?? ""),
+    comentario: String(formData.get("comentario") ?? ""),
+    observaciones: String(formData.get("observaciones") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { projectId, comentario, observaciones } = parsed.data;
 
   const supabase = await createClient();
   const {
@@ -779,16 +841,21 @@ const CLOSE_PROJECT_ERROR: Record<string, string> = {
  * una sola transacción — antes eran 2 `update` sueltos desde acá, sin
  * evaluación y sin protección contra un fallo a mitad de camino.
  */
+const CloseProjectSchema = z.object({
+  projectId: z.string().min(1, "Falta el proyecto."),
+  milestoneId: z.string().min(1, "Define un hito final con una entrega antes de cerrar el proyecto."),
+});
+
 export async function closeProject(
   _prevState: CloseProjectState,
   formData: FormData,
 ): Promise<CloseProjectState> {
-  const projectId = String(formData.get("projectId") ?? "");
-  const milestoneId = String(formData.get("milestoneId") ?? "");
-  if (!projectId) return { error: "Falta el proyecto." };
-  if (!milestoneId) {
-    return { error: "Define un hito final con una entrega antes de cerrar el proyecto." };
-  }
+  const parsed = CloseProjectSchema.safeParse({
+    projectId: String(formData.get("projectId") ?? ""),
+    milestoneId: String(formData.get("milestoneId") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { projectId, milestoneId } = parsed.data;
 
   const supabase = await createClient();
 
