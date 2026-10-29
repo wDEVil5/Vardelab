@@ -99,6 +99,12 @@ En desarrollo local, **350 pruebas automatizadas** (lógica de negocio + políti
 | 3 · Piloto | 10 proyectos, 30–50 estudiantes, 8 semanas | ⬜ Pendiente |
 | 4 · Institucionalización | Presentar resultados y buscar continuidad | ⬜ Pendiente |
 
+### 🗺️ Próximos pasos
+
+- **Confirmar 3 decisiones abiertas** marcadas `Propuesta` en `REGLAS_NEGOCIO.md`: una sola fase activa por proyecto (con excepciones manuales registradas), usar el contacto/lead previo para acotar desafíos vagos antes de pedir registro, y una revisión manual corta por proyecto entregado en vez de una métrica automática prematura.
+- **Abrir la Fase 3 (piloto real)**: conseguir organizaciones, sembrar proyectos y abrir la convocatoria a estudiantes externos — es trabajo operativo, no de código.
+- **Pulir diseño** en las pantallas secundarias que todavía no están alineadas 1:1 con el prototipo de Figma.
+
 ## 🛠️ Stack tecnológico
 
 | Capa | Tecnología | Rol |
