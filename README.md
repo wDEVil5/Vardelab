@@ -215,6 +215,14 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=   # solo servidor, nunca en el cliente
 ```
 
+**Correr las pruebas** (mismos comandos que usa el CI):
+
+```bash
+node --test tests/*.test.mjs       # lógica de negocio (no necesita Supabase corriendo)
+npx supabase start                 # solo para las de RLS — necesita Docker
+node --test tests/rls/*.test.mjs   # políticas RLS reales contra Postgres
+```
+
 > La app arranca aunque Supabase no esté configurado todavía: el `proxy.ts` se salta la sesión si faltan las claves.
 
 ## 📚 Documentación
