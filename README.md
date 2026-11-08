@@ -215,6 +215,14 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=   # solo servidor, nunca en el cliente
 ```
 
+**Tipos y lint** (mismo orden que el CI — `next typegen` primero: `tsc` referencia tipos de rutas que Next genera):
+
+```bash
+npx next typegen
+npx tsc --noEmit
+npm run lint
+```
+
 **Correr las pruebas** (mismos comandos que usa el CI):
 
 ```bash
