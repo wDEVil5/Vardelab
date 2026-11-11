@@ -45,4 +45,8 @@ jobs:
         run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
 
       - name: Aplicar las migraciones
-        run: supabase db push
+        # Versiones recientes de la CLI apuntan al stack local por defecto
+        # (http://127.0.0.1:54322, que no existe en CI) aunque ya se haya
+        # hecho `supabase link` — hace falta `--remote` explícito para que
+        # use el proyecto remoto enlazado.
+        run: supabase db push --remote
