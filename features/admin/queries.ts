@@ -15,6 +15,7 @@ type PilotMetricsRaw = {
   postulaciones: { total: number; aceptadas: number };
   hitos: { total: number; aprobados: number };
   reportes: { abiertos: number; resueltos: number };
+  participantes: { activos: number; conEvidencia: number };
 };
 
 const METRICAS_VACIAS: PilotMetricsRaw = {
@@ -25,6 +26,7 @@ const METRICAS_VACIAS: PilotMetricsRaw = {
   postulaciones: { total: 0, aceptadas: 0 },
   hitos: { total: 0, aprobados: 0 },
   reportes: { abiertos: 0, resueltos: 0 },
+  participantes: { activos: 0, conEvidencia: 0 },
 };
 
 /**
@@ -74,6 +76,7 @@ export async function getPilotMetrics() {
     postulaciones: metrics.postulaciones,
     hitos: metrics.hitos,
     reportes: metrics.reportes,
+    participantes: metrics.participantes,
     northStar: {
       completados,
       meta: META_NORTH_STAR,

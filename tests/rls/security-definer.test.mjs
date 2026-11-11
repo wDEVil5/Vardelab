@@ -190,12 +190,15 @@ test('get_pilot_metrics agrega bien los conteos reales del seed', () => {
   const metrics = JSON.parse(rows[0]);
   // Valores del seed (supabase/seed.sql): 4 proyectos, 2 postulaciones (ambas
   // aceptadas), 2 equipos, 6 hitos (1 aprobado), sin reportes ni evidencias.
+  // Las 2 filas de team_members son de la MISMA estudiante (dos equipos
+  // distintos) — 1 participante activo (M114), sin ninguna ficha pública.
   assert.equal(metrics.totalProyectos, 4);
   assert.equal(metrics.equiposFormados, 2);
   assert.equal(metrics.evidenciasPortafolio, 0);
   assert.deepEqual(metrics.postulaciones, { total: 2, aceptadas: 2 });
   assert.deepEqual(metrics.hitos, { total: 6, aprobados: 1 });
   assert.deepEqual(metrics.reportes, { abiertos: 0, resueltos: 0 });
+  assert.deepEqual(metrics.participantes, { activos: 1, conEvidencia: 0 });
   assert.equal(
     metrics.porEstado.publicado + metrics.porEstado.seleccion,
     4,
