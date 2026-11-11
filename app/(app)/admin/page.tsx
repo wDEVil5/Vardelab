@@ -20,6 +20,10 @@ export default async function AdminMetricasPage() {
 
   const pctAceptadas = porcentaje(m.postulaciones.aceptadas, m.postulaciones.total);
   const pctHitosAprobados = porcentaje(m.hitos.aprobados, m.hitos.total);
+  const pctParticipantesConEvidencia = porcentaje(
+    m.participantes.conEvidencia,
+    m.participantes.activos,
+  );
 
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-10 lg:py-12">
@@ -98,6 +102,12 @@ export default async function AdminMetricasPage() {
             valor={`${m.reportes.abiertos} abiertos`}
             nota={`${m.reportes.resueltos} resueltos`}
             tone={m.reportes.abiertos > 0 ? "danger" : "ink"}
+          />
+          <Indicador
+            label="Participantes con evidencia"
+            valor={m.participantes.activos > 0 ? `${pctParticipantesConEvidencia}%` : "—"}
+            nota={`${m.participantes.conEvidencia} de ${m.participantes.activos}`}
+            tone="brand"
           />
         </div>
         <ExportMetricsButton metrics={m} />

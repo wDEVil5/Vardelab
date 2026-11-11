@@ -17,6 +17,8 @@ function aCsv(m: PilotMetrics): string {
     ["Hitos aprobados", String(m.hitos.aprobados)],
     ["Reportes abiertos", String(m.reportes.abiertos)],
     ["Reportes resueltos", String(m.reportes.resueltos)],
+    ["Participantes activos", String(m.participantes.activos)],
+    ["Participantes con evidencia", String(m.participantes.conEvidencia)],
   ];
   const escapar = (v: string) => `"${v.replaceAll('"', '""')}"`;
   return [["Métrica", "Valor"], ...filas]
