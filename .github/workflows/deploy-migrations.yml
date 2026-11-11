@@ -48,5 +48,9 @@ jobs:
         # Versiones recientes de la CLI apuntan al stack local por defecto
         # (http://127.0.0.1:54322, que no existe en CI) aunque ya se haya
         # hecho `supabase link` — hace falta `--remote` explícito para que
-        # use el proyecto remoto enlazado.
-        run: supabase db push --remote
+        # use el proyecto remoto enlazado. Además pide confirmación
+        # interactiva antes de aplicar contra producción; sin TTY en CI
+        # (stdout no es una terminal) no hay quién responda, así que hace
+        # falta `--yes` para que no se quede esperando y aborte sin aplicar
+        # nada.
+        run: supabase db push --remote --yes
