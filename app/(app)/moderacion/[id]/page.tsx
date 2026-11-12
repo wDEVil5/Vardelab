@@ -25,6 +25,10 @@ const MODALIDAD_LABEL: Record<string, string> = {
 // real"): ninguno es un campo del formulario del patrocinador, todos dependen
 // de este criterio editorial humano (decisión del piloto, prioridad 4 de la
 // auditoría de reglas de negocio).
+// Los últimos 3 ítems se agregaron el 2026-11-11 (decisión D9 del dueño) para
+// cerrar la brecha restante de REGLAS_NEGOCIO.md: destino de uso/confidencialidad/
+// propiedad intelectual, validador explícito y dedicación realmente acordada
+// (PRD §6.3) — mismo patrón que el resto: guía editorial, no campos nuevos.
 const GUIA = [
   "Existe una necesidad real y actual — no un problema armado solo para que el equipo practique una tecnología.",
   "Hay un beneficiario o responsable identificable que va a usar, probar o revisar el resultado.",
@@ -33,6 +37,9 @@ const GUIA = [
   "El entregable es concreto y se puede verificar al final.",
   "Los roles piden habilidades razonables para estudiantes, sin reemplazar un puesto permanente.",
   "El patrocinador acepta responder preguntas, revisar hitos y evaluar el resultado al cierre.",
+  "El problema es real, no un ejercicio armado y presentado como si fuera un encargo genuino.",
+  "Queda claro qué pasará con el resultado (dónde se usará) y si hay información confidencial o de propiedad intelectual que cuidar.",
+  "Está identificada la persona específica que va a validar el entregable final, no solo que 'alguien' lo revisará — y la dedicación declarada es la que el patrocinador también está dispuesto a acompañar.",
 ];
 
 // Tiempo relativo desde que se creó el proyecto (no hay un timestamp propio de
