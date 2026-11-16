@@ -21,6 +21,8 @@ Convierte necesidades reales en microproyectos acotados y acompañados, para que
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?logo=githubactions&logoColor=white)
 ![Sentry](https://img.shields.io/badge/Sentry-362D59?logo=sentry&logoColor=white)
 ![Figma](https://img.shields.io/badge/Figma-F24E1E?logo=figma&logoColor=white)
+![Motion](https://img.shields.io/badge/Motion-000000?logo=framermotion&logoColor=white)
+![Matter.js](https://img.shields.io/badge/Matter.js-4B5563?logoColor=white)
 
 </div>
 
