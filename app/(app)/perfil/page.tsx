@@ -249,14 +249,12 @@ export default async function PerfilPage({ searchParams }: PageProps) {
               : "Tu perfil es privado; solo tú lo ves."}
           </p>
           <div className="flex items-center gap-4">
-            {esPublico && (
-              <Link
-                href={`/u/${profile.id}`}
-                className="text-sm font-medium text-electric hover:underline"
-              >
-                Ver perfil público
-              </Link>
-            )}
+            <Link
+              href={`/u/${profile.id}`}
+              className="text-sm font-medium text-electric hover:underline"
+            >
+              {esPublico ? "Ver perfil público" : "Ver mi perfil"}
+            </Link>
             <VisibilityToggle checked={esPublico} action={setProfileVisibility} />
           </div>
         </div>
@@ -482,14 +480,12 @@ function PerfilPatrocinador({
               : "Tu perfil es privado; solo tú lo ves."}
           </p>
           <div className="flex items-center gap-4">
-            {esPublico && (
-              <Link
-                href={`/u/${profileId}`}
-                className="text-sm font-medium text-electric hover:underline"
-              >
-                Ver perfil público
-              </Link>
-            )}
+            <Link
+              href={`/u/${profileId}`}
+              className="text-sm font-medium text-electric hover:underline"
+            >
+              {esPublico ? "Ver perfil público" : "Ver mi perfil"}
+            </Link>
             <VisibilityToggle checked={esPublico} action={setProfileVisibility} />
           </div>
         </div>
