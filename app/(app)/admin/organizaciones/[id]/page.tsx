@@ -11,6 +11,7 @@ import {
   getOrganizationMembers,
   getPendingOwnershipOffer,
 } from "@/features/organizations/queries";
+import { RemoveMemberButton } from "@/features/organizations/components/remove-member-button";
 import { externalUrl } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -74,6 +75,7 @@ export default async function AdminOrganizacionDetallePage({ params }: PageProps
   const miembrosActivos = miembros
     .filter((m): m is typeof m & { user_id: string } => m.status === "activo" && Boolean(m.user_id))
     .map((m) => ({ userId: m.user_id, etiqueta: m.nombre ?? m.invited_email }));
+  const invitacionesPendientes = miembros.filter((m) => m.status === "pendiente");
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-10 lg:py-12">
@@ -170,6 +172,38 @@ export default async function AdminOrganizacionDetallePage({ params }: PageProps
           propiedad cambia solo cuando la acepta.
         </p>
       </div>
+
+      {invitacionesPendientes.length > 0 && (
+        <div className="mt-5 rounded-2xl border border-border bg-white p-7">
+          <h2 className="font-semibold text-ink">
+            Invitaciones de miembro pendientes ({invitacionesPendientes.length})
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            Rescate para cuando nadie activo en la organización puede cancelarla (correo mal
+            escrito, invitador que ya no gestiona).
+          </p>
+          <ul className="mt-4 flex flex-col gap-3">
+            {invitacionesPendientes.map((m) => (
+              <li
+                key={m.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3"
+              >
+                <div>
+                  <p className="text-sm font-medium text-ink">{m.nombre ?? m.invited_email}</p>
+                  <p className="text-xs text-muted">
+                    Invitado el {FORMATO_FECHA.format(new Date(m.created_at))}
+                  </p>
+                </div>
+                <RemoveMemberButton
+                  memberId={m.id}
+                  orgId={org.id}
+                  nombre={m.nombre ?? m.invited_email}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {org.verificacion === "en_revision" && (
         <div className="mt-5">
