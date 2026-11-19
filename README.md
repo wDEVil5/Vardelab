@@ -6,6 +6,8 @@
 
 Convierte necesidades reales en microproyectos acotados y acompañados, para que estudiantes universitarios puedan colaborar, entregar resultados y construir un portafolio con evidencia desde una etapa temprana de su carrera, antes de realizar su primera práctica profesional o acceder a su primer empleo.
 
+🔗 **[vardelab.cl](https://vardelab.cl)** — en producción, piloto interno
+
 ![Estado](https://img.shields.io/badge/estado-en%20producción%20(piloto%20interno)-brightgreen)
 ![Licencia](https://img.shields.io/badge/licencia-por%20definir-lightgrey)
 ![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)
