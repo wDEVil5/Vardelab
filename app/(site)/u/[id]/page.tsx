@@ -513,12 +513,15 @@ export default async function PerfilPublicoPage({ params }: PageProps) {
           <div className="mt-4 flex flex-col gap-6">
             {gruposPortafolio.map((grupo) => (
               <div key={grupo.key}>
-                <p className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted">
+                <p className="mb-2 flex items-start gap-2 text-xs font-medium uppercase tracking-wide text-muted">
                   {grupo.titulo ?? "Trabajo independiente"}
                   {/* El proyecto sigue activo: es avance, no un resultado ya
-                      validado — evita que se lea como entrega cerrada. */}
+                      validado — evita que se lea como entrega cerrada.
+                      `items-start` (no `items-center`): con un título largo
+                      que pasa a 2 líneas, el badge debe alinearse con la
+                      primera línea, no quedar centrado entre ambas. */}
                   {grupo.enCurso && (
-                    <Badge tone="brand" className="normal-case">
+                    <Badge tone="brand" className="shrink-0 normal-case">
                       En curso
                     </Badge>
                   )}
